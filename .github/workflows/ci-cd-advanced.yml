@@ -1,0 +1,588 @@
+﻿# GameCore 進階 CI/CD 工作流程
+# 包含建置、測試、安全掃描、部署等完整流程
+
+name: GameCore Advanced CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ published ]
+  schedule:
+    # 每日凌晨 2 點執行安全掃描
+    - cron: '0 2 * * *'
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  NODE_VERSION: '18.x'
+  DOCKER_REGISTRY: 'ghcr.io'
+  IMAGE_NAME: 'gamecore'
+
+jobs:
+  # ============================================================================
+  # 階段 1: 程式碼品質檢查
+  # ============================================================================
+  code-quality:
+    name: 🔍 程式碼品質檢查
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 檢出程式碼
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # 完整歷史記錄，用於 SonarCloud
+    
+    - name: 🛠️ 設定 .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: 📦 快取 NuGet 套件
+      uses: actions/cache@v3
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+    
+    - name: 🔄 還原相依性
+      run: dotnet restore
+    
+    - name: 🏗️ 建置專案
+      run: dotnet build --configuration Release --no-restore
+    
+    - name: 🧪 執行測試 (含覆蓋率)
+      run: |
+        dotnet test --configuration Release \
+          --no-build \
+          --collect:"XPlat Code Coverage" \
+          --results-directory ./TestResults \
+          --logger "trx;LogFileName=test-results.trx"
+    
+    - name: 📊 生成覆蓋率報告
+      uses: danielpalme/ReportGenerator-GitHub-Action@5.1.26
+      with:
+        reports: 'TestResults/**/coverage.cobertura.xml'
+        targetdir: 'CoverageReports'
+        reporttypes: 'HtmlInline;Badges;Cobertura'
+        sourcedirs: '.'
+    
+    - name: 📈 上傳覆蓋率到 Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./CoverageReports/Cobertura.xml
+        fail_ci_if_error: false
+    
+    - name: 🔍 SonarCloud 掃描
+      uses: SonarSource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      with:
+        args: >
+          -Dsonar.projectKey=gamecore
+          -Dsonar.organization=gamecore-org
+          -Dsonar.cs.opencover.reportsPaths=TestResults/**/coverage.opencover.xml
+          -Dsonar.coverage.exclusions=**Tests/**
+    
+    - name: 📤 上傳測試結果
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results
+        path: |
+          TestResults/
+          CoverageReports/
+
+  # ============================================================================
+  # 階段 2: 安全性掃描
+  # ============================================================================
+  security-scan:
+    name: 🔒 安全性掃描
+    runs-on: ubuntu-latest
+    needs: code-quality
+    
+    steps:
+    - name: 📥 檢出程式碼
+      uses: actions/checkout@v4
+    
+    - name: 🛠️ 設定 .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: 🔍 依賴性漏洞掃描
+      run: |
+        dotnet list package --vulnerable --include-transitive 2>&1 | tee vulnerability-report.txt
+        if grep -q "has the following vulnerable packages" vulnerability-report.txt; then
+          echo "發現安全漏洞！"
+          cat vulnerability-report.txt
+          exit 1
+        fi
+    
+    - name: 🔒 CodeQL 分析
+      uses: github/codeql-action/init@v2
+      with:
+        languages: csharp
+        config-file: ./.github/codeql/codeql-config.yml
+    
+    - name: 🏗️ 自動建置 (CodeQL)
+      uses: github/codeql-action/autobuild@v2
+    
+    - name: 📊 執行 CodeQL 分析
+      uses: github/codeql-action/analyze@v2
+    
+    - name: 🛡️ 執行 Security Audit
+      run: |
+        # 安裝安全審計工具
+        dotnet tool install --global security-scan
+        
+        # 執行安全掃描
+        security-scan --project ./GameCore.sln --output security-report.json
+      continue-on-error: true
+    
+    - name: 📤 上傳安全報告
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          vulnerability-report.txt
+          security-report.json
+
+  # ============================================================================
+  # 階段 3: 前端資源建置
+  # ============================================================================
+  frontend-build:
+    name: 🎨 前端資源建置
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 檢出程式碼
+      uses: actions/checkout@v4
+    
+    - name: 🟢 設定 Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: 'GameCore.Web/package-lock.json'
+    
+    - name: 📦 安裝前端依賴
+      working-directory: ./GameCore.Web
+      run: |
+        npm ci
+        npm audit --audit-level high
+    
+    - name: 🎨 建置前端資源
+      working-directory: ./GameCore.Web
+      run: |
+        npm run build
+        npm run minify
+    
+    - name: 🧪 前端測試
+      working-directory: ./GameCore.Web
+      run: |
+        npm run test:unit
+        npm run test:e2e:headless
+    
+    - name: 📤 上傳前端建置產物
+      uses: actions/upload-artifact@v3
+      with:
+        name: frontend-assets
+        path: |
+          GameCore.Web/wwwroot/dist/
+          GameCore.Web/wwwroot/css/
+          GameCore.Web/wwwroot/js/
+
+  # ============================================================================
+  # 階段 4: 容器化建置
+  # ============================================================================
+  docker-build:
+    name: 🐳 Docker 建置
+    runs-on: ubuntu-latest
+    needs: [code-quality, security-scan]
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
+    
+    steps:
+    - name: 📥 檢出程式碼
+      uses: actions/checkout@v4
+    
+    - name: 🐳 設定 Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: 🔑 登入 Container Registry
+      if: github.event_name != 'pull_request'
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.DOCKER_REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: 📝 提取中繼資料
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.DOCKER_REGISTRY }}/${{ github.repository }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=raw,value=latest,enable={{is_default_branch}}
+    
+    - name: 🏗️ 建置並推送 Docker 映像
+      id: build
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        platforms: linux/amd64,linux/arm64
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          BUILDKIT_INLINE_CACHE=1
+          VERSION=${{ steps.meta.outputs.version }}
+    
+    - name: 🔍 掃描容器漏洞
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ steps.meta.outputs.tags }}
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: 📤 上傳 Trivy 掃描結果
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # ============================================================================
+  # 階段 5: 整合測試
+  # ============================================================================
+  integration-tests:
+    name: 🔧 整合測試
+    runs-on: ubuntu-latest
+    needs: docker-build
+    
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          SA_PASSWORD: 'YourStrong@Passw0rd'
+          ACCEPT_EULA: 'Y'
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong@Passw0rd -Q 'SELECT 1'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 3
+    
+    steps:
+    - name: 📥 檢出程式碼
+      uses: actions/checkout@v4
+    
+    - name: 🛠️ 設定 .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: 🗄️ 設定測試資料庫
+      run: |
+        # 等待 SQL Server 啟動
+        sleep 30
+        
+        # 創建測試資料庫
+        sqlcmd -S localhost -U sa -P 'YourStrong@Passw0rd' -Q "CREATE DATABASE GameCoreTest"
+        
+        # 執行建表腳本
+        sqlcmd -S localhost -U sa -P 'YourStrong@Passw0rd' -d GameCoreTest -i Database/01-CreateTables.sql
+        
+        # 載入測試資料
+        sqlcmd -S localhost -U sa -P 'YourStrong@Passw0rd' -d GameCoreTest -i Database/02-InsertMockData.sql
+    
+    - name: 🧪 執行整合測試
+      env:
+        ConnectionStrings__DefaultConnection: 'Server=localhost;Database=GameCoreTest;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=true;'
+      run: |
+        dotnet test GameCore.Tests/GameCore.Tests.csproj \
+          --configuration Release \
+          --filter "Category=Integration" \
+          --logger "trx;LogFileName=integration-test-results.trx"
+    
+    - name: 📤 上傳整合測試結果
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: integration-test-results
+        path: TestResults/integration-test-results.trx
+
+  # ============================================================================
+  # 階段 6: 部署到 Staging
+  # ============================================================================
+  deploy-staging:
+    name: 🚀 部署到 Staging
+    runs-on: ubuntu-latest
+    needs: [docker-build, integration-tests]
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: staging
+      url: https://gamecore-staging.azurewebsites.net
+    
+    steps:
+    - name: 📥 檢出程式碼
+      uses: actions/checkout@v4
+    
+    - name: 🔑 Azure 登入
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: 🚀 部署到 Azure Container Instances
+      uses: azure/aci-deploy@v1
+      with:
+        resource-group: gamecore-staging-rg
+        dns-name-label: gamecore-staging
+        image: ${{ needs.docker-build.outputs.image-tag }}
+        registry-login-server: ${{ env.DOCKER_REGISTRY }}
+        registry-username: ${{ github.actor }}
+        registry-password: ${{ secrets.GITHUB_TOKEN }}
+        name: gamecore-staging
+        location: 'East Asia'
+        environment-variables: |
+          ASPNETCORE_ENVIRONMENT=Staging
+          ConnectionStrings__DefaultConnection=${{ secrets.STAGING_CONNECTION_STRING }}
+        secure-environment-variables: |
+          ApiKeys__GoogleOAuth=${{ secrets.STAGING_GOOGLE_OAUTH_KEY }}
+          ApiKeys__FacebookOAuth=${{ secrets.STAGING_FACEBOOK_OAUTH_KEY }}
+    
+    - name: 🔍 健康檢查
+      run: |
+        # 等待服務啟動
+        sleep 60
+        
+        # 檢查健康狀態
+        response=$(curl -s -o /dev/null -w "%{http_code}" https://gamecore-staging.azurewebsites.net/health)
+        if [ $response -eq 200 ]; then
+          echo "✅ Staging 部署成功！"
+        else
+          echo "❌ Staging 健康檢查失敗，HTTP 狀態碼: $response"
+          exit 1
+        fi
+    
+    - name: 🧪 冒煙測試
+      run: |
+        # 執行基本的冒煙測試
+        npm install -g newman
+        newman run tests/postman/GameCore-SmokeTests.json \
+          --environment tests/postman/staging-environment.json \
+          --reporters cli,junit \
+          --reporter-junit-export staging-smoke-test-results.xml
+    
+    - name: 📤 上傳冒煙測試結果
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: staging-smoke-test-results
+        path: staging-smoke-test-results.xml
+
+  # ============================================================================
+  # 階段 7: 部署到 Production
+  # ============================================================================
+  deploy-production:
+    name: 🎯 部署到 Production
+    runs-on: ubuntu-latest
+    needs: [docker-build, integration-tests]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: production
+      url: https://gamecore.azurewebsites.net
+    
+    steps:
+    - name: 📥 檢出程式碼
+      uses: actions/checkout@v4
+    
+    - name: ⏸️ 維護模式
+      run: |
+        # 啟用維護模式
+        curl -X POST https://gamecore.azurewebsites.net/api/maintenance/enable \
+          -H "Authorization: Bearer ${{ secrets.MAINTENANCE_TOKEN }}"
+    
+    - name: 🔑 Azure 登入
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: 🗄️ 資料庫遷移
+      run: |
+        # 執行資料庫遷移腳本
+        sqlcmd -S ${{ secrets.PROD_DB_SERVER }} \
+          -U ${{ secrets.PROD_DB_USER }} \
+          -P ${{ secrets.PROD_DB_PASSWORD }} \
+          -d GameCore \
+          -i Database/migrations/latest.sql
+    
+    - name: 🚀 藍綠部署
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: gamecore-prod
+        slot-name: staging
+        images: ${{ needs.docker-build.outputs.image-tag }}
+    
+    - name: 🔍 Production 健康檢查
+      run: |
+        # 檢查 staging slot 健康狀態
+        sleep 120
+        response=$(curl -s -o /dev/null -w "%{http_code}" https://gamecore-prod-staging.azurewebsites.net/health)
+        if [ $response -eq 200 ]; then
+          echo "✅ Production staging slot 健康！"
+        else
+          echo "❌ Production staging slot 健康檢查失敗"
+          exit 1
+        fi
+    
+    - name: 🔄 切換 Production Slot
+      run: |
+        # 切換到 production slot
+        az webapp deployment slot swap \
+          --resource-group gamecore-prod-rg \
+          --name gamecore-prod \
+          --slot staging \
+          --target-slot production
+    
+    - name: ▶️ 關閉維護模式
+      run: |
+        # 關閉維護模式
+        curl -X POST https://gamecore.azurewebsites.net/api/maintenance/disable \
+          -H "Authorization: Bearer ${{ secrets.MAINTENANCE_TOKEN }}"
+    
+    - name: 🎉 部署成功通知
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        channel: '#deployments'
+        text: '🎉 GameCore 已成功部署到 Production！'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # ============================================================================
+  # 階段 8: 效能測試
+  # ============================================================================
+  performance-tests:
+    name: ⚡ 效能測試
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+    - name: 📥 檢出程式碼
+      uses: actions/checkout@v4
+    
+    - name: 🟢 設定 Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    
+    - name: 📦 安裝 K6
+      run: |
+        sudo gpg -k
+        sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+        echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+        sudo apt-get update
+        sudo apt-get install k6
+    
+    - name: ⚡ 執行負載測試
+      run: |
+        k6 run tests/performance/load-test.js \
+          --env BASE_URL=https://gamecore-staging.azurewebsites.net \
+          --out json=load-test-results.json
+    
+    - name: ⚡ 執行壓力測試
+      run: |
+        k6 run tests/performance/stress-test.js \
+          --env BASE_URL=https://gamecore-staging.azurewebsites.net \
+          --out json=stress-test-results.json
+    
+    - name: 📊 分析效能結果
+      run: |
+        # 分析效能測試結果
+        node tests/performance/analyze-results.js \
+          load-test-results.json \
+          stress-test-results.json
+    
+    - name: 📤 上傳效能測試結果
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: performance-test-results
+        path: |
+          load-test-results.json
+          stress-test-results.json
+          performance-report.html
+
+  # ============================================================================
+  # 階段 9: 清理和通知
+  # ============================================================================
+  cleanup-notify:
+    name: 🧹 清理和通知
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production, performance-tests]
+    if: always()
+    
+    steps:
+    - name: 🧹 清理舊的 Container Images
+      if: github.event_name != 'pull_request'
+      run: |
+        # 保留最新的 10 個映像，刪除其餘的
+        gh api repos/${{ github.repository }}/packages/container/${{ env.IMAGE_NAME }}/versions \
+          --paginate \
+          --jq '.[] | select(.metadata.container.tags | length == 0) | .id' \
+          | tail -n +11 \
+          | xargs -I {} gh api --method DELETE repos/${{ github.repository }}/packages/container/${{ env.IMAGE_NAME }}/versions/{}
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: 📊 生成部署報告
+      run: |
+        echo "# GameCore 部署報告 📊" > deployment-report.md
+        echo "" >> deployment-report.md
+        echo "**建置時間:** $(date)" >> deployment-report.md
+        echo "**Git Commit:** ${{ github.sha }}" >> deployment-report.md
+        echo "**觸發事件:** ${{ github.event_name }}" >> deployment-report.md
+        echo "" >> deployment-report.md
+        
+        if [ "${{ needs.deploy-staging.result }}" == "success" ]; then
+          echo "✅ **Staging 部署:** 成功" >> deployment-report.md
+        else
+          echo "❌ **Staging 部署:** 失敗" >> deployment-report.md
+        fi
+        
+        if [ "${{ needs.deploy-production.result }}" == "success" ]; then
+          echo "✅ **Production 部署:** 成功" >> deployment-report.md
+        elif [ "${{ needs.deploy-production.result }}" == "skipped" ]; then
+          echo "⏭️ **Production 部署:** 跳過" >> deployment-report.md
+        else
+          echo "❌ **Production 部署:** 失敗" >> deployment-report.md
+        fi
+    
+    - name: 💬 發送通知
+      uses: 8398a7/action-slack@v3
+      if: always()
+      with:
+        status: ${{ job.status }}
+        channel: '#ci-cd'
+        fields: repo,message,commit,author,action,eventName,ref,workflow
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

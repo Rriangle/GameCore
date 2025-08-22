@@ -1,0 +1,521 @@
+﻿@{
+    ViewData["Title"] = "登入 - GameCore";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="logo-section">
+                <div class="logo-badge">GC</div>
+                <h1>歡迎回到 GameCore</h1>
+                <p class="subtitle">遊戲社群，從這裡開始</p>
+            </div>
+        </div>
+
+        <div class="auth-content">
+            <!-- 社交登入按鈕 -->
+            <div class="social-login">
+                <h3>快速登入</h3>
+                <div class="social-buttons">
+                    <a href="/signin-google" class="btn-social google">
+                        <svg class="social-icon" viewBox="0 0 24 24">
+                            <path fill="#4285f4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34a853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#fbbc05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                            <path fill="#ea4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                        </svg>
+                        使用 Google 登入
+                    </a>
+                    
+                    <a href="/signin-facebook" class="btn-social facebook">
+                        <svg class="social-icon" viewBox="0 0 24 24">
+                            <path fill="#1877f2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                        </svg>
+                        使用 Facebook 登入
+                    </a>
+                    
+                    <a href="/signin-discord" class="btn-social discord">
+                        <svg class="social-icon" viewBox="0 0 24 24">
+                            <path fill="#5865f2" d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419-.0189 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/>
+                        </svg>
+                        使用 Discord 登入
+                    </a>
+                </div>
+            </div>
+
+            <div class="divider">
+                <span>或使用帳號登入</span>
+            </div>
+
+            <!-- 表單登入 -->
+            <form asp-action="Login" asp-controller="Account" method="post" class="auth-form">
+                <div asp-validation-summary="All" class="validation-summary"></div>
+                
+                <div class="form-group">
+                    <label for="Account">帳號或 Email</label>
+                    <input name="Account" type="text" required 
+                           placeholder="請輸入您的帳號或 Email" 
+                           class="form-control" 
+                           autocomplete="username">
+                </div>
+
+                <div class="form-group">
+                    <label for="Password">密碼</label>
+                    <input name="Password" type="password" required 
+                           placeholder="請輸入密碼" 
+                           class="form-control" 
+                           autocomplete="current-password">
+                </div>
+
+                <div class="form-options">
+                    <label class="checkbox-container">
+                        <input name="RememberMe" type="checkbox" value="true">
+                        <span class="checkmark"></span>
+                        記住我
+                    </label>
+                    <a href="/Account/ForgotPassword" class="forgot-link">忘記密碼？</a>
+                </div>
+
+                <button type="submit" class="btn-primary full-width">
+                    登入
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                <p>還沒有帳號嗎？ <a href="/Account/Register">立即註冊</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* GameCore 登入頁面樣式 */
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(900px 500px at -10% -10%, rgba(117,87,255,.10), transparent 60%), 
+                radial-gradient(800px 460px at 110% 10%, rgba(52,210,255,.10), transparent 50%), 
+                linear-gradient(180deg, #eef3f8, #ffffff);
+    padding: 20px;
+}
+
+.auth-card {
+    background: rgba(255,255,255,.85);
+    backdrop-filter: blur(14px);
+    border: 1px solid #e5e7eb;
+    border-radius: 24px;
+    box-shadow: 0 18px 40px rgba(17,24,39,.12);
+    width: 100%;
+    max-width: 420px;
+    padding: 32px;
+    animation: slideUp 0.6s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.logo-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-badge {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #7557ff, #34d2ff);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 20px;
+    box-shadow: 0 8px 24px rgba(117,87,255,.3);
+}
+
+.auth-header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.subtitle {
+    margin: 0;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.social-login {
+    margin-bottom: 24px;
+}
+
+.social-login h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #374151;
+    margin: 0 0 16px 0;
+    text-align: center;
+}
+
+.social-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.btn-social {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: white;
+    color: #374151;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-social:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,.1);
+    text-decoration: none;
+    color: #374151;
+}
+
+.social-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.divider {
+    position: relative;
+    margin: 24px 0;
+    text-align: center;
+}
+
+.divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #e5e7eb;
+}
+
+.divider span {
+    background: rgba(255,255,255,.85);
+    color: #64748b;
+    padding: 0 16px;
+    font-size: 14px;
+    position: relative;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group label {
+    font-weight: 500;
+    color: #374151;
+    font-size: 14px;
+}
+
+.form-control {
+    padding: 12px 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    background: white;
+    font-size: 16px;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #7557ff;
+    box-shadow: 0 0 0 3px rgba(117,87,255,.1);
+}
+
+.form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 8px 0;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #374151;
+    cursor: pointer;
+}
+
+.checkbox-container input[type="checkbox"] {
+    display: none;
+}
+
+.checkmark {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #d1d5db;
+    border-radius: 4px;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.checkbox-container input[type="checkbox"]:checked + .checkmark {
+    background: #7557ff;
+    border-color: #7557ff;
+}
+
+.checkbox-container input[type="checkbox"]:checked + .checkmark::after {
+    content: '✓';
+    position: absolute;
+    top: -2px;
+    left: 3px;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.forgot-link {
+    color: #7557ff;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.forgot-link:hover {
+    text-decoration: underline;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #7557ff, #3b82f6);
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(117,87,255,.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(117,87,255,.4);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.full-width {
+    width: 100%;
+}
+
+.auth-footer {
+    margin-top: 24px;
+    text-align: center;
+}
+
+.auth-footer p {
+    margin: 0;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.auth-footer a {
+    color: #7557ff;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.auth-footer a:hover {
+    text-decoration: underline;
+}
+
+.validation-summary {
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    padding: 12px;
+    color: #dc2626;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+.validation-summary ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+/* 響應式設計 */
+@media (max-width: 480px) {
+    .auth-container {
+        padding: 12px;
+    }
+    
+    .auth-card {
+        padding: 24px;
+    }
+    
+    .social-buttons {
+        gap: 8px;
+    }
+    
+    .btn-social {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    
+    .form-options {
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
+    }
+}
+
+/* 深色模式支援 */
+@media (prefers-color-scheme: dark) {
+    .auth-container {
+        background: radial-gradient(900px 500px at -10% -10%, rgba(117,87,255,.15), transparent 60%), 
+                    radial-gradient(800px 460px at 110% 10%, rgba(52,210,255,.15), transparent 50%), 
+                    linear-gradient(180deg, #0c111b, #0a0f18);
+    }
+    
+    .auth-card {
+        background: rgba(22,30,48,.85);
+        border-color: #1e2b43;
+    }
+    
+    .auth-header h1 {
+        color: #e5edff;
+    }
+    
+    .subtitle {
+        color: #9fb1c9;
+    }
+    
+    .social-login h3 {
+        color: #e5edff;
+    }
+    
+    .btn-social {
+        background: rgba(22,30,48,.8);
+        border-color: #1e2b43;
+        color: #e5edff;
+    }
+    
+    .form-group label {
+        color: #e5edff;
+    }
+    
+    .form-control {
+        background: rgba(22,30,48,.6);
+        border-color: #1e2b43;
+        color: #e5edff;
+    }
+    
+    .form-control::placeholder {
+        color: #9fb1c9;
+    }
+    
+    .checkbox-container {
+        color: #e5edff;
+    }
+    
+    .auth-footer p {
+        color: #9fb1c9;
+    }
+    
+    .divider span {
+        background: rgba(22,30,48,.85);
+        color: #9fb1c9;
+    }
+}
+</style>
+
+<!-- 加載字體和圖示 -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+
+<script>
+// 表單驗證和互動效果
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('.auth-form');
+    const inputs = form.querySelectorAll('.form-control');
+    
+    // 輸入框焦點效果
+    inputs.forEach(input => {
+        input.addEventListener('focus', function() {
+            this.parentElement.classList.add('focused');
+        });
+        
+        input.addEventListener('blur', function() {
+            this.parentElement.classList.remove('focused');
+        });
+    });
+    
+    // 表單提交處理
+    form.addEventListener('submit', function(e) {
+        const submitBtn = this.querySelector('.btn-primary');
+        const originalText = submitBtn.textContent;
+        
+        // 防止重複提交
+        submitBtn.disabled = true;
+        submitBtn.textContent = '登入中...';
+        
+        // 如果驗證失敗，恢復按鈕狀態
+        setTimeout(() => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }, 3000);
+    });
+    
+    // 社交登入按鈕點擊效果
+    document.querySelectorAll('.btn-social').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            this.style.transform = 'scale(0.98)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 150);
+        });
+    });
+});
+</script>
+

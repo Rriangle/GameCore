@@ -1,0 +1,38 @@
+﻿{
+    "TestConfiguration": {
+        "DatabaseConnection": "Data Source=:memory:",
+        "BaseUrl": "https://localhost:5001",
+        "SeleniumSettings": {
+            "BrowserType": "Chrome",
+            "Headless": true,
+            "PageLoadTimeout": 30,
+            "ImplicitWait": 10
+        },
+        "PerformanceThresholds": {
+            "DatabaseQuery": {
+                "SimpleQuery": 100,
+                "ComplexQuery": 500,
+                "BatchOperation": 1000
+            },
+            "WebRequest": {
+                "PageLoad": 3000,
+                "ApiCall": 1000,
+                "FileUpload": 5000
+            }
+        },
+        "TestData": {
+            "UserCount": 100,
+            "GameCount": 20,
+            "ProductCount": 200,
+            "ForumCount": 10
+        }
+    },
+    "Logging": {
+        "LogLevel": {
+            "Default": "Information",
+            "Microsoft": "Warning",
+            "Microsoft.Hosting.Lifetime": "Information",
+            "GameCore.Tests": "Debug"
+        }
+    }
+}

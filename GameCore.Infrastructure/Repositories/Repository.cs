@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using GameCore.Core.Interfaces;
 using GameCore.Infrastructure.Data;
 using System.Linq.Expressions;

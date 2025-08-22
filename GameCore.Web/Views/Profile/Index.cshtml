@@ -1,0 +1,735 @@
+﻿@model ProfileIndexViewModel
+@{
+    ViewData["Title"] = "個人中心";
+}
+
+<link rel="stylesheet" href="~/css/glassmorphism.css" />
+
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- 左側個人資訊 -->
+        <div class="col-lg-4">
+            <!-- 個人資訊卡片 -->
+            <div class="profile-card glass-card mx-3 my-3">
+                <div class="profile-header">
+                    <div class="profile-cover">
+                        <img src="/images/profile-cover.jpg" alt="封面圖片" onerror="this.src='/images/default-cover.jpg'">
+                    </div>
+                    <div class="profile-avatar">
+                        <img src="/images/avatars/@(Model.User.Username).jpg" alt="頭像" onerror="this.src='/images/default-avatar.png'">
+                        <div class="online-status"></div>
+                    </div>
+                </div>
+                
+                <div class="profile-info">
+                    <h3 class="profile-name">@Model.User.DisplayName</h3>
+                    <p class="profile-username">@@@Model.User.Username</p>
+                    <p class="profile-bio">熱愛遊戲的玩家，喜歡探索新世界和挑戰自我。歡迎大家一起討論遊戲心得！</p>
+                    
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <span class="stat-number">@Model.User.UserLevel</span>
+                            <span class="stat-label">等級</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">@Model.User.Points</span>
+                            <span class="stat-label">積分</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">@Model.User.Experience</span>
+                            <span class="stat-label">經驗值</span>
+                        </div>
+                    </div>
+
+                    <div class="profile-badges">
+                        <span class="badge badge-primary">資深玩家</span>
+                        <span class="badge badge-success">論壇達人</span>
+                        <span class="badge badge-warning">每日簽到王</span>
+                    </div>
+
+                    <div class="profile-actions">
+                        <a href="/Profile/Edit" class="btn glass-btn me-2">
+                            <i class="fas fa-edit"></i> 編輯資料
+                        </a>
+                        <a href="/Profile/Settings" class="btn glass-btn">
+                            <i class="fas fa-cog"></i> 設定
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 寵物資訊卡片 -->
+            @if (Model.Pet != null)
+            {
+                <div class="pet-info-card glass-card mx-3 my-3">
+                    <div class="card-header">
+                        <h4>
+                            <i class="fas fa-paw me-2" style="color: #ff6b9d;"></i>
+                            我的寵物
+                        </h4>
+                    </div>
+                    <div class="pet-display">
+                        <div class="pet-avatar">
+                            <div class="pet-character" style="background-color: @Model.Pet.Color;">
+                                🐱
+                            </div>
+                            <div class="pet-level">Lv.@Model.Pet.Level</div>
+                        </div>
+                        <div class="pet-details">
+                            <h5>@Model.Pet.Name</h5>
+                            <div class="pet-stats-mini">
+                                <div class="stat-bar">
+                                    <span>❤️</span>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-danger" style="width: @Model.Pet.Health%">@Model.Pet.Health/100</div>
+                                    </div>
+                                </div>
+                                <div class="stat-bar">
+                                    <span>🍖</span>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-warning" style="width: @Model.Pet.Hunger%">@Model.Pet.Hunger/100</div>
+                                    </div>
+                                </div>
+                                <div class="stat-bar">
+                                    <span>😊</span>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-success" style="width: @Model.Pet.Happiness%">@Model.Pet.Happiness/100</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <a href="/Pet" class="btn btn-sm glass-btn mt-2">前往照顧</a>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- 簽到統計 -->
+            @if (Model.SignInStats != null)
+            {
+                <div class="signin-stats-card glass-card mx-3 my-3">
+                    <div class="card-header">
+                        <h4>
+                            <i class="fas fa-calendar-check me-2" style="color: #10b981;"></i>
+                            簽到統計
+                        </h4>
+                    </div>
+                    <div class="signin-summary">
+                        <div class="signin-streak">
+                            <div class="streak-number">@Model.SignInStats.CurrentStreak</div>
+                            <div class="streak-label">連續簽到天數</div>
+                        </div>
+                        <div class="signin-details">
+                            <div class="detail-item">
+                                <span>本月簽到</span>
+                                <span>@Model.SignInStats.MonthlySignIns/30</span>
+                            </div>
+                            <div class="detail-item">
+                                <span>累計簽到</span>
+                                <span>@Model.SignInStats.TotalSignIns</span>
+                            </div>
+                            <div class="detail-item">
+                                <span>獲得獎勵</span>
+                                <span>@Model.SignInStats.TotalRewards 💰</span>
+                            </div>
+                        </div>
+                        <a href="/SignIn" class="btn btn-sm glass-btn mt-2">前往簽到</a>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- 右側內容區 -->
+        <div class="col-lg-8">
+            <!-- 快捷操作 -->
+            <div class="quick-actions glass-card mx-3 my-3">
+                <h4 class="section-title mb-3">
+                    <i class="fas fa-bolt me-2" style="color: #f59e0b;"></i>
+                    快捷操作
+                </h4>
+                <div class="actions-grid">
+                    <a href="/Store" class="action-item">
+                        <div class="action-icon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
+                            <i class="fas fa-store"></i>
+                        </div>
+                        <div class="action-info">
+                            <h6>官方商城</h6>
+                            <p>購買遊戲和周邊</p>
+                        </div>
+                    </a>
+                    
+                    <a href="/Forum" class="action-item">
+                        <div class="action-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <div class="action-info">
+                            <h6>遊戲論壇</h6>
+                            <p>與玩家交流心得</p>
+                        </div>
+                    </a>
+
+                    <a href="/PlayerMarket" class="action-item">
+                        <div class="action-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                            <i class="fas fa-handshake"></i>
+                        </div>
+                        <div class="action-info">
+                            <h6>玩家市場</h6>
+                            <p>道具交易平台</p>
+                        </div>
+                    </a>
+
+                    <a href="/Profile/Orders" class="action-item">
+                        <div class="action-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                            <i class="fas fa-shopping-bag"></i>
+                        </div>
+                        <div class="action-info">
+                            <h6>我的訂單</h6>
+                            <p>查看購買記錄</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 遊戲統計 -->
+            <div class="game-stats glass-card mx-3 my-3">
+                <h4 class="section-title mb-3">
+                    <i class="fas fa-chart-line me-2" style="color: #8b5cf6;"></i>
+                    遊戲統計
+                </h4>
+                <div class="stats-overview">
+                    <div class="stat-card">
+                        <div class="stat-icon">🎮</div>
+                        <div class="stat-info">
+                            <h5>@Model.GameStats.GamesOwned</h5>
+                            <p>擁有遊戲</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⏰</div>
+                        <div class="stat-info">
+                            <h5>@Model.GameStats.TotalPlayTime 小時</h5>
+                            <p>總遊戲時間</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🏆</div>
+                        <div class="stat-info">
+                            <h5>@Model.GameStats.Achievements</h5>
+                            <p>成就數量</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">💖</div>
+                        <div class="stat-info">
+                            <h5>@Model.GameStats.FavoriteGenre</h5>
+                            <p>偏好類型</p>
+                        </div>
+                    </div>
+                </div>
+
+                @if (Model.GameStats.RecentGames.Any())
+                {
+                    <div class="recent-games mt-4">
+                        <h5 class="mb-3">最近遊玩</h5>
+                        <div class="games-list">
+                            @foreach (var game in Model.GameStats.RecentGames.Take(3))
+                            {
+                                <div class="game-item">
+                                    <img src="@game.ImageUrl" alt="@game.GameName" onerror="this.src='/images/placeholder-game.jpg'">
+                                    <div class="game-info">
+                                        <h6>@game.GameName</h6>
+                                        <p>遊戲時間: @game.PlayTime 小時</p>
+                                        <small class="text-muted">最後遊玩: @game.LastPlayed.ToString("MM/dd HH:mm")</small>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- 最近活動 -->
+            <div class="recent-activity glass-card mx-3 my-3">
+                <h4 class="section-title mb-3">
+                    <i class="fas fa-history me-2" style="color: #06b6d4;"></i>
+                    最近活動
+                </h4>
+                <div class="activity-timeline">
+                    @foreach (var activity in Model.RecentActivities.Take(5))
+                    {
+                        <div class="activity-item">
+                            <div class="activity-icon" style="color: @activity.Color;">
+                                <i class="fas @activity.Icon"></i>
+                            </div>
+                            <div class="activity-content">
+                                <p>@activity.Description</p>
+                                <small class="text-muted">@activity.Timestamp.ToString("MM/dd HH:mm")</small>
+                            </div>
+                        </div>
+                    }
+                    
+                    <!-- 示例活動 -->
+                    <div class="activity-item">
+                        <div class="activity-icon" style="color: #10b981;">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="activity-content">
+                            <p>完成每日簽到，獲得 30 點數和 15 經驗值</p>
+                            <small class="text-muted">2小時前</small>
+                        </div>
+                    </div>
+
+                    <div class="activity-item">
+                        <div class="activity-icon" style="color: #3b82f6;">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <div class="activity-content">
+                            <p>在官方商城購買了 "Cyberpunk 2077"</p>
+                            <small class="text-muted">昨天 14:30</small>
+                        </div>
+                    </div>
+
+                    <div class="activity-item">
+                        <div class="activity-icon" style="color: #8b5cf6;">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <div class="activity-content">
+                            <p>在論壇發表了新主題 "遊戲優化設定分享"</p>
+                            <small class="text-muted">昨天 10:15</small>
+                        </div>
+                    </div>
+
+                    <div class="activity-item">
+                        <div class="activity-icon" style="color: #ff6b9d;">
+                            <i class="fas fa-paw"></i>
+                        </div>
+                        <div class="activity-content">
+                            <p>寵物升級到 Lv.@Model.Pet?.Level，獲得新技能</p>
+                            <small class="text-muted">2天前</small>
+                        </div>
+                    </div>
+
+                    <div class="activity-item">
+                        <div class="activity-icon" style="color: #f59e0b;">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <div class="activity-content">
+                            <p>解鎖成就 "連續簽到達人"，獲得特殊徽章</p>
+                            <small class="text-muted">3天前</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="#" class="btn btn-sm glass-btn">查看更多活動</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .profile-card {
+        overflow: hidden;
+    }
+
+    .profile-header {
+        position: relative;
+        margin-bottom: 4rem;
+    }
+
+    .profile-cover {
+        height: 120px;
+        overflow: hidden;
+        border-radius: 15px 15px 0 0;
+    }
+
+    .profile-cover img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .profile-avatar {
+        position: absolute;
+        bottom: -50px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        border: 4px solid rgba(255, 255, 255, 0.2);
+        overflow: hidden;
+    }
+
+    .profile-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .online-status {
+        position: absolute;
+        bottom: 5px;
+        right: 5px;
+        width: 20px;
+        height: 20px;
+        background: #10b981;
+        border: 3px solid white;
+        border-radius: 50%;
+    }
+
+    .profile-info {
+        text-align: center;
+        padding: 1rem;
+    }
+
+    .profile-name {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 0.25rem;
+    }
+
+    .profile-username {
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 1rem;
+    }
+
+    .profile-bio {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.9rem;
+        line-height: 1.5;
+        margin-bottom: 1.5rem;
+    }
+
+    .profile-stats {
+        display: flex;
+        justify-content: space-around;
+        margin-bottom: 1.5rem;
+        padding: 1rem 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .stat-item {
+        text-align: center;
+    }
+
+    .stat-number {
+        display: block;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #3b82f6;
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .profile-badges {
+        margin-bottom: 1.5rem;
+    }
+
+    .badge {
+        margin: 0.25rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+    }
+
+    .badge-primary {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    }
+
+    .badge-success {
+        background: linear-gradient(135deg, #10b981, #059669);
+    }
+
+    .badge-warning {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+
+    .profile-actions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+    }
+
+    .pet-info-card .card-header,
+    .signin-stats-card .card-header {
+        padding: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .pet-display {
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .pet-avatar {
+        position: relative;
+        width: 80px;
+        height: 80px;
+    }
+
+    .pet-character {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .pet-level {
+        position: absolute;
+        bottom: -5px;
+        right: -5px;
+        background: linear-gradient(135deg, #ff6b9d, #c084fc);
+        color: white;
+        font-size: 0.7rem;
+        font-weight: bold;
+        padding: 0.25rem 0.5rem;
+        border-radius: 10px;
+        border: 2px solid white;
+    }
+
+    .pet-details {
+        flex-grow: 1;
+    }
+
+    .pet-details h5 {
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    .pet-stats-mini .stat-bar {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.25rem;
+        font-size: 0.8rem;
+    }
+
+    .pet-stats-mini .stat-bar span {
+        width: 20px;
+        margin-right: 0.5rem;
+    }
+
+    .pet-stats-mini .progress {
+        flex-grow: 1;
+        height: 0.5rem;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 0.25rem;
+    }
+
+    .signin-summary {
+        padding: 1rem;
+    }
+
+    .signin-streak {
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+
+    .streak-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #10b981;
+    }
+
+    .streak-label {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.9rem;
+    }
+
+    .signin-details {
+        margin-bottom: 1rem;
+    }
+
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .detail-item span:first-child {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .detail-item span:last-child {
+        font-weight: 500;
+    }
+
+    .actions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .action-item {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.3s ease;
+    }
+
+    .action-item:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-2px);
+        color: inherit;
+    }
+
+    .action-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        color: white;
+        font-size: 1.2rem;
+    }
+
+    .action-info h6 {
+        margin-bottom: 0.25rem;
+        font-weight: 600;
+    }
+
+    .action-info p {
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 0;
+    }
+
+    .stats-overview {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+        transition: transform 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-3px);
+    }
+
+    .stat-card .stat-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-card .stat-info h5 {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        color: #3b82f6;
+    }
+
+    .stat-card .stat-info p {
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 0;
+    }
+
+    .games-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .game-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+    }
+
+    .game-item img {
+        width: 50px;
+        height: 50px;
+        border-radius: 5px;
+        object-fit: cover;
+        margin-right: 1rem;
+    }
+
+    .game-info h6 {
+        margin-bottom: 0.25rem;
+        font-weight: 500;
+    }
+
+    .game-info p {
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.8);
+        margin-bottom: 0.1rem;
+    }
+
+    .activity-timeline {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .activity-item {
+        display: flex;
+        align-items: flex-start;
+        padding: 0.75rem;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+    }
+
+    .activity-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.1);
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+
+    .activity-content {
+        flex-grow: 1;
+    }
+
+    .activity-content p {
+        margin-bottom: 0.25rem;
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+        .actions-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .stats-overview {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .profile-actions {
+            flex-direction: column;
+        }
+
+        .pet-display {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+</style>

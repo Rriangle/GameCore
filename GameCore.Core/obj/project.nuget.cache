@@ -1,8 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "2USt00j+ofI=",
+  "dgSpecHash": "vYiSwyzqIq4=",
   "success": true,
-  "projectFilePath": "/workspace/GameCore.Core/GameCore.Core.csproj",
-  "expectedPackageFiles": [],
+  "projectFilePath": "D:\\GameCore\\GameCore.Core\\GameCore.Core.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\ispan\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\8.0.0\\microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512",
+    "C:\\Users\\ispan\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\8.0.0\\microsoft.extensions.logging.abstractions.8.0.0.nupkg.sha512",
+    "C:\\Users\\ispan\\.nuget\\packages\\system.componentmodel.annotations\\5.0.0\\system.componentmodel.annotations.5.0.0.nupkg.sha512"
+  ],
   "logs": []
 }

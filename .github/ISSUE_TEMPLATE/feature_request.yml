@@ -1,0 +1,218 @@
+﻿name: ✨ 功能請求
+description: 建議新功能或改進現有功能
+title: "[FEATURE] "
+labels: ["enhancement", "需要討論"]
+assignees:
+  - product-team
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感謝您的功能建議！您的想法對 GameCore 的發展非常重要。
+
+  - type: textarea
+    id: feature-summary
+    attributes:
+      label: ✨ 功能摘要
+      description: 用一句話簡潔描述這個功能
+      placeholder: 我希望能夠...
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem-description
+    attributes:
+      label: 🎯 問題描述
+      description: 這個功能要解決什麼問題？為什麼需要這個功能？
+      placeholder: |
+        目前的問題是...
+        這會影響到...
+        使用者需要...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: 💡 建議解決方案
+      description: 您希望如何實現這個功能？
+      placeholder: |
+        我建議...
+        這個功能應該...
+        實現方式可能是...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternative-solutions
+    attributes:
+      label: 🔄 替代方案
+      description: 您是否考慮過其他實現方式？
+      placeholder: |
+        其他可能的方案：
+        1. ...
+        2. ...
+        
+        我選擇建議方案的原因是...
+
+  - type: dropdown
+    id: feature-category
+    attributes:
+      label: 📂 功能分類
+      description: 這個功能屬於哪個模組？
+      options:
+        - 使用者系統 (註冊/登入/個人資料)
+        - 寵物系統 (養成/互動/商店)
+        - 遊戲系統 (小遊戲/統計)
+        - 論壇系統 (發文/回覆/搜尋)
+        - 商城系統 (商品/購物車/訂單)
+        - 玩家市場 (C2C交易)
+        - 通知系統 (推播/訊息)
+        - 聊天系統 (即時通訊/群組)
+        - 簽到系統 (每日簽到/獎勵)
+        - 管理後台 (數據管理/權限)
+        - UI/UX 改進
+        - 效能優化
+        - 安全性
+        - 其他
+    validations:
+      required: true
+
+  - type: dropdown
+    id: user-type
+    attributes:
+      label: 👥 目標使用者
+      description: 這個功能主要針對哪類使用者？
+      options:
+        - 一般使用者
+        - VIP 會員
+        - 新手使用者
+        - 資深玩家
+        - 管理員
+        - 開發者
+        - 全部使用者
+      multiple: true
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: ⭐ 優先級
+      description: 您認為這個功能的優先級如何？
+      options:
+        - 低 - 有了更好，沒有也無妨
+        - 中 - 希望能有，會提升使用體驗
+        - 高 - 很重要，對使用者體驗有顯著影響
+        - 緊急 - 必須要有，當前缺少會嚴重影響使用
+      default: 1
+    validations:
+      required: true
+
+  - type: textarea
+    id: user-scenarios
+    attributes:
+      label: 📖 使用場景
+      description: 請描述具體的使用場景和用戶故事
+      placeholder: |
+        場景 1：當使用者...時，他們需要...
+        場景 2：在...情況下，這個功能可以...
+        場景 3：如果使用者想要...，他們可以...
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: ✅ 驗收標準
+      description: 這個功能完成後應該滿足哪些條件？
+      placeholder: |
+        - [ ] 使用者可以...
+        - [ ] 系統應該...
+        - [ ] 當...時，應該顯示...
+        - [ ] 功能應該支援...
+
+  - type: textarea
+    id: mockups
+    attributes:
+      label: 🎨 設計稿或示意圖
+      description: 如果您有設計想法，請分享圖片或連結
+      placeholder: |
+        請上傳設計稿、線框圖或參考圖片
+        或提供參考網站連結...
+
+  - type: textarea
+    id: technical-considerations
+    attributes:
+      label: 🔧 技術考量
+      description: 這個功能可能涉及哪些技術挑戰？
+      placeholder: |
+        可能需要：
+        - 前端技術：...
+        - 後端技術：...
+        - 資料庫變更：...
+        - 第三方整合：...
+        - 效能影響：...
+
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: 📊 複雜度估計
+      description: 您認為這個功能的實現複雜度如何？
+      options:
+        - 簡單 (1-3 天)
+        - 中等 (1-2 週)
+        - 複雜 (2-4 週)
+        - 非常複雜 (1 個月以上)
+        - 不確定
+      default: 4
+
+  - type: textarea
+    id: business-impact
+    attributes:
+      label: 💼 商業影響
+      description: 這個功能對 GameCore 平台有什麼商業價值？
+      placeholder: |
+        這個功能可以：
+        - 提升使用者留存率
+        - 增加使用者活躍度
+        - 提高收入
+        - 改善使用者滿意度
+        - 增強競爭優勢
+        - ...
+
+  - type: textarea
+    id: related-issues
+    attributes:
+      label: 🔗 相關 Issues
+      description: 這個功能請求是否與其他 Issues 相關？
+      placeholder: |
+        相關的 Bug：#123
+        相關的功能請求：#456
+        依賴的功能：#789
+
+  - type: checkboxes
+    id: research
+    attributes:
+      label: 🔍 研究確認
+      description: 請確認您已經完成以下調查
+      options:
+        - label: 我已經搜尋過現有功能，確認這是一個新需求
+          required: true
+        - label: 我已經查看過現有的 Issues，確認沒有重複請求
+          required: true
+        - label: 我已經考慮過這個功能的可行性和必要性
+          required: true
+        - label: 我願意參與功能討論和測試
+          required: true
+
+  - type: textarea
+    id: additional-notes
+    attributes:
+      label: 📝 其他備註
+      description: 任何其他您想補充的資訊
+      placeholder: |
+        其他想法或建議...
+        參考資料或案例...
+        時程考量...

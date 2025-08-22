@@ -1,4 +1,4 @@
-using Xunit;
+﻿using Xunit;
 using Moq;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;

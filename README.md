@@ -1,4 +1,4 @@
-# GameCore 遊戲社群平台
+﻿# GameCore 遊戲社群平台
 
 ![GameCore Logo](https://via.placeholder.com/800x200/7557ff/ffffff?text=GameCore+%E9%81%8A%E6%88%B2%E7%A4%BE%E7%BE%A4%E5%B9%B3%E5%8F%B0)
 

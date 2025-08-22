@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using GameCore.Core.Entities;
 using GameCore.Core.Interfaces;
 using GameCore.Core.Services;

@@ -1,0 +1,231 @@
+﻿@{
+    ViewData["Title"] = "我的寵物";
+}
+
+<link rel="stylesheet" href="~/css/glassmorphism.css" />
+
+<div class="container-fluid p-0">
+    <!-- 寵物主頁面 -->
+    <div class="row g-0">
+        <!-- 左側寵物展示區 -->
+        <div class="col-lg-8">
+            <div class="glass-card mx-3 my-3" style="height: 80vh;">
+                <div class="glass-header">
+                    <h2 class="glass-title">
+                        <i class="fas fa-paw me-2" style="color: #ff6b9d;"></i>
+                        我的寵物夥伴
+                    </h2>
+                </div>
+                
+                <!-- 寵物展示區 -->
+                <div class="pet-display-area" style="height: 60vh; position: relative;">
+                    <canvas id="petCanvas" width="600" height="400" style="border-radius: 20px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));"></canvas>
+                    
+                    <!-- 寵物資訊面板 -->
+                    <div class="pet-info-panel glass-card" style="position: absolute; top: 20px; right: 20px; width: 200px;">
+                        <h5>🐱 我的貓咪</h5>
+                        <div class="pet-stats">
+                            <div class="stat-bar">
+                                <span>❤️ 血量</span>
+                                <div class="progress">
+                                    <div class="progress-bar bg-danger" style="width: 80%">80/100</div>
+                                </div>
+                            </div>
+                            <div class="stat-bar mt-2">
+                                <span>🍖 飽食度</span>
+                                <div class="progress">
+                                    <div class="progress-bar bg-warning" style="width: 60%">60/100</div>
+                                </div>
+                            </div>
+                            <div class="stat-bar mt-2">
+                                <span>😊 心情</span>
+                                <div class="progress">
+                                    <div class="progress-bar bg-success" style="width: 90%">90/100</div>
+                                </div>
+                            </div>
+                            <div class="stat-bar mt-2">
+                                <span>⭐ 經驗值</span>
+                                <div class="progress">
+                                    <div class="progress-bar bg-info" style="width: 45%">450/1000</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="pet-level mt-3">
+                            <strong>等級 5</strong>
+                            <small class="text-muted d-block">下一級還需 550 經驗</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 互動按鈕區 -->
+                <div class="pet-actions text-center mt-4">
+                    <button class="btn glass-btn me-2" onclick="petFeed()">
+                        <i class="fas fa-cookie-bite"></i> 餵食 (-10💰)
+                    </button>
+                    <button class="btn glass-btn me-2" onclick="petPlay()">
+                        <i class="fas fa-gamepad"></i> 遊戲 (-5💰)
+                    </button>
+                    <button class="btn glass-btn me-2" onclick="petPat()">
+                        <i class="fas fa-hand-paper"></i> 撫摸 (免費)
+                    </button>
+                    <button class="btn glass-btn me-2" onclick="petBath()">
+                        <i class="fas fa-shower"></i> 洗澡 (-15💰)
+                    </button>
+                    <button class="btn glass-btn" onclick="petMedicine()">
+                        <i class="fas fa-pills"></i> 治療 (-20💰)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側功能區 -->
+        <div class="col-lg-4">
+            <!-- 寵物商店 -->
+            <div class="glass-card mx-3 my-3">
+                <div class="glass-header">
+                    <h4 class="glass-title">
+                        <i class="fas fa-store me-2" style="color: #4ade80;"></i>
+                        寵物商店
+                    </h4>
+                </div>
+                <div class="shop-items">
+                    <div class="shop-item d-flex justify-content-between align-items-center p-2 mb-2" style="background: rgba(255, 255, 255, 0.1); border-radius: 10px;">
+                        <div>
+                            <span>🍖 高級飼料</span>
+                            <small class="text-muted d-block">恢復 50 飽食度</small>
+                        </div>
+                        <button class="btn btn-sm glass-btn">20💰</button>
+                    </div>
+                    <div class="shop-item d-flex justify-content-between align-items-center p-2 mb-2" style="background: rgba(255, 255, 255, 0.1); border-radius: 10px;">
+                        <div>
+                            <span>🧸 逗貓棒</span>
+                            <small class="text-muted d-block">增加 30 心情值</small>
+                        </div>
+                        <button class="btn btn-sm glass-btn">15💰</button>
+                    </div>
+                    <div class="shop-item d-flex justify-content-between align-items-center p-2 mb-2" style="background: rgba(255, 255, 255, 0.1); border-radius: 10px;">
+                        <div>
+                            <span>💊 健康藥品</span>
+                            <small class="text-muted d-block">恢復 40 血量</small>
+                        </div>
+                        <button class="btn btn-sm glass-btn">30💰</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 寵物裝扮 -->
+            <div class="glass-card mx-3 my-3">
+                <div class="glass-header">
+                    <h4 class="glass-title">
+                        <i class="fas fa-palette me-2" style="color: #f59e0b;"></i>
+                        寵物裝扮
+                    </h4>
+                </div>
+                <div class="pet-customization">
+                    <div class="color-palette mb-3">
+                        <h6>毛色選擇：</h6>
+                        <div class="color-options">
+                            <div class="color-option" style="background: #8B4513;" onclick="changePetColor('#8B4513')"></div>
+                            <div class="color-option" style="background: #FFD700;" onclick="changePetColor('#FFD700')"></div>
+                            <div class="color-option" style="background: #000000;" onclick="changePetColor('#000000')"></div>
+                            <div class="color-option" style="background: #FFFFFF;" onclick="changePetColor('#FFFFFF')"></div>
+                            <div class="color-option" style="background: #FF6347;" onclick="changePetColor('#FF6347')"></div>
+                        </div>
+                    </div>
+                    <button class="btn glass-btn w-100">
+                        <i class="fas fa-save"></i> 保存外觀 (-50💰)
+                    </button>
+                </div>
+            </div>
+
+            <!-- 每日任務 -->
+            <div class="glass-card mx-3 my-3">
+                <div class="glass-header">
+                    <h4 class="glass-title">
+                        <i class="fas fa-tasks me-2" style="color: #8b5cf6;"></i>
+                        每日任務
+                    </h4>
+                </div>
+                <div class="daily-tasks">
+                    <div class="task-item d-flex justify-content-between align-items-center p-2 mb-2" style="background: rgba(255, 255, 255, 0.1); border-radius: 10px;">
+                        <div>
+                            <span>餵食寵物 3 次</span>
+                            <small class="text-muted d-block">進度: 1/3</small>
+                        </div>
+                        <span class="badge bg-warning">+50 經驗</span>
+                    </div>
+                    <div class="task-item d-flex justify-content-between align-items-center p-2 mb-2" style="background: rgba(255, 255, 255, 0.1); border-radius: 10px;">
+                        <div>
+                            <span>與寵物互動 5 次</span>
+                            <small class="text-muted d-block">進度: 3/5</small>
+                        </div>
+                        <span class="badge bg-warning">+30 經驗</span>
+                    </div>
+                    <div class="task-item d-flex justify-content-between align-items-center p-2 mb-2" style="background: rgba(34, 197, 94, 0.8); border-radius: 10px;">
+                        <div>
+                            <span>登入遊戲</span>
+                            <small class="text-success d-block">已完成!</small>
+                        </div>
+                        <span class="badge bg-success">+20 經驗</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 寵物系統 JavaScript -->
+<script src="~/js/pet-system.js"></script>
+
+<style>
+    .pet-info-panel {
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .stat-bar span {
+        font-size: 0.9rem;
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+
+    .progress {
+        height: 0.5rem;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 0.25rem;
+    }
+
+    .color-options {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .color-option {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        transition: transform 0.2s;
+    }
+
+    .color-option:hover {
+        transform: scale(1.1);
+        border-color: rgba(255, 255, 255, 0.8);
+    }
+
+    .pet-actions button {
+        transition: all 0.3s ease;
+    }
+
+    .pet-actions button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .shop-item:hover, .task-item:hover {
+        background: rgba(255, 255, 255, 0.2) !important;
+        transition: background 0.3s ease;
+    }
+</style>

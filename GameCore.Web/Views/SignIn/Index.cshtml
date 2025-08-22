@@ -1,0 +1,489 @@
+﻿@{
+    ViewData["Title"] = "每日簽到";
+}
+
+<link rel="stylesheet" href="~/css/glassmorphism.css" />
+
+<div class="container-fluid p-0">
+    <div class="row g-0 justify-content-center">
+        <div class="col-lg-10">
+            <!-- 簽到主卡片 -->
+            <div class="glass-card mx-3 my-4">
+                <div class="glass-header text-center">
+                    <h1 class="glass-title">
+                        <i class="fas fa-calendar-check me-3" style="color: #10b981;"></i>
+                        每日簽到系統
+                    </h1>
+                    <p class="text-muted">堅持簽到，獲得豐厚獎勵！</p>
+                </div>
+
+                <!-- 當前狀態 -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="stat-card glass-card text-center">
+                            <div class="stat-icon">🔥</div>
+                            <h3 class="stat-number">7</h3>
+                            <p class="stat-label">連續簽到天數</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card glass-card text-center">
+                            <div class="stat-icon">💰</div>
+                            <h3 class="stat-number">1,250</h3>
+                            <p class="stat-label">累計獲得金幣</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card glass-card text-center">
+                            <div class="stat-icon">⭐</div>
+                            <h3 class="stat-number">580</h3>
+                            <p class="stat-label">累計獲得經驗</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 簽到日曆 -->
+                <div class="signin-calendar glass-card mb-4">
+                    <h3 class="mb-4 text-center">
+                        <i class="fas fa-calendar-alt me-2" style="color: #3b82f6;"></i>
+                        本月簽到記錄
+                    </h3>
+                    <div class="calendar-grid">
+                        <!-- 星期標題 -->
+                        <div class="calendar-header">
+                            <div class="day-header">日</div>
+                            <div class="day-header">一</div>
+                            <div class="day-header">二</div>
+                            <div class="day-header">三</div>
+                            <div class="day-header">四</div>
+                            <div class="day-header">五</div>
+                            <div class="day-header">六</div>
+                        </div>
+                        <!-- 日期網格 -->
+                        <div class="calendar-body">
+                            <!-- 第一週 -->
+                            <div class="calendar-day empty"></div>
+                            <div class="calendar-day empty"></div>
+                            <div class="calendar-day empty"></div>
+                            <div class="calendar-day empty"></div>
+                            <div class="calendar-day empty"></div>
+                            <div class="calendar-day signed">1 ✓</div>
+                            <div class="calendar-day signed">2 ✓</div>
+                            
+                            <!-- 第二週 -->
+                            <div class="calendar-day signed">3 ✓</div>
+                            <div class="calendar-day signed">4 ✓</div>
+                            <div class="calendar-day signed">5 ✓</div>
+                            <div class="calendar-day signed">6 ✓</div>
+                            <div class="calendar-day signed">7 ✓</div>
+                            <div class="calendar-day today">8 今日</div>
+                            <div class="calendar-day">9</div>
+                            
+                            <!-- 第三週 -->
+                            <div class="calendar-day">10</div>
+                            <div class="calendar-day">11</div>
+                            <div class="calendar-day">12</div>
+                            <div class="calendar-day">13</div>
+                            <div class="calendar-day">14</div>
+                            <div class="calendar-day">15</div>
+                            <div class="calendar-day">16</div>
+                            
+                            <!-- 第四週 -->
+                            <div class="calendar-day">17</div>
+                            <div class="calendar-day">18</div>
+                            <div class="calendar-day">19</div>
+                            <div class="calendar-day">20</div>
+                            <div class="calendar-day">21</div>
+                            <div class="calendar-day">22</div>
+                            <div class="calendar-day">23</div>
+                            
+                            <!-- 第五週 -->
+                            <div class="calendar-day">24</div>
+                            <div class="calendar-day">25</div>
+                            <div class="calendar-day">26</div>
+                            <div class="calendar-day">27</div>
+                            <div class="calendar-day">28</div>
+                            <div class="calendar-day">29</div>
+                            <div class="calendar-day">30</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 簽到獎勵規則 -->
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="reward-rules glass-card">
+                            <h4 class="mb-3">
+                                <i class="fas fa-gift me-2" style="color: #f59e0b;"></i>
+                                獎勵規則
+                            </h4>
+                            <div class="reward-item">
+                                <span class="reward-type">平日簽到</span>
+                                <span class="reward-value">+20💰 +10⭐</span>
+                            </div>
+                            <div class="reward-item">
+                                <span class="reward-type">週末簽到</span>
+                                <span class="reward-value">+30💰 +15⭐</span>
+                            </div>
+                            <div class="reward-item">
+                                <span class="reward-type">連續7天</span>
+                                <span class="reward-value">+100💰 +50⭐</span>
+                            </div>
+                            <div class="reward-item">
+                                <span class="reward-type">完美月份</span>
+                                <span class="reward-value">+500💰 +200⭐</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="signin-action glass-card text-center">
+                            <h4 class="mb-3">今日簽到</h4>
+                            <div class="today-reward mb-3">
+                                <div class="reward-preview">
+                                    <span class="reward-icon">💰</span>
+                                    <span class="reward-amount">+30</span>
+                                </div>
+                                <div class="reward-preview">
+                                    <span class="reward-icon">⭐</span>
+                                    <span class="reward-amount">+15</span>
+                                </div>
+                            </div>
+                            <button class="btn glass-btn btn-lg signin-btn" onclick="dailySignIn()">
+                                <i class="fas fa-check-circle me-2"></i>
+                                立即簽到
+                            </button>
+                            <p class="text-muted mt-2 mb-0">
+                                <small>今天是週末，獎勵加倍！</small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 簽到排行榜 -->
+                <div class="signin-leaderboard glass-card mt-4">
+                    <h4 class="mb-3">
+                        <i class="fas fa-trophy me-2" style="color: #eab308;"></i>
+                        簽到排行榜 (本月)
+                    </h4>
+                    <div class="leaderboard-list">
+                        <div class="leaderboard-item rank-1">
+                            <div class="rank-icon">🥇</div>
+                            <div class="player-info">
+                                <span class="player-name">遊戲達人2023</span>
+                                <small class="streak-info">連續簽到 30 天</small>
+                            </div>
+                            <div class="points">3,000 分</div>
+                        </div>
+                        <div class="leaderboard-item rank-2">
+                            <div class="rank-icon">🥈</div>
+                            <div class="player-info">
+                                <span class="player-name">貓咪愛好者</span>
+                                <small class="streak-info">連續簽到 28 天</small>
+                            </div>
+                            <div class="points">2,800 分</div>
+                        </div>
+                        <div class="leaderboard-item rank-3">
+                            <div class="rank-icon">🥉</div>
+                            <div class="player-info">
+                                <span class="player-name">每日玩家</span>
+                                <small class="streak-info">連續簽到 25 天</small>
+                            </div>
+                            <div class="points">2,500 分</div>
+                        </div>
+                        <div class="leaderboard-item">
+                            <div class="rank-number">4</div>
+                            <div class="player-info">
+                                <span class="player-name">遊戲新手</span>
+                                <small class="streak-info">連續簽到 20 天</small>
+                            </div>
+                            <div class="points">2,000 分</div>
+                        </div>
+                        <div class="leaderboard-item current-user">
+                            <div class="rank-number">15</div>
+                            <div class="player-info">
+                                <span class="player-name">我</span>
+                                <small class="streak-info">連續簽到 7 天</small>
+                            </div>
+                            <div class="points">700 分</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 簽到成功模態框 -->
+<div class="modal fade" id="signinSuccessModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-card">
+            <div class="modal-body text-center py-4">
+                <div class="success-animation mb-3">
+                    <i class="fas fa-check-circle" style="font-size: 4rem; color: #10b981;"></i>
+                </div>
+                <h3 class="mb-3">簽到成功！</h3>
+                <div class="reward-summary">
+                    <div class="reward-item d-inline-block mx-3">
+                        <span class="reward-icon">💰</span>
+                        <span class="reward-amount">+30</span>
+                    </div>
+                    <div class="reward-item d-inline-block mx-3">
+                        <span class="reward-icon">⭐</span>
+                        <span class="reward-amount">+15</span>
+                    </div>
+                </div>
+                <p class="text-muted mt-3">連續簽到 8 天！再堅持 7 天即可獲得額外獎勵！</p>
+                <button type="button" class="btn glass-btn" data-bs-dismiss="modal">確定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function dailySignIn() {
+        // 模擬簽到請求
+        fetch('/SignIn/DailySignIn', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 顯示成功模態框
+                var modal = new bootstrap.Modal(document.getElementById('signinSuccessModal'));
+                modal.show();
+                
+                // 更新頁面數據
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            } else {
+                alert('簽到失敗：' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('簽到失敗，請稍後再試');
+        });
+    }
+</script>
+
+<style>
+    .stat-card {
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: transform 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .stat-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 0.25rem;
+        background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .stat-label {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.9rem;
+    }
+
+    .calendar-grid {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .calendar-header {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+        margin-bottom: 10px;
+    }
+
+    .day-header {
+        text-align: center;
+        font-weight: bold;
+        padding: 10px;
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .calendar-body {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+    }
+
+    .calendar-day {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .calendar-day.empty {
+        background: transparent;
+        cursor: default;
+    }
+
+    .calendar-day.signed {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        font-weight: bold;
+    }
+
+    .calendar-day.today {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        color: white;
+        font-weight: bold;
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+    }
+
+    .calendar-day:hover:not(.empty) {
+        transform: scale(1.1);
+    }
+
+    .reward-rules .reward-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .reward-rules .reward-item:last-child {
+        border-bottom: none;
+    }
+
+    .reward-type {
+        font-weight: 500;
+    }
+
+    .reward-value {
+        font-weight: bold;
+        color: #10b981;
+    }
+
+    .signin-action {
+        padding: 2rem;
+    }
+
+    .reward-preview {
+        display: inline-block;
+        margin: 0 1rem;
+        font-size: 1.2rem;
+    }
+
+    .reward-icon {
+        font-size: 1.5rem;
+        margin-right: 0.5rem;
+    }
+
+    .reward-amount {
+        font-weight: bold;
+        color: #10b981;
+    }
+
+    .signin-btn {
+        width: 200px;
+        height: 60px;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+    }
+
+    .signin-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+    }
+
+    .leaderboard-item {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        transition: background 0.3s ease;
+    }
+
+    .leaderboard-item:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .leaderboard-item.current-user {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(139, 92, 246, 0.3));
+        border: 1px solid rgba(59, 130, 246, 0.5);
+    }
+
+    .rank-icon {
+        font-size: 1.5rem;
+        margin-right: 1rem;
+        width: 30px;
+        text-align: center;
+    }
+
+    .rank-number {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-right: 1rem;
+        width: 30px;
+        text-align: center;
+        color: #8b5cf6;
+    }
+
+    .player-info {
+        flex-grow: 1;
+    }
+
+    .player-name {
+        display: block;
+        font-weight: 500;
+    }
+
+    .streak-info {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.8rem;
+    }
+
+    .points {
+        font-weight: bold;
+        color: #10b981;
+    }
+
+    .success-animation {
+        animation: bounceIn 0.6s ease-out;
+    }
+
+    @keyframes bounceIn {
+        0% {
+            transform: scale(0.3);
+            opacity: 0;
+        }
+        50% {
+            transform: scale(1.05);
+        }
+        70% {
+            transform: scale(0.9);
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+</style>

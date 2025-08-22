@@ -1,4 +1,4 @@
-name: GameCore CI/CD Pipeline
+﻿name: GameCore CI/CD Pipeline
 
 on:
   push:

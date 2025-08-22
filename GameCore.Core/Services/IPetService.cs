@@ -1,4 +1,4 @@
-using GameCore.Core.Entities;
+﻿using GameCore.Core.Entities;
 
 namespace GameCore.Core.Services
 {

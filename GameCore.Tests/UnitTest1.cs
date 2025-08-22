@@ -1,4 +1,4 @@
-namespace GameCore.Tests;
+﻿namespace GameCore.Tests;
 
 public class UnitTest1
 {

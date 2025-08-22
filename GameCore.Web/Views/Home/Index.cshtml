@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewData["Title"] = "GameCore｜遊戲社群平台";
 }
 
@@ -753,16 +753,16 @@
 
                 const hotScroller = document.getElementById('hotScroller');
                 if (hotScroller) {
-                    hotScroller.innerHTML = hotThreads.map(title => `
-                        <article class="card">
-                            <div style="font-weight:900">${title}</div>
-                            <div style="color:var(--muted); font-size:13px">點擊查看完整內容...</div>
-                            <div style="display:flex; gap:8px; margin-top:8px">
-                                <span class="chip">熱門</span>
-                                <span class="chip">精華</span>
-                            </div>
-                        </article>
-                    `).join('');
+                    hotScroller.innerHTML = hotThreads.map(title => 
+                        '<article class="card">' +
+                            '<div style="font-weight:900">' + title + '</div>' +
+                            '<div style="color:var(--muted); font-size:13px">點擊查看完整內容...</div>' +
+                            '<div style="display:flex; gap:8px; margin-top:8px">' +
+                                '<span class="chip">熱門</span>' +
+                                '<span class="chip">精華</span>' +
+                            '</div>' +
+                        '</article>'
+                    ).join('');
                 }
             }
 
@@ -777,7 +777,7 @@
                 const ticker = document.getElementById('ticker');
                 if (ticker) {
                     const twice = bulletins.concat(bulletins);
-                    ticker.innerHTML = twice.map(t => `<span>🔔 ${t}</span>`).join('<span>·</span>');
+                    ticker.innerHTML = twice.map(t => '<span>🔔 ' + t + '</span>').join('<span>·</span>');
                 }
             }
 
@@ -791,23 +791,23 @@
 
                 const feed = document.getElementById('feed');
                 if (feed) {
-                    feed.innerHTML = posts.map(post => `
-                        <article class="row">
-                            <div class="av">${post.author[0]}</div>
-                            <div>
-                                <div style="font-weight:900">${post.title}</div>
-                                <div class="meta">
-                                    <span>@${post.author}</span>
-                                    <span>｜</span>
-                                    <span>${post.time}</span>
-                                </div>
-                            </div>
-                            <div style="display:flex; gap:8px">
-                                <span class="ghost">❤️ ${post.likes}</span>
-                                <span class="ghost">💬 ${post.replies}</span>
-                            </div>
-                        </article>
-                    `).join('');
+                    feed.innerHTML = posts.map(post => 
+                        '<article class="row">' +
+                            '<div class="av">' + post.author[0] + '</div>' +
+                            '<div>' +
+                                '<div style="font-weight:900">' + post.title + '</div>' +
+                                '<div class="meta">' +
+                                    '<span>@' + post.author + '</span>' +
+                                    '<span>｜</span>' +
+                                    '<span>' + post.time + '</span>' +
+                                '</div>' +
+                            '</div>' +
+                            '<div style="display:flex; gap:8px">' +
+                                '<span class="ghost">❤️ ' + post.likes + '</span>' +
+                                '<span class="ghost">💬 ' + post.replies + '</span>' +
+                            '</div>' +
+                        '</article>'
+                    ).join('');
                 }
             }
 
@@ -828,13 +828,12 @@
                         const dcls = game.delta > 0 ? 'up' : game.delta < 0 ? 'down' : 'flat';
                         const deltaText = game.delta === 0 ? '0' : Math.abs(game.delta);
                         
-                        return `
-                            <div class="rrow ${cls}">
-                                <div class="rank">${i+1}</div>
-                                <div class="title-2">${game.name}</div>
-                                <div class="delta ${dcls}">${sign} ${deltaText}</div>
-                            </div>
-                        `;
+                        return 
+                            '<div class="rrow ' + cls + '">' +
+                                '<div class="rank">' + (i+1) + '</div>' +
+                                '<div class="title-2">' + game.name + '</div>' +
+                                '<div class="delta ' + dcls + '">' + sign + ' ' + deltaText + '</div>' +
+                            '</div>';
                     }).join('');
                 }
             }

@@ -1,0 +1,263 @@
+﻿# GameCore Docker Compose 配置
+# 用於本地開發和測試環境
+
+version: '3.8'
+
+services:
+  # ============================================================================
+  # GameCore 主應用程式
+  # ============================================================================
+  gamecore-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: gamecore-web
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=https://+:5001;http://+:5000
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=password
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
+      - ConnectionStrings__DefaultConnection=Server=gamecore-db;Database=GameCore;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=true;
+      - ConnectionStrings__Redis=gamecore-redis:6379
+    depends_on:
+      gamecore-db:
+        condition: service_healthy
+      gamecore-redis:
+        condition: service_healthy
+    volumes:
+      - ~/.aspnet/https:/https:ro
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
+    networks:
+      - gamecore-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ============================================================================
+  # SQL Server 資料庫
+  # ============================================================================
+  gamecore-db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: gamecore-db
+    environment:
+      SA_PASSWORD: 'YourStrong@Passw0rd'
+      ACCEPT_EULA: 'Y'
+      MSSQL_PID: 'Developer'
+    ports:
+      - "1433:1433"
+    volumes:
+      - gamecore-db-data:/var/opt/mssql
+      - ./Database:/scripts
+    networks:
+      - gamecore-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "YourStrong@Passw0rd", "-Q", "SELECT 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ============================================================================
+  # Redis 快取
+  # ============================================================================
+  gamecore-redis:
+    image: redis:7-alpine
+    container_name: gamecore-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - gamecore-redis-data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - gamecore-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================================================
+  # Nginx 反向代理 (生產環境用)
+  # ============================================================================
+  gamecore-nginx:
+    image: nginx:alpine
+    container_name: gamecore-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./logs/nginx:/var/log/nginx
+      - ./uploads:/var/www/uploads:ro
+    depends_on:
+      - gamecore-web
+    networks:
+      - gamecore-network
+    restart: unless-stopped
+    profiles:
+      - production
+
+  # ============================================================================
+  # Elasticsearch (搜尋引擎)
+  # ============================================================================
+  gamecore-elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.0
+    container_name: gamecore-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - gamecore-es-data:/usr/share/elasticsearch/data
+    networks:
+      - gamecore-network
+    restart: unless-stopped
+    profiles:
+      - full-stack
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9200/_cluster/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================================================
+  # Kibana (Elasticsearch 管理介面)
+  # ============================================================================
+  gamecore-kibana:
+    image: docker.elastic.co/kibana/kibana:8.8.0
+    container_name: gamecore-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://gamecore-elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      gamecore-elasticsearch:
+        condition: service_healthy
+    networks:
+      - gamecore-network
+    restart: unless-stopped
+    profiles:
+      - full-stack
+
+  # ============================================================================
+  # Prometheus (監控)
+  # ============================================================================
+  gamecore-prometheus:
+    image: prom/prometheus:latest
+    container_name: gamecore-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - gamecore-prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - gamecore-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  # ============================================================================
+  # Grafana (監控儀表板)
+  # ============================================================================
+  gamecore-grafana:
+    image: grafana/grafana:latest
+    container_name: gamecore-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+    volumes:
+      - gamecore-grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - gamecore-prometheus
+    networks:
+      - gamecore-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  # ============================================================================
+  # Jaeger (分散式追蹤)
+  # ============================================================================
+  gamecore-jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: gamecore-jaeger
+    ports:
+      - "16686:16686" # Web UI
+      - "14268:14268" # HTTP collector
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - gamecore-network
+    restart: unless-stopped
+    profiles:
+      - tracing
+
+  # ============================================================================
+  # 資料庫初始化服務
+  # ============================================================================
+  gamecore-db-init:
+    build:
+      context: .
+      dockerfile: Dockerfile.db-init
+    container_name: gamecore-db-init
+    depends_on:
+      gamecore-db:
+        condition: service_healthy
+    environment:
+      - DB_CONNECTION_STRING=Server=gamecore-db;Database=GameCore;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=true;
+    volumes:
+      - ./Database:/scripts
+    networks:
+      - gamecore-network
+    restart: "no"
+    profiles:
+      - init
+
+# ============================================================================
+# 網路配置
+# ============================================================================
+networks:
+  gamecore-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# ============================================================================
+# 資料卷配置
+# ============================================================================
+volumes:
+  gamecore-db-data:
+    driver: local
+  gamecore-redis-data:
+    driver: local
+  gamecore-es-data:
+    driver: local
+  gamecore-prometheus-data:
+    driver: local
+  gamecore-grafana-data:
+    driver: local

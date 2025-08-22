@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace GameCore.Core.Entities
@@ -134,8 +134,7 @@ namespace GameCore.Core.Entities
         /// <summary>
         /// 當日指數
         /// </summary>
-        [Column("index_value")]
-        [Column(TypeName = "decimal(18,4)")]
+        [Column("index_value", TypeName = "decimal(18,4)")]
         public decimal IndexValue { get; set; }
 
         /// <summary>

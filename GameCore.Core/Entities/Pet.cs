@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace GameCore.Core.Entities
@@ -247,8 +247,7 @@ namespace GameCore.Core.Entities
         /// 怪物移動速度倍率
         /// </summary>
         [Required]
-        [Column("SpeedMultiplier")]
-        [Column(TypeName = "decimal(5,2)")]
+        [Column("SpeedMultiplier", TypeName = "decimal(5,2)")]
         public decimal SpeedMultiplier { get; set; } = 1.00m;
 
         /// <summary>

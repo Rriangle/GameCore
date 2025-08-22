@@ -1,0 +1,211 @@
+﻿# GameCore 進階多階段 Dockerfile
+# 支援開發、測試、生產多種環境
+
+# ============================================================================
+# 階段 1: 基礎映像
+# ============================================================================
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+LABEL maintainer="GameCore Team <team@gamecore.com>"
+LABEL version="1.0.0"
+LABEL description="GameCore 遊戲社群平台"
+
+# 設定工作目錄
+WORKDIR /app
+
+# 建立非 root 使用者
+RUN groupadd -r gamecore && useradd -r -g gamecore gamecore
+
+# 安裝系統依賴
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    unzip \
+    imagemagick \
+    fonts-wqy-microhei \
+    fonts-wqy-zenhei \
+    && rm -rf /var/lib/apt/lists/*
+
+# 設定時區
+ENV TZ=Asia/Taipei
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# 設定 ASP.NET Core 環境
+ENV ASPNETCORE_URLS=http://+:80
+ENV DOTNET_RUNNING_IN_CONTAINER=true
+ENV DOTNET_EnableDiagnostics=0
+
+# 暴露連接埠
+EXPOSE 80
+EXPOSE 443
+
+# ============================================================================
+# 階段 2: 建置環境
+# ============================================================================
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# 安裝 Node.js (用於前端建置)
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+RUN apt-get install -y nodejs
+
+# 複製專案檔案並還原 NuGet 套件
+COPY ["GameCore.Web/GameCore.Web.csproj", "GameCore.Web/"]
+COPY ["GameCore.Core/GameCore.Core.csproj", "GameCore.Core/"]
+COPY ["GameCore.Infrastructure/GameCore.Infrastructure.csproj", "GameCore.Infrastructure/"]
+COPY ["GameCore.Tests/GameCore.Tests.csproj", "GameCore.Tests/"]
+
+# 還原依賴項目
+RUN dotnet restore "GameCore.Web/GameCore.Web.csproj"
+
+# 複製前端套件管理檔案
+COPY ["GameCore.Web/package*.json", "GameCore.Web/"]
+
+# 還原前端依賴
+WORKDIR /src/GameCore.Web
+RUN npm ci --only=production
+
+# 複製所有原始碼
+WORKDIR /src
+COPY . .
+
+# 建置前端資源
+WORKDIR /src/GameCore.Web
+RUN npm run build && npm run minify
+
+# 建置 .NET 應用程式
+WORKDIR /src
+RUN dotnet build "GameCore.Web/GameCore.Web.csproj" -c Release -o /app/build
+
+# ============================================================================
+# 階段 3: 測試階段
+# ============================================================================
+FROM build AS test
+WORKDIR /src
+
+# 安裝測試工具
+RUN dotnet tool install --global dotnet-reportgenerator-globaltool
+ENV PATH="$PATH:/root/.dotnet/tools"
+
+# 執行測試並生成覆蓋率報告
+RUN dotnet test "GameCore.Tests/GameCore.Tests.csproj" \
+    --configuration Release \
+    --collect:"XPlat Code Coverage" \
+    --results-directory /testresults \
+    --logger "trx;LogFileName=test_results.trx"
+
+# 生成覆蓋率報告
+RUN reportgenerator \
+    -reports:/testresults/**/coverage.cobertura.xml \
+    -targetdir:/testresults/coveragereport \
+    -reporttypes:"Html;Badges"
+
+# ============================================================================
+# 階段 4: 發布階段
+# ============================================================================
+FROM build AS publish
+WORKDIR /src
+
+# 發布應用程式
+RUN dotnet publish "GameCore.Web/GameCore.Web.csproj" \
+    -c Release \
+    -o /app/publish \
+    --no-restore \
+    --self-contained false
+
+# 清理不必要的檔案
+RUN find /app/publish -name "*.pdb" -delete && \
+    find /app/publish -name "*.xml" -delete
+
+# ============================================================================
+# 階段 5: 開發環境
+# ============================================================================
+FROM base AS development
+
+# 安裝開發工具
+RUN apt-get update && apt-get install -y \
+    vim \
+    nano \
+    htop \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# 安裝 .NET SDK
+COPY --from=mcr.microsoft.com/dotnet/sdk:8.0 /usr/share/dotnet /usr/share/dotnet
+RUN ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
+
+# 設定開發環境變數
+ENV ASPNETCORE_ENVIRONMENT=Development
+ENV DOTNET_USE_POLLING_FILE_WATCHER=true
+ENV DOTNET_WATCH_RESTART_ON_RUDE_EDIT=true
+
+# 建立目錄
+RUN mkdir -p /app/logs /app/uploads /app/temp
+RUN chown -R gamecore:gamecore /app
+
+USER gamecore
+
+# 設定健康檢查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost/health || exit 1
+
+# ============================================================================
+# 階段 6: 生產環境
+# ============================================================================
+FROM base AS production
+
+# 複製發布的應用程式
+COPY --from=publish /app/publish .
+
+# 建立必要目錄
+RUN mkdir -p logs uploads temp && \
+    chown -R gamecore:gamecore logs uploads temp
+
+# 設定生產環境變數
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENV DOTNET_EnableDiagnostics=0
+
+# 複製啟動腳本
+COPY scripts/docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# 切換到非 root 使用者
+USER gamecore
+
+# 設定健康檢查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost/health || exit 1
+
+# 設定啟動命令
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+CMD ["dotnet", "GameCore.Web.dll"]
+
+# ============================================================================
+# 階段 7: 安全掃描階段
+# ============================================================================
+FROM production AS security-scan
+
+# 切換回 root 執行安全工具
+USER root
+
+# 安裝安全掃描工具
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# 下載 Trivy
+RUN wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add -
+RUN echo "deb https://aquasecurity.github.io/trivy-repo/deb generic main" | tee -a /etc/apt/sources.list.d/trivy.list
+RUN apt-get update && apt-get install -y trivy
+
+# 執行安全掃描
+RUN trivy fs --exit-code 0 --no-progress --format table /app
+
+# 切換回應用程式使用者
+USER gamecore
+
+# ============================================================================
+# 最終階段選擇
+# ============================================================================
+# 預設使用生產環境
+FROM production

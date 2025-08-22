@@ -1,0 +1,168 @@
+﻿name: 🐛 Bug 回報
+description: 回報 GameCore 中的錯誤或問題
+title: "[BUG] "
+labels: ["bug", "需要分類"]
+assignees:
+  - gamecore-team
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感謝您回報 Bug！請填寫以下資訊，幫助我們更快速地定位和修復問題。
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: 🐛 問題描述
+      description: 請清楚描述您遇到的問題
+      placeholder: 描述發生了什麼問題...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: 🔄 重現步驟
+      description: 請提供重現問題的詳細步驟
+      placeholder: |
+        1. 前往 '...'
+        2. 點擊 '...'
+        3. 滾動到 '...'
+        4. 看到錯誤
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: ✅ 預期行為
+      description: 描述您期望發生什麼
+      placeholder: 應該要...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: ❌ 實際行為
+      description: 描述實際發生什麼
+      placeholder: 但是實際上...
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 📸 螢幕截圖
+      description: 如果適用，請添加螢幕截圖以幫助解釋您的問題
+      placeholder: 拖拽圖片到這裡或點擊上傳...
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: 🌐 瀏覽器
+      description: 您使用的瀏覽器是？
+      options:
+        - Chrome
+        - Firefox
+        - Safari
+        - Edge
+        - Opera
+        - 其他
+      multiple: true
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: 💻 作業系統
+      description: 您的作業系統是？
+      options:
+        - Windows 11
+        - Windows 10
+        - macOS Monterey (12.x)
+        - macOS Big Sur (11.x)
+        - macOS Catalina (10.15)
+        - Ubuntu
+        - 其他 Linux
+        - iOS
+        - Android
+        - 其他
+    validations:
+      required: true
+
+  - type: dropdown
+    id: device-type
+    attributes:
+      label: 📱 裝置類型
+      description: 您使用的裝置類型？
+      options:
+        - 桌面電腦
+        - 筆記型電腦
+        - 平板電腦
+        - 手機
+        - 其他
+    validations:
+      required: true
+
+  - type: input
+    id: gamecore-version
+    attributes:
+      label: 🎮 GameCore 版本
+      description: 您使用的 GameCore 版本（可在頁面底部找到）
+      placeholder: 例如：v1.0.0
+    validations:
+      required: false
+
+  - type: textarea
+    id: console-logs
+    attributes:
+      label: 🔍 瀏覽器控制台日誌
+      description: 請提供瀏覽器開發者工具中的錯誤訊息
+      placeholder: 貼上控制台錯誤訊息...
+      render: text
+
+  - type: textarea
+    id: network-info
+    attributes:
+      label: 🌐 網路資訊
+      description: 如果問題與網路相關，請提供網路狀況
+      placeholder: 例如：Wi-Fi, 4G, 網速等...
+
+  - type: dropdown
+    id: urgency
+    attributes:
+      label: ⚡ 緊急程度
+      description: 這個問題對您的影響程度？
+      options:
+        - 低 - 不影響主要功能
+        - 中 - 影響部分功能
+        - 高 - 無法使用主要功能
+        - 緊急 - 完全無法使用
+      default: 1
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 📝 其他資訊
+      description: 其他可能有助於我們解決問題的資訊
+      placeholder: 任何其他相關資訊...
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: ✅ 確認事項
+      description: 請確認您已經完成以下檢查
+      options:
+        - label: 我已經搜尋過現有的 Issues，確認這是一個新問題
+          required: true
+        - label: 我已經嘗試重新整理頁面或重新登入
+          required: true
+        - label: 我提供的資訊是準確和完整的
+          required: true
+        - label: 我同意開發團隊可能會要求更多資訊以協助調查
+          required: true

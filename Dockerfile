@@ -1,4 +1,4 @@
-# GameCore 遊戲社群平台 Docker 配置
+﻿# GameCore 遊戲社群平台 Docker 配置
 # 使用多階段建置來優化映像大小
 
 # ===== 建置階段 =====

@@ -1,4 +1,4 @@
-namespace GameCore.Web.Models;
+﻿namespace GameCore.Web.Models;
 
 public class ErrorViewModel
 {

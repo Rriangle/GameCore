@@ -1,11 +1,13 @@
-using GameCore.Infrastructure.Data;
+﻿using GameCore.Infrastructure.Data;
 using GameCore.Core.Interfaces;
 using GameCore.Core.Services;
 using GameCore.Infrastructure.Repositories;
+using GameCore.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.Facebook;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,7 +55,7 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddControllersWithViews(options =>
 {
     // 全域授權過濾器
-    options.Filters.Add(new Microsoft.AspNetCore.Authorization.AuthorizeAttribute());
+    options.Filters.Add(new AuthorizeAttribute());
 })
 .AddNewtonsoftJson(options =>
 {
@@ -104,13 +106,13 @@ builder.Services.AddScoped<IManagerRepository, ManagerRepository>();
 // 註冊服務
 builder.Services.AddScoped<IPetService, PetService>();
 builder.Services.AddScoped<ISignInService, SignInService>();
-builder.Services.AddScoped<IMiniGameService, MiniGameService>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IForumService, ForumService>();
-builder.Services.AddScoped<IStoreService, StoreService>();
-builder.Services.AddScoped<IPlayerMarketService, PlayerMarketService>();
-builder.Services.AddScoped<INotificationService, NotificationService>();
-builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IMiniGameService, SimpleMiniGameService>();
+builder.Services.AddScoped<IUserService, SimpleUserService>();
+builder.Services.AddScoped<IForumService, SimpleForumService>();
+builder.Services.AddScoped<IStoreService, SimpleStoreService>();
+builder.Services.AddScoped<IPlayerMarketService, SimplePlayerMarketService>();
+builder.Services.AddScoped<INotificationService, SimpleNotificationService>();
+builder.Services.AddScoped<IChatService, SimpleChatService>();
 
 // 設定 Logging
 builder.Logging.ClearProviders();

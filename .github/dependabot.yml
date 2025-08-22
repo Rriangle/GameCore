@@ -1,0 +1,97 @@
+﻿# Dependabot 配置
+# 自動更新專案依賴，確保安全性和最新功能
+
+version: 2
+updates:
+  # .NET 依賴更新
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Taipei"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "gamecore-team"
+    assignees:
+      - "gamecore-lead"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "dotnet"
+    milestone: 1
+    
+  # Node.js 依賴更新 (前端)
+  - package-ecosystem: "npm"
+    directory: "/GameCore.Web"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+      timezone: "Asia/Taipei"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "frontend-team"
+    commit-message:
+      prefix: "chore(frontend)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "frontend"
+      - "javascript"
+    
+  # Docker 基礎映像更新
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "09:00"
+      timezone: "Asia/Taipei"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "devops-team"
+    commit-message:
+      prefix: "chore(docker)"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "infrastructure"
+    
+  # GitHub Actions 更新
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "thursday"
+      time: "09:00" 
+      timezone: "Asia/Taipei"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "devops-team"
+    commit-message:
+      prefix: "chore(ci)"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "ci-cd"
+
+# 忽略特定更新
+ignore:
+  # 忽略主要版本更新（需要手動審查）
+  - dependency-name: "Microsoft.AspNetCore.*"
+    update-types: ["version-update:semver-major"]
+  - dependency-name: "Microsoft.EntityFrameworkCore.*"
+    update-types: ["version-update:semver-major"]
+  
+  # 忽略特定套件的更新
+  - dependency-name: "Newtonsoft.Json"
+    # 保持與 ASP.NET Core 相容的版本
+  
+  # 忽略開發依賴的某些更新
+  - dependency-name: "xunit"
+    update-types: ["version-update:semver-major"]

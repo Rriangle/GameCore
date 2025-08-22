@@ -2,6 +2,7 @@ using GameCore.Infrastructure.Data;
 using GameCore.Core.Interfaces;
 using GameCore.Core.Services;
 using GameCore.Infrastructure.Repositories;
+using GameCore.Web.Middleware;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
@@ -50,11 +51,7 @@ builder.Services.AddAuthorization(options =>
 });
 
 // 設定 MVC 和 API
-builder.Services.AddControllersWithViews(options =>
-{
-    // 全域授權過濾器
-    options.Filters.Add(new Microsoft.AspNetCore.Authorization.AuthorizeAttribute());
-})
+builder.Services.AddControllersWithViews()
 .AddNewtonsoftJson(options =>
 {
     options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
@@ -112,6 +109,16 @@ builder.Services.AddScoped<IPlayerMarketService, PlayerMarketService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 
+// 註冊 HTTP 客戶端
+builder.Services.AddHttpClient();
+
+// 註冊健康檢查
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<GameCoreDbContext>();
+
+// 註冊快取服務
+builder.Services.AddScoped<ICacheService, CacheService>();
+
 // 設定 Logging
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
@@ -139,10 +146,16 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseCors();
 
+// 添加錯誤處理中間件
+app.UseMiddleware<ErrorHandlingMiddleware>();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseSession();
+
+// 健康檢查端點
+app.MapHealthChecks("/health");
 
 // 設定路由
 app.MapControllerRoute(
@@ -157,16 +170,6 @@ app.MapControllerRoute(
 // SignalR Hub 路由
 app.MapHub<ChatHub>("/chathub");
 app.MapHub<NotificationHub>("/notificationhub");
-
-// 允許匿名訪問的頁面
-app.MapControllerRoute(
-    name: "public",
-    pattern: "{controller=Home}/{action=Index}").AllowAnonymous();
-
-app.MapControllerRoute(
-    name: "auth",
-    pattern: "Account/{action}",
-    defaults: new { controller = "Account" }).AllowAnonymous();
 
 // 確保資料庫已建立並初始化假資料
 using (var scope = app.Services.CreateScope())
@@ -202,8 +205,11 @@ static async Task SeedBasicDataAsync(GameCoreDbContext context, ILogger logger)
         // 檢查是否已有基礎資料
         if (await context.NotificationSources.AnyAsync())
         {
-            return; // 已有資料，跳過初始化
+            logger.LogInformation("基礎資料已存在，跳過初始化");
+            return;
         }
+
+        logger.LogInformation("開始初始化基礎資料...");
 
         // 插入通知來源
         var notificationSources = new[]
@@ -217,6 +223,8 @@ static async Task SeedBasicDataAsync(GameCoreDbContext context, ILogger logger)
         };
         
         context.NotificationSources.AddRange(notificationSources);
+        await context.SaveChangesAsync();
+        logger.LogInformation("通知來源資料初始化完成");
 
         // 插入通知行為
         var notificationActions = new[]
@@ -232,6 +240,8 @@ static async Task SeedBasicDataAsync(GameCoreDbContext context, ILogger logger)
         };
         
         context.NotificationActions.AddRange(notificationActions);
+        await context.SaveChangesAsync();
+        logger.LogInformation("通知行為資料初始化完成");
 
         // 插入基礎遊戲資料
         var games = new[]
@@ -245,8 +255,8 @@ static async Task SeedBasicDataAsync(GameCoreDbContext context, ILogger logger)
         };
         
         context.Games.AddRange(games);
-
         await context.SaveChangesAsync();
+        logger.LogInformation("遊戲資料初始化完成");
 
         // 為每個遊戲建立論壇版面
         var forums = games.Select(g => new Forum
@@ -258,6 +268,8 @@ static async Task SeedBasicDataAsync(GameCoreDbContext context, ILogger logger)
         });
         
         context.Forums.AddRange(forums);
+        await context.SaveChangesAsync();
+        logger.LogInformation("論壇版面初始化完成");
 
         // 插入管理員角色權限
         var adminRole = new ManagerRolePermission
@@ -272,15 +284,15 @@ static async Task SeedBasicDataAsync(GameCoreDbContext context, ILogger logger)
         };
         
         context.ManagerRolePermissions.Add(adminRole);
-
         await context.SaveChangesAsync();
+        logger.LogInformation("管理員角色權限初始化完成");
         
-        logger.LogInformation("基礎資料初始化完成");
+        logger.LogInformation("所有基礎資料初始化完成");
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "基礎資料初始化失敗");
-        throw;
+        logger.LogError(ex, "基礎資料初始化失敗: {Message}", ex.Message);
+        // 不拋出異常，讓應用程式繼續運行
     }
 }
 

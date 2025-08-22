@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # SQL Server 資料庫
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: gamecore-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=GameCore123!
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - gamecore-network
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P GameCore123! -Q 'SELECT 1'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # GameCore Web 應用程式
+  gamecore-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gamecore-web
+    ports:
+      - "5000:80"
+      - "5001:443"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80;https://+:443
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=GameCore;User Id=sa;Password=GameCore123!;TrustServerCertificate=true;MultipleActiveResultSets=true
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - gamecore-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Redis 快取 (可選)
+  redis:
+    image: redis:7-alpine
+    container_name: gamecore-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - gamecore-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  sqlserver_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  gamecore-network:
+    driver: bridge

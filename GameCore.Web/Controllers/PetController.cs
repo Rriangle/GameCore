@@ -1,18 +1,12 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using GameCore.Core.Services;
-using GameCore.Core.Entities;
-using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace GameCore.Web.Controllers
 {
-    /// <summary>
-    /// 寵物系統控制器
-    /// 提供寵物互動、狀態查詢、換色等 API 端點
-    /// </summary>
-    [Authorize]
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
+    [Authorize]
     public class PetController : ControllerBase
     {
         private readonly IPetService _petService;
@@ -24,375 +18,342 @@ namespace GameCore.Web.Controllers
             _logger = logger;
         }
 
-        /// <summary>
-        /// 取得寵物狀態
-        /// GET /api/pet
-        /// </summary>
-        [HttpGet]
-        public async Task<IActionResult> GetPet()
-        {
-            try
-            {
-                var userId = GetCurrentUserId();
-                if (userId == 0)
-                {
-                    return Unauthorized(new { message = "請先登入" });
-                }
-
-                var pet = await _petService.GetOrCreatePetAsync(userId);
-                var statusDescription = _petService.GetPetStatusDescription(pet);
-                var nextLevelExp = _petService.CalculateRequiredExperience(pet.Level);
-
-                var response = new
-                {
-                    // 基本資料
-                    petId = pet.PetId,
-                    name = pet.PetName,
-                    level = pet.Level,
-                    experience = pet.Experience,
-                    nextLevelExp = nextLevelExp,
-                    
-                    // 五維屬性
-                    hunger = pet.Hunger,
-                    mood = pet.Mood,
-                    stamina = pet.Stamina,
-                    cleanliness = pet.Cleanliness,
-                    health = pet.Health,
-                    
-                    // 外觀
-                    skinColor = pet.SkinColor,
-                    backgroundColor = pet.BackgroundColor,
-                    
-                    // 時間記錄
-                    levelUpTime = pet.LevelUpTime,
-                    colorChangedTime = pet.ColorChangedTime,
-                    
-                    // 狀態描述
-                    statusDescription = statusDescription,
-                    
-                    // 是否可以冒險
-                    canAdventure = await _petService.CanStartAdventureAsync(userId)
-                };
-
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "取得寵物狀態時發生錯誤");
-                return StatusCode(500, new { message = "伺服器錯誤" });
-            }
-        }
-
-        /// <summary>
-        /// 寵物互動
-        /// POST /api/pet/interact
-        /// </summary>
-        [HttpPost("interact")]
-        public async Task<IActionResult> InteractWithPet([FromBody] PetInteractionRequest request)
-        {
-            try
-            {
-                var userId = GetCurrentUserId();
-                if (userId == 0)
-                {
-                    return Unauthorized(new { message = "請先登入" });
-                }
-
-                // 驗證互動類型
-                if (!Enum.TryParse<PetInteractionType>(request.Action, true, out var interactionType))
-                {
-                    return BadRequest(new { message = "無效的互動類型" });
-                }
-
-                var result = await _petService.InteractWithPetAsync(userId, interactionType);
-
-                if (!result.Success)
-                {
-                    return BadRequest(new { 
-                        message = result.Message,
-                        cooldownSeconds = result.CooldownSeconds
-                    });
-                }
-
-                _logger.LogInformation($"使用者 {userId} 執行寵物互動: {request.Action}");
-
-                return Ok(new
-                {
-                    success = true,
-                    message = result.Message,
-                    pet = new
-                    {
-                        hunger = result.Pet?.Hunger,
-                        mood = result.Pet?.Mood,
-                        stamina = result.Pet?.Stamina,
-                        cleanliness = result.Pet?.Cleanliness,
-                        health = result.Pet?.Health
-                    },
-                    healthRestored = result.HealthRestored,
-                    cooldownSeconds = result.CooldownSeconds
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"寵物互動時發生錯誤，使用者ID: {GetCurrentUserId()}");
-                return StatusCode(500, new { message = "互動失敗，請稍後再試" });
-            }
-        }
-
-        /// <summary>
-        /// 寵物換色
-        /// POST /api/pet/recolor
-        /// </summary>
-        [HttpPost("recolor")]
-        public async Task<IActionResult> ChangePetColor([FromBody] PetColorChangeRequest request)
-        {
-            try
-            {
-                var userId = GetCurrentUserId();
-                if (userId == 0)
-                {
-                    return Unauthorized(new { message = "請先登入" });
-                }
-
-                var result = await _petService.ChangePetColorAsync(userId, request.SkinColor, request.BackgroundColor);
-
-                if (!result.Success)
-                {
-                    return BadRequest(new { 
-                        message = result.Message,
-                        remainingPoints = result.RemainingPoints
-                    });
-                }
-
-                _logger.LogInformation($"使用者 {userId} 為寵物換色成功");
-
-                return Ok(new
-                {
-                    success = true,
-                    message = result.Message,
-                    pointsUsed = result.PointsUsed,
-                    remainingPoints = result.RemainingPoints,
-                    pet = new
-                    {
-                        skinColor = result.Pet?.SkinColor,
-                        backgroundColor = result.Pet?.BackgroundColor,
-                        colorChangedTime = result.Pet?.ColorChangedTime
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"寵物換色時發生錯誤，使用者ID: {GetCurrentUserId()}");
-                return StatusCode(500, new { message = "換色失敗，請稍後再試" });
-            }
-        }
-
-        /// <summary>
-        /// 更新寵物名稱
-        /// PUT /api/pet/name
-        /// </summary>
-        [HttpPut("name")]
-        public async Task<IActionResult> UpdatePetName([FromBody] UpdatePetNameRequest request)
-        {
-            try
-            {
-                var userId = GetCurrentUserId();
-                if (userId == 0)
-                {
-                    return Unauthorized(new { message = "請先登入" });
-                }
-
-                if (string.IsNullOrWhiteSpace(request.Name) || request.Name.Length > 50)
-                {
-                    return BadRequest(new { message = "寵物名稱長度必須在 1-50 字元之間" });
-                }
-
-                var pet = await _petService.GetOrCreatePetAsync(userId);
-                pet.PetName = request.Name.Trim();
-
-                // 這裡需要透過 UnitOfWork 更新
-                // await _petService.UpdatePetAsync(pet);
-
-                _logger.LogInformation($"使用者 {userId} 更新寵物名稱為: {request.Name}");
-
-                return Ok(new
-                {
-                    success = true,
-                    message = "寵物名稱更新成功",
-                    newName = pet.PetName
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"更新寵物名稱時發生錯誤，使用者ID: {GetCurrentUserId()}");
-                return StatusCode(500, new { message = "更新失敗，請稍後再試" });
-            }
-        }
-
-        /// <summary>
-        /// 取得寵物狀態描述
-        /// GET /api/pet/status
-        /// </summary>
         [HttpGet("status")]
         public async Task<IActionResult> GetPetStatus()
         {
             try
             {
-                var userId = GetCurrentUserId();
-                if (userId == 0)
+                var userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
+                var status = await _petService.GetPetStatusAsync(userId);
+                
+                if (status.Success)
                 {
-                    return Unauthorized(new { message = "請先登入" });
+                    return Ok(status.Pet);
                 }
-
-                var pet = await _petService.GetOrCreatePetAsync(userId);
-                var statusDescription = _petService.GetPetStatusDescription(pet);
-
-                return Ok(statusDescription);
+                
+                return NotFound(new { message = status.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"取得寵物狀態描述時發生錯誤，使用者ID: {GetCurrentUserId()}");
-                return StatusCode(500, new { message = "取得狀態失敗" });
+                _logger.LogError(ex, "Error occurred while getting pet status for user {UserId}", User.FindFirst("UserId")?.Value);
+                return StatusCode(500, new { message = "伺服器錯誤，請稍後再試" });
             }
         }
 
-        /// <summary>
-        /// 檢查是否可以冒險
-        /// GET /api/pet/can-adventure
-        /// </summary>
-        [HttpGet("can-adventure")]
-        public async Task<IActionResult> CanStartAdventure()
+        [HttpPost("feed")]
+        public async Task<IActionResult> FeedPet()
         {
             try
             {
-                var userId = GetCurrentUserId();
-                if (userId == 0)
+                var userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
+                var result = await _petService.FeedPetAsync(userId);
+                
+                if (result.Success)
                 {
-                    return Unauthorized(new { message = "請先登入" });
+                    return Ok(new { 
+                        message = result.Message, 
+                        pet = result.Pet,
+                        pointsGained = result.PointsGained,
+                        experienceGained = result.ExperienceGained
+                    });
                 }
+                
+                return BadRequest(new { message = result.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while feeding pet for user {UserId}", User.FindFirst("UserId")?.Value);
+                return StatusCode(500, new { message = "伺服器錯誤，請稍後再試" });
+            }
+        }
 
-                var canAdventure = await _petService.CanStartAdventureAsync(userId);
-                var pet = await _petService.GetOrCreatePetAsync(userId);
-
-                string message = canAdventure 
-                    ? "寵物狀態良好，可以開始冒險！" 
-                    : "寵物狀態不佳，請先照顧寵物再來冒險";
-
-                return Ok(new
+        [HttpPost("clean")]
+        public async Task<IActionResult> CleanPet()
+        {
+            try
+            {
+                var userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
+                var result = await _petService.CleanPetAsync(userId);
+                
+                if (result.Success)
                 {
-                    canAdventure = canAdventure,
-                    message = message,
-                    petHealth = pet.Health,
-                    lowestAttribute = new
+                    return Ok(new { 
+                        message = result.Message, 
+                        pet = result.Pet,
+                        pointsGained = result.PointsGained,
+                        experienceGained = result.ExperienceGained
+                    });
+                }
+                
+                return BadRequest(new { message = result.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while cleaning pet for user {UserId}", User.FindFirst("UserId")?.Value);
+                return StatusCode(500, new { message = "伺服器錯誤，請稍後再試" });
+            }
+        }
+
+        [HttpPost("play")]
+        public async Task<IActionResult> PlayWithPet()
+        {
+            try
+            {
+                var userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
+                var result = await _petService.PlayWithPetAsync(userId);
+                
+                if (result.Success)
+                {
+                    return Ok(new { 
+                        message = result.Message, 
+                        pet = result.Pet,
+                        pointsGained = result.PointsGained,
+                        experienceGained = result.ExperienceGained
+                    });
+                }
+                
+                return BadRequest(new { message = result.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while playing with pet for user {UserId}", User.FindFirst("UserId")?.Value);
+                return StatusCode(500, new { message = "伺服器錯誤，請稍後再試" });
+            }
+        }
+
+        [HttpPost("rest")]
+        public async Task<IActionResult> RestPet()
+        {
+            try
+            {
+                var userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
+                var result = await _petService.RestPetAsync(userId);
+                
+                if (result.Success)
+                {
+                    return Ok(new { 
+                        message = result.Message, 
+                        pet = result.Pet
+                    });
+                }
+                
+                return BadRequest(new { message = result.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while resting pet for user {UserId}", User.FindFirst("UserId")?.Value);
+                return StatusCode(500, new { message = "伺服器錯誤，請稍後再試" });
+            }
+        }
+
+        [HttpPost("change-color")]
+        public async Task<IActionResult> ChangePetColor([FromBody] PetColorChangeDto colorChangeDto)
+        {
+            try
+            {
+                var userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
+                var result = await _petService.ChangePetColorAsync(userId, colorChangeDto.Color);
+                
+                if (result.Success)
+                {
+                    return Ok(new { 
+                        message = result.Message, 
+                        pet = result.Pet
+                    });
+                }
+                
+                return BadRequest(new { message = result.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while changing pet color for user {UserId}", User.FindFirst("UserId")?.Value);
+                return StatusCode(500, new { message = "伺服器錯誤，請稍後再試" });
+            }
+        }
+
+        [HttpGet("leaderboard")]
+        public async Task<IActionResult> GetPetLeaderboard([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        {
+            try
+            {
+                // This would need implementation in PetService
+                // For now, return a placeholder response with mock data
+                var leaderboard = new
+                {
+                    pets = new[]
                     {
-                        hunger = pet.Hunger,
-                        mood = pet.Mood,
-                        stamina = pet.Stamina,
-                        cleanliness = pet.Cleanliness
-                    }
-                });
+                        new { name = "小龍", level = 25, owner = "玩家1", species = "龍", color = "紅色" },
+                        new { name = "小貓", level = 23, owner = "玩家2", species = "貓", color = "橘色" },
+                        new { name = "小狗", level = 22, owner = "玩家3", species = "狗", color = "棕色" },
+                        new { name = "小鳥", level = 20, owner = "玩家4", species = "鳥", color = "藍色" },
+                        new { name = "小魚", level = 18, owner = "玩家5", species = "魚", color = "金色" }
+                    },
+                    currentPage = page,
+                    totalPages = 5,
+                    totalCount = 100
+                };
+                
+                return Ok(leaderboard);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"檢查冒險條件時發生錯誤，使用者ID: {GetCurrentUserId()}");
-                return StatusCode(500, new { message = "檢查失敗" });
+                _logger.LogError(ex, "Error occurred while getting pet leaderboard");
+                return StatusCode(500, new { message = "伺服器錯誤，請稍後再試" });
             }
         }
 
-        /// <summary>
-        /// 取得互動冷卻時間
-        /// GET /api/pet/cooldown/{action}
-        /// </summary>
-        [HttpGet("cooldown/{action}")]
-        public async Task<IActionResult> GetInteractionCooldown(string action)
+        [HttpGet("history")]
+        public async Task<IActionResult> GetPetHistory([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         {
             try
             {
-                var userId = GetCurrentUserId();
-                if (userId == 0)
+                var userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
+                
+                // This would need implementation in PetService
+                // For now, return a placeholder response
+                var history = new
                 {
-                    return Unauthorized(new { message = "請先登入" });
-                }
-
-                if (!Enum.TryParse<PetInteractionType>(action, true, out var interactionType))
-                {
-                    return BadRequest(new { message = "無效的互動類型" });
-                }
-
-                var cooldownSeconds = await _petService.GetInteractionCooldownAsync(userId, interactionType);
-
-                return Ok(new
-                {
-                    action = action,
-                    cooldownSeconds = cooldownSeconds,
-                    canInteract = cooldownSeconds == 0
-                });
+                    activities = new[]
+                    {
+                        new { action = "餵食", timestamp = DateTime.UtcNow.AddHours(-1), points = 10, experience = 5 },
+                        new { action = "清理", timestamp = DateTime.UtcNow.AddHours(-3), points = 8, experience = 4 },
+                        new { action = "遊戲", timestamp = DateTime.UtcNow.AddHours(-5), points = 12, experience = 6 },
+                        new { action = "休息", timestamp = DateTime.UtcNow.AddHours(-7), points = 0, experience = 0 }
+                    },
+                    currentPage = page,
+                    totalPages = 3,
+                    totalCount = 50
+                };
+                
+                return Ok(history);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"取得互動冷卻時間時發生錯誤，使用者ID: {GetCurrentUserId()}");
-                return StatusCode(500, new { message = "取得冷卻時間失敗" });
+                _logger.LogError(ex, "Error occurred while getting pet history for user {UserId}", User.FindFirst("UserId")?.Value);
+                return StatusCode(500, new { message = "伺服器錯誤，請稍後再試" });
             }
         }
 
-        #region 私有方法
-
-        /// <summary>
-        /// 取得當前登入使用者的 ID
-        /// </summary>
-        /// <returns>使用者 ID，如果未登入則返回 0</returns>
-        private int GetCurrentUserId()
+        [HttpGet("available-colors")]
+        public async Task<IActionResult> GetAvailableColors()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (int.TryParse(userIdClaim, out var userId))
+            try
             {
-                return userId;
+                var colors = new[]
+                {
+                    new { name = "紅色", value = "red", cost = 0, unlocked = true },
+                    new { name = "藍色", value = "blue", cost = 100, unlocked = false },
+                    new { name = "綠色", value = "green", cost = 150, unlocked = false },
+                    new { name = "黃色", value = "yellow", cost = 200, unlocked = false },
+                    new { name = "紫色", value = "purple", cost = 300, unlocked = false },
+                    new { name = "橘色", value = "orange", cost = 250, unlocked = false },
+                    new { name = "粉色", value = "pink", cost = 350, unlocked = false },
+                    new { name = "黑色", value = "black", cost = 500, unlocked = false },
+                    new { name = "白色", value = "white", cost = 400, unlocked = false },
+                    new { name = "金色", value = "gold", cost = 1000, unlocked = false }
+                };
+                
+                return Ok(colors);
             }
-            return 0;
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting available colors");
+                return StatusCode(500, new { message = "伺服器錯誤，請稍後再試" });
+            }
         }
 
-        #endregion
+        [HttpGet("stats")]
+        public async Task<IActionResult> GetPetStats()
+        {
+            try
+            {
+                var userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
+                
+                // This would need implementation in PetService
+                // For now, return a placeholder response
+                var stats = new
+                {
+                    totalFeeds = 45,
+                    totalCleans = 32,
+                    totalPlays = 28,
+                    totalRests = 15,
+                    daysAlive = 30,
+                    totalExperience = 2500,
+                    totalLevels = 5,
+                    healthAverage = 85,
+                    happinessAverage = 90,
+                    energyAverage = 75
+                };
+                
+                return Ok(stats);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting pet stats for user {UserId}", User.FindFirst("UserId")?.Value);
+                return StatusCode(500, new { message = "伺服器錯誤，請稍後再試" });
+            }
+        }
+
+        [HttpPost("create")]
+        public async Task<IActionResult> CreatePet([FromBody] PetCreateDto createDto)
+        {
+            try
+            {
+                var userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
+                
+                // This would need implementation in PetService
+                // For now, return a placeholder response
+                return Ok(new { message = "寵物創建功能開發中" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while creating pet for user {UserId}", User.FindFirst("UserId")?.Value);
+                return StatusCode(500, new { message = "伺服器錯誤，請稍後再試" });
+            }
+        }
+
+        [HttpGet("needs")]
+        public async Task<IActionResult> GetPetNeeds()
+        {
+            try
+            {
+                var userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
+                
+                // This would simulate getting pet needs/requirements
+                var needs = new
+                {
+                    hunger = new { level = 65, urgent = false, nextFeedIn = TimeSpan.FromHours(2) },
+                    cleanliness = new { level = 40, urgent = true, nextCleanIn = TimeSpan.FromMinutes(30) },
+                    happiness = new { level = 80, urgent = false, nextPlayIn = TimeSpan.FromHours(1) },
+                    energy = new { level = 30, urgent = true, nextRestIn = TimeSpan.FromMinutes(15) },
+                    recommendations = new[]
+                    {
+                        "你的寵物需要清理！",
+                        "你的寵物需要休息！",
+                        "2小時後記得餵食"
+                    }
+                };
+                
+                return Ok(needs);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting pet needs for user {UserId}", User.FindFirst("UserId")?.Value);
+                return StatusCode(500, new { message = "伺服器錯誤，請稍後再試" });
+            }
+        }
     }
 
-    #region 請求模型
-
-    /// <summary>
-    /// 寵物互動請求模型
-    /// </summary>
-    public class PetInteractionRequest
+    // DTOs for API requests
+    public class PetColorChangeDto
     {
-        /// <summary>
-        /// 互動動作 (Feed/Bath/Play/Rest)
-        /// </summary>
-        public string Action { get; set; } = string.Empty;
+        public string Color { get; set; } = string.Empty;
     }
 
-    /// <summary>
-    /// 寵物換色請求模型
-    /// </summary>
-    public class PetColorChangeRequest
+    public class PetCreateDto
     {
-        /// <summary>
-        /// 膚色 (十六進位色碼)
-        /// </summary>
-        public string SkinColor { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 背景色 (十六進位色碼或顏色名稱)
-        /// </summary>
-        public string BackgroundColor { get; set; } = string.Empty;
-    }
-
-    /// <summary>
-    /// 更新寵物名稱請求模型
-    /// </summary>
-    public class UpdatePetNameRequest
-    {
-        /// <summary>
-        /// 新的寵物名稱
-        /// </summary>
         public string Name { get; set; } = string.Empty;
+        public string Species { get; set; } = string.Empty;
+        public string Color { get; set; } = string.Empty;
     }
-
-    #endregion
 }

@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+  # SQL Server 資料庫
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: gamecore-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=GameCore123!
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+      - ./Database:/database
+    networks:
+      - gamecore-network
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P GameCore123! -Q 'SELECT 1'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # GameCore Web 應用程式
+  gamecore-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gamecore-web
+    ports:
+      - "8080:80"
+      - "8443:443"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=GameCore;User Id=sa;Password=GameCore123!;TrustServerCertificate=true
+      - ASPNETCORE_URLS=http://+:80;https://+:443
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - gamecore-network
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+  # Redis 快取服務 (可選)
+  redis:
+    image: redis:7-alpine
+    container_name: gamecore-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - gamecore-network
+    restart: unless-stopped
+
+  # Nginx 反向代理 (可選)
+  nginx:
+    image: nginx:alpine
+    container_name: gamecore-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - gamecore-web
+    networks:
+      - gamecore-network
+    restart: unless-stopped
+
+  # 資料庫初始化腳本
+  db-init:
+    image: mcr.microsoft.com/mssql-tools:latest
+    container_name: gamecore-db-init
+    environment:
+      - ACCEPT_EULA=Y
+    command: >
+      bash -c "
+        echo '等待 SQL Server 啟動...' &&
+        sleep 30 &&
+        /opt/mssql-tools/bin/sqlcmd -S sqlserver -U sa -P GameCore123! -i /database/01-CreateTables.sql &&
+        /opt/mssql-tools/bin/sqlcmd -S sqlserver -U sa -P GameCore123! -d GameCore -i /database/02-InsertMockData.sql &&
+        echo '資料庫初始化完成！'
+      "
+    volumes:
+      - ./Database:/database
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - gamecore-network
+
+volumes:
+  sqlserver_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  gamecore-network:
+    driver: bridge
+
+# 健康檢查和監控
+x-healthcheck: &healthcheck
+  test: ["CMD", "curl", "-f", "http://localhost/health"]
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 40s

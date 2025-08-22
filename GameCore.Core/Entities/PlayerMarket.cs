@@ -84,13 +84,13 @@ namespace GameCore.Core.Entities
         /// 建立時間
         /// </summary>
         [Column("created_at")]
-        public DateTime? CreatedAt { get; set; }
+        public DateTime? CreatedAt { get; set; } = DateTime.UtcNow;
 
         /// <summary>
         /// 更新時間
         /// </summary>
         [Column("updated_at")]
-        public DateTime? UpdatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
 
         // 導航屬性
         public virtual ProductInfo? ProductInfo { get; set; }
@@ -170,7 +170,7 @@ namespace GameCore.Core.Entities
         /// 訂單日期
         /// </summary>
         [Column("p_order_date")]
-        public DateTime? POrderDate { get; set; }
+        public DateTime? POrderDate { get; set; } = DateTime.UtcNow;
 
         /// <summary>
         /// 訂單狀態
@@ -208,13 +208,13 @@ namespace GameCore.Core.Entities
         /// 建立時間
         /// </summary>
         [Column("p_order_created_at")]
-        public DateTime? POrderCreatedAt { get; set; }
+        public DateTime? POrderCreatedAt { get; set; } = DateTime.UtcNow;
 
         /// <summary>
         /// 更新時間
         /// </summary>
         [Column("p_order_updated_at")]
-        public DateTime? POrderUpdatedAt { get; set; }
+        public DateTime? POrderUpdatedAt { get; set; } = DateTime.UtcNow;
 
         // 導航屬性
         public virtual PlayerMarketProductInfo PlayerMarketProductInfo { get; set; } = null!;
@@ -224,7 +224,7 @@ namespace GameCore.Core.Entities
     }
 
     /// <summary>
-    /// 交易中頁面表
+    /// 交易中頁面表 - Buyer和Seller都確認在遊戲平台交易完成，才金流
     /// </summary>
     [Table("PlayerMarketOrderTradepage")]
     public class PlayerMarketOrderTradepage
@@ -258,13 +258,13 @@ namespace GameCore.Core.Entities
         public int POrderPlatformFee { get; set; }
 
         /// <summary>
-        /// 賣家移交時間
+        /// 賣家移交時間 - user1(seller) 賣家移交時間
         /// </summary>
         [Column("seller_transferred_at")]
         public DateTime? SellerTransferredAt { get; set; }
 
         /// <summary>
-        /// 買家接收時間
+        /// 買家接收時間 - user2(buyer) 買家接收時間
         /// </summary>
         [Column("buyer_received_at")]
         public DateTime? BuyerReceivedAt { get; set; }
@@ -320,7 +320,7 @@ namespace GameCore.Core.Entities
         /// 傳訊時間
         /// </summary>
         [Column("created_at")]
-        public DateTime? CreatedAt { get; set; }
+        public DateTime? CreatedAt { get; set; } = DateTime.UtcNow;
 
         // 導航屬性
         public virtual PlayerMarketOrderTradepage PlayerMarketOrderTradepage { get; set; } = null!;
@@ -390,7 +390,7 @@ namespace GameCore.Core.Entities
         /// 排行榜更新時間
         /// </summary>
         [Column("updated_at")]
-        public DateTime? UpdatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
 
         // 導航屬性
         public virtual PlayerMarketProductInfo PlayerMarketProductInfo { get; set; } = null!;

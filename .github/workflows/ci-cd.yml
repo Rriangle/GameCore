@@ -1,0 +1,323 @@
+name: GameCore CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  AZURE_WEBAPP_NAME: 'gamecore-webapp'
+  AZURE_WEBAPP_PACKAGE_PATH: './publish'
+
+jobs:
+  # ===== 建置和測試階段 =====
+  build-and-test:
+    name: 🔨 建置和測試
+    runs-on: ubuntu-latest
+    
+    steps:
+    # 檢出程式碼
+    - name: 📥 檢出程式碼
+      uses: actions/checkout@v4
+      
+    # 設定 .NET
+    - name: 🔧 設定 .NET ${{ env.DOTNET_VERSION }}
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    # 快取 NuGet 套件
+    - name: 📦 快取 NuGet 套件
+      uses: actions/cache@v3
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+          
+    # 還原套件
+    - name: 🔄 還原 NuGet 套件
+      run: dotnet restore GameCore.sln
+      
+    # 建置專案
+    - name: 🔨 建置專案
+      run: dotnet build GameCore.sln --configuration Release --no-restore
+      
+    # 執行單元測試
+    - name: 🧪 執行單元測試
+      run: |
+        dotnet test GameCore.Tests/GameCore.Tests.csproj \
+          --configuration Release \
+          --no-build \
+          --verbosity normal \
+          --collect:"XPlat Code Coverage" \
+          --results-directory ./TestResults/
+          
+    # 上傳測試結果
+    - name: 📊 上傳測試覆蓋率報告
+      uses: codecov/codecov-action@v3
+      with:
+        directory: ./TestResults/
+        flags: unittests
+        name: GameCore-Coverage
+        
+    # 發佈專案
+    - name: 📦 發佈專案
+      run: |
+        dotnet publish GameCore.Web/GameCore.Web.csproj \
+          --configuration Release \
+          --no-build \
+          --output ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          
+    # 上傳建置產物
+    - name: 📤 上傳建置產物
+      uses: actions/upload-artifact@v3
+      with:
+        name: webapp-package
+        path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+
+  # ===== 安全性掃描階段 =====
+  security-scan:
+    name: 🔒 安全性掃描
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    
+    steps:
+    - name: 📥 檢出程式碼
+      uses: actions/checkout@v4
+      
+    # .NET 安全性掃描
+    - name: 🔍 .NET 安全性掃描
+      run: |
+        dotnet list package --vulnerable --include-transitive
+        
+    # 依賴套件安全掃描
+    - name: 🛡️ 依賴套件安全掃描
+      uses: securecodewarrior/github-action-add-sarif@v1
+      with:
+        sarif-file: 'security-scan-results.sarif'
+        
+    # CodeQL 分析
+    - name: 🔎 CodeQL 分析
+      uses: github/codeql-action/init@v2
+      with:
+        languages: csharp
+        
+    - name: 🔍 執行 CodeQL 分析
+      uses: github/codeql-action/analyze@v2
+
+  # ===== 部署到測試環境 =====
+  deploy-staging:
+    name: 🚀 部署到測試環境
+    runs-on: ubuntu-latest
+    needs: [build-and-test, security-scan]
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+    
+    steps:
+    - name: 📥 下載建置產物
+      uses: actions/download-artifact@v3
+      with:
+        name: webapp-package
+        path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+        
+    # 部署到 Azure App Service (測試環境)
+    - name: 🌐 部署到 Azure App Service (Staging)
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}-staging
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_STAGING }}
+        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+        
+    # 執行健康檢查
+    - name: 🏥 健康檢查
+      run: |
+        sleep 30
+        curl -f https://${{ env.AZURE_WEBAPP_NAME }}-staging.azurewebsites.net/health
+
+  # ===== 整合測試階段 =====
+  integration-tests:
+    name: 🔗 整合測試
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+    - name: 📥 檢出程式碼
+      uses: actions/checkout@v4
+      
+    - name: 🔧 設定 .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    # 執行整合測試
+    - name: 🧪 執行整合測試
+      run: |
+        dotnet test GameCore.Tests/GameCore.Tests.csproj \
+          --filter "Category=Integration" \
+          --configuration Release \
+          --verbosity normal
+      env:
+        GAMECORE_TEST_URL: https://${{ env.AZURE_WEBAPP_NAME }}-staging.azurewebsites.net
+        
+    # 執行端對端測試
+    - name: 🎭 執行端對端測試
+      run: |
+        dotnet test GameCore.Tests/GameCore.Tests.csproj \
+          --filter "Category=E2E" \
+          --configuration Release \
+          --verbosity normal
+      env:
+        GAMECORE_TEST_URL: https://${{ env.AZURE_WEBAPP_NAME }}-staging.azurewebsites.net
+
+  # ===== 部署到生產環境 =====
+  deploy-production:
+    name: 🚀 部署到生產環境
+    runs-on: ubuntu-latest
+    needs: [build-and-test, security-scan, integration-tests]
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - name: 📥 下載建置產物
+      uses: actions/download-artifact@v3
+      with:
+        name: webapp-package
+        path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+        
+    # 部署到 Azure App Service (生產環境)
+    - name: 🌐 部署到 Azure App Service (Production)
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+        
+    # 執行生產環境健康檢查
+    - name: 🏥 生產環境健康檢查
+      run: |
+        sleep 60
+        for i in {1..5}; do
+          if curl -f https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/health; then
+            echo "✅ 健康檢查通過"
+            break
+          else
+            echo "❌ 健康檢查失敗，重試中... ($i/5)"
+            sleep 10
+          fi
+        done
+        
+    # 發送部署通知
+    - name: 📧 發送部署通知
+      if: always()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        text: |
+          🚀 GameCore 部署到生產環境完成！
+          📊 狀態: ${{ job.status }}
+          🔗 網址: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net
+          📝 提交: ${{ github.sha }}
+          👤 作者: ${{ github.actor }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # ===== 效能測試階段 =====
+  performance-test:
+    name: ⚡ 效能測試
+    runs-on: ubuntu-latest
+    needs: deploy-production
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: 📥 檢出程式碼
+      uses: actions/checkout@v4
+      
+    # 安裝 k6 效能測試工具
+    - name: 🔧 安裝 k6
+      run: |
+        sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+        echo "deb https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+        sudo apt-get update
+        sudo apt-get install k6
+        
+    # 執行負載測試
+    - name: 📈 執行負載測試
+      run: |
+        k6 run --vus 100 --duration 5m ./Scripts/performance-test.js
+      env:
+        TARGET_URL: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net
+
+  # ===== 資料庫遷移階段 =====
+  database-migration:
+    name: 🗄️ 資料庫遷移
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: 📥 檢出程式碼
+      uses: actions/checkout@v4
+      
+    - name: 🔧 設定 .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    # 安裝 EF Core 工具
+    - name: 🔧 安裝 EF Core 工具
+      run: dotnet tool install --global dotnet-ef
+      
+    # 執行資料庫遷移
+    - name: 🗄️ 執行資料庫遷移
+      run: |
+        dotnet ef database update \
+          --project GameCore.Infrastructure \
+          --startup-project GameCore.Web \
+          --connection "${{ secrets.AZURE_SQL_CONNECTION_STRING }}"
+
+  # ===== 通知階段 =====
+  notify:
+    name: 📢 發送通知
+    runs-on: ubuntu-latest
+    needs: [deploy-production, performance-test]
+    if: always()
+    
+    steps:
+    # 發送 Teams 通知
+    - name: 📢 發送 Microsoft Teams 通知
+      uses: skitionek/notify-microsoft-teams@master
+      if: always()
+      with:
+        webhook_url: ${{ secrets.TEAMS_WEBHOOK_URL }}
+        overwrite: |
+          {
+            "text": "🎮 GameCore 部署完成通知",
+            "sections": [
+              {
+                "activityTitle": "部署結果",
+                "activitySubtitle": "${{ github.workflow }} - ${{ github.ref_name }}",
+                "facts": [
+                  {
+                    "name": "狀態",
+                    "value": "${{ needs.deploy-production.result }}"
+                  },
+                  {
+                    "name": "提交者",
+                    "value": "${{ github.actor }}"
+                  },
+                  {
+                    "name": "提交訊息",
+                    "value": "${{ github.event.head_commit.message }}"
+                  },
+                  {
+                    "name": "網址",
+                    "value": "https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+                  }
+                ]
+              }
+            ]
+          }

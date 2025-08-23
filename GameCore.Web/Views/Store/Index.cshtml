@@ -1,0 +1,607 @@
+@model List<GameCore.Core.Entities.StoreProduct>
+@{
+    ViewData["Title"] = "GameCore 商城";
+    ViewData["ActivePage"] = "Store";
+}
+
+<div class="container-fluid">
+    <!-- 頁面標題 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-shopping-cart text-primary"></i>
+                GameCore 商城
+            </h1>
+            <p class="text-muted">探索各種遊戲道具、點數卡和限定商品</p>
+        </div>
+    </div>
+
+    <!-- 搜尋和篩選區域 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="row">
+                        <!-- 搜尋框 -->
+                        <div class="col-md-6 mb-3">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="searchInput" placeholder="搜尋商品名稱或描述...">
+                                <div class="input-group-append">
+                                    <button class="btn btn-primary" type="button" onclick="searchProducts()">
+                                        <i class="fas fa-search"></i> 搜尋
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 分類篩選 -->
+                        <div class="col-md-3 mb-3">
+                            <select class="form-control" id="categoryFilter" onchange="filterByCategory()">
+                                <option value="">所有分類</option>
+                                <option value="點數卡">點數卡</option>
+                                <option value="造型">造型</option>
+                                <option value="道具">道具</option>
+                                <option value="會員">會員</option>
+                                <option value="周邊">周邊</option>
+                                <option value="遊戲">遊戲</option>
+                            </select>
+                        </div>
+
+                        <!-- 價格排序 -->
+                        <div class="col-md-3 mb-3">
+                            <select class="form-control" id="priceSort" onchange="sortByPrice()">
+                                <option value="">價格排序</option>
+                                <option value="asc">價格由低到高</option>
+                                <option value="desc">價格由高到低</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 商品列表 -->
+    <div class="row" id="productsContainer">
+        @if (Model != null && Model.Any())
+        {
+            foreach (var product in Model)
+            {
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4 product-item" 
+                     data-category="@product.Category" 
+                     data-price="@product.Price">
+                    <div class="card h-100 shadow-sm product-card">
+                        <!-- 商品圖片 -->
+                        <div class="product-image-container">
+                            @if (!string.IsNullOrEmpty(product.ImageUrl))
+                            {
+                                <img src="@product.ImageUrl" class="card-img-top product-image" alt="@product.Name">
+                            }
+                            else
+                            {
+                                <div class="card-img-top product-image-placeholder d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-image fa-3x text-muted"></i>
+                                </div>
+                            }
+                            
+                            <!-- 折扣標籤 -->
+                            @if (product.OriginalPrice.HasValue && product.OriginalPrice > product.Price)
+                            {
+                                <div class="discount-badge">
+                                    @{
+                                        var discount = Math.Round((1 - product.Price / product.OriginalPrice.Value) * 100);
+                                    }
+                                    -@discount%
+                                </div>
+                            }
+                        </div>
+
+                        <div class="card-body d-flex flex-column">
+                            <!-- 商品標題 -->
+                            <h5 class="card-title product-title">@product.Name</h5>
+                            
+                            <!-- 商品描述 -->
+                            <p class="card-text text-muted flex-grow-1">
+                                @(product.Description?.Length > 100 ? product.Description.Substring(0, 100) + "..." : product.Description)
+                            </p>
+
+                            <!-- 商品分類 -->
+                            <div class="mb-2">
+                                <span class="badge badge-info">@product.Category</span>
+                                @if (product.Stock <= 10 && product.Stock > 0)
+                                {
+                                    <span class="badge badge-warning">庫存不足</span>
+                                }
+                                else if (product.Stock == 0)
+                                {
+                                    <span class="badge badge-danger">缺貨</span>
+                                }
+                            </div>
+
+                            <!-- 價格區域 -->
+                            <div class="price-section mb-3">
+                                @if (product.OriginalPrice.HasValue && product.OriginalPrice > product.Price)
+                                {
+                                    <span class="text-muted text-decoration-line-through">NT$ @product.OriginalPrice.Value.ToString("N0")</span>
+                                    <span class="h5 text-danger mb-0">NT$ @product.Price.ToString("N0")</span>
+                                }
+                                else
+                                {
+                                    <span class="h5 text-primary mb-0">NT$ @product.Price.ToString("N0")</span>
+                                }
+                            </div>
+
+                            <!-- 操作按鈕 -->
+                            <div class="mt-auto">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <button class="btn btn-outline-primary btn-sm w-100" 
+                                                onclick="addToCart(@product.Id, '@product.Name')"
+                                                @(product.Stock == 0 ? "disabled" : "")>
+                                            <i class="fas fa-cart-plus"></i> 加入購物車
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button class="btn btn-primary btn-sm w-100" 
+                                                onclick="buyNow(@product.Id, '@product.Name')"
+                                                @(product.Stock == 0 ? "disabled" : "")>
+                                            <i class="fas fa-shopping-bag"></i> 立即購買
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">暫無商品</h4>
+                    <p class="text-muted">目前沒有可用的商品，請稍後再來查看。</p>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- 分頁控制 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="商品分頁">
+                <ul class="pagination justify-content-center" id="pagination">
+                    <!-- 分頁將由 JavaScript 動態生成 -->
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- 購物車提示 Modal -->
+<div class="modal fade" id="cartModal" tabindex="-1" aria-labelledby="cartModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cartModalLabel">
+                    <i class="fas fa-shopping-cart text-success"></i> 購物車更新
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="cartModalMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">繼續購物</button>
+                <a href="/Store/Cart" class="btn btn-primary">查看購物車</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 立即購買 Modal -->
+<div class="modal fade" id="buyNowModal" tabindex="-1" aria-labelledby="buyNowModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="buyNowModalLabel">
+                    <i class="fas fa-shopping-bag text-primary"></i> 立即購買
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="buyNowContent">
+                    <!-- 購買內容將由 JavaScript 動態生成 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="confirmPurchase()">確認購買</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .product-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid #e3e6f0;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        }
+
+        .product-image-container {
+            position: relative;
+            height: 200px;
+            overflow: hidden;
+        }
+
+        .product-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+
+        .product-card:hover .product-image {
+            transform: scale(1.05);
+        }
+
+        .product-image-placeholder {
+            background-color: #f8f9fc;
+            color: #858796;
+        }
+
+        .discount-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #e74a3b;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .product-title {
+            font-size: 1rem;
+            line-height: 1.4;
+            height: 2.8rem;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .price-section {
+            text-align: center;
+        }
+
+        .price-section .text-decoration-line-through {
+            font-size: 0.9rem;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+        }
+
+        .btn-sm {
+            font-size: 0.8rem;
+            padding: 0.375rem 0.5rem;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        .product-item {
+            opacity: 1;
+            transition: opacity 0.3s;
+        }
+
+        .product-item.hidden {
+            opacity: 0;
+            display: none;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .loading .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        let currentProducts = @Html.Raw(Json.Serialize(Model ?? new List<GameCore.Core.Entities.StoreProduct>()));
+        let filteredProducts = [...currentProducts];
+        let currentPage = 1;
+        const productsPerPage = 12;
+
+        // 搜尋商品
+        function searchProducts() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            filteredProducts = currentProducts.filter(product => 
+                product.name.toLowerCase().includes(searchTerm) ||
+                product.description.toLowerCase().includes(searchTerm)
+            );
+            
+            currentPage = 1;
+            displayProducts();
+        }
+
+        // 分類篩選
+        function filterByCategory() {
+            const category = document.getElementById('categoryFilter').value;
+            
+            if (category === '') {
+                filteredProducts = [...currentProducts];
+            } else {
+                filteredProducts = currentProducts.filter(product => 
+                    product.category === category
+                );
+            }
+            
+            currentPage = 1;
+            displayProducts();
+        }
+
+        // 價格排序
+        function sortByPrice() {
+            const sortOrder = document.getElementById('priceSort').value;
+            
+            if (sortOrder === 'asc') {
+                filteredProducts.sort((a, b) => a.price - b.price);
+            } else if (sortOrder === 'desc') {
+                filteredProducts.sort((a, b) => b.price - a.price);
+            } else {
+                filteredProducts = [...currentProducts];
+            }
+            
+            currentPage = 1;
+            displayProducts();
+        }
+
+        // 顯示商品
+        function displayProducts() {
+            const container = document.getElementById('productsContainer');
+            const startIndex = (currentPage - 1) * productsPerPage;
+            const endIndex = startIndex + productsPerPage;
+            const pageProducts = filteredProducts.slice(startIndex, endIndex);
+
+            if (pageProducts.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="text-center py-5">
+                            <i class="fas fa-search fa-4x text-muted mb-3"></i>
+                            <h4 class="text-muted">沒有找到商品</h4>
+                            <p class="text-muted">請嘗試調整搜尋條件或分類篩選。</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = pageProducts.map(product => `
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4 product-item fade-in" 
+                     data-category="${product.category}" 
+                     data-price="${product.price}">
+                    <div class="card h-100 shadow-sm product-card">
+                        <div class="product-image-container">
+                            ${product.imageUrl ? 
+                                `<img src="${product.imageUrl}" class="card-img-top product-image" alt="${product.name}">` :
+                                `<div class="card-img-top product-image-placeholder d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-image fa-3x text-muted"></i>
+                                </div>`
+                            }
+                            ${product.originalPrice && product.originalPrice > product.price ? 
+                                `<div class="discount-badge">
+                                    -${Math.round((1 - product.price / product.originalPrice) * 100)}%
+                                </div>` : ''
+                            }
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title product-title">${product.name}</h5>
+                            <p class="card-text text-muted flex-grow-1">
+                                ${product.description && product.description.length > 100 ? 
+                                    product.description.substring(0, 100) + '...' : 
+                                    product.description || ''
+                                }
+                            </p>
+                            <div class="mb-2">
+                                <span class="badge badge-info">${product.category}</span>
+                                ${product.stock <= 10 && product.stock > 0 ? 
+                                    '<span class="badge badge-warning">庫存不足</span>' : ''
+                                }
+                                ${product.stock === 0 ? 
+                                    '<span class="badge badge-danger">缺貨</span>' : ''
+                                }
+                            </div>
+                            <div class="price-section mb-3">
+                                ${product.originalPrice && product.originalPrice > product.price ? 
+                                    `<span class="text-muted text-decoration-line-through">NT$ ${product.originalPrice.toLocaleString()}</span><br>` : ''
+                                }
+                                <span class="h5 text-primary mb-0">NT$ ${product.price.toLocaleString()}</span>
+                            </div>
+                            <div class="mt-auto">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <button class="btn btn-outline-primary btn-sm w-100" 
+                                                onclick="addToCart(${product.id}, '${product.name}')"
+                                                ${product.stock === 0 ? 'disabled' : ''}>
+                                            <i class="fas fa-cart-plus"></i> 加入購物車
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button class="btn btn-primary btn-sm w-100" 
+                                                onclick="buyNow(${product.id}, '${product.name}')"
+                                                ${product.stock === 0 ? 'disabled' : ''}>
+                                            <i class="fas fa-shopping-bag"></i> 立即購買
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            updatePagination();
+        }
+
+        // 更新分頁
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+            const pagination = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+
+            let paginationHTML = '';
+            
+            // 上一頁
+            paginationHTML += `
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+            `;
+
+            // 頁碼
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    paginationHTML += `
+                        <li class="page-item ${i === currentPage ? 'active' : ''}">
+                            <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+                        </li>
+                    `;
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    paginationHTML += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                }
+            }
+
+            // 下一頁
+            paginationHTML += `
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            `;
+
+            pagination.innerHTML = paginationHTML;
+        }
+
+        // 切換頁面
+        function changePage(page) {
+            const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+            if (page < 1 || page > totalPages) return;
+            
+            currentPage = page;
+            displayProducts();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 加入購物車
+        function addToCart(productId, productName) {
+            // 這裡應該調用 API 將商品加入購物車
+            fetch('/api/store/cart/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    productId: productId,
+                    quantity: 1
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showCartModal(`${productName} 已成功加入購物車！`);
+                    // 更新購物車數量顯示
+                    updateCartCount();
+                } else {
+                    showCartModal(`加入購物車失敗：${data.message}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showCartModal('加入購物車時發生錯誤，請稍後再試。');
+            });
+        }
+
+        // 立即購買
+        function buyNow(productId, productName) {
+            // 這裡應該顯示購買確認頁面
+            const modal = new bootstrap.Modal(document.getElementById('buyNowModal'));
+            document.getElementById('buyNowContent').innerHTML = `
+                <div class="text-center">
+                    <h5>確認購買 ${productName}</h5>
+                    <p class="text-muted">您即將購買此商品，請確認購買資訊。</p>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        購買後商品將立即發送到您的帳號中
+                    </div>
+                </div>
+            `;
+            modal.show();
+        }
+
+        // 確認購買
+        function confirmPurchase() {
+            // 這裡應該調用購買 API
+            alert('購買功能開發中...');
+            bootstrap.Modal.getInstance(document.getElementById('buyNowModal')).hide();
+        }
+
+        // 顯示購物車提示
+        function showCartModal(message) {
+            document.getElementById('cartModalMessage').textContent = message;
+            const modal = new bootstrap.Modal(document.getElementById('cartModal'));
+            modal.show();
+        }
+
+        // 更新購物車數量
+        function updateCartCount() {
+            // 這裡應該更新頁面上的購物車數量顯示
+            console.log('購物車數量已更新');
+        }
+
+        // 頁面載入完成後初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            displayProducts();
+            
+            // 搜尋框 Enter 鍵事件
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchProducts();
+                }
+            });
+        });
+    </script>
+}

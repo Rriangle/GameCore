@@ -1,0 +1,951 @@
+@model GameCore.Core.Entities.CheckoutViewModel
+@{
+    ViewData["Title"] = "結帳";
+    ViewData["ActivePage"] = "Store";
+}
+
+<div class="container-fluid">
+    <!-- 頁面標題 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-credit-card text-primary"></i>
+                結帳
+            </h1>
+            <p class="text-muted">確認訂單資訊並完成付款</p>
+        </div>
+    </div>
+
+    <form id="checkoutForm" method="post" action="/api/store/checkout">
+        <div class="row">
+            <!-- 左側：訂單資訊 -->
+            <div class="col-lg-8 mb-4">
+                <!-- 訂單摘要 -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-shopping-bag"></i>
+                            訂單摘要
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 80px;">商品</th>
+                                        <th>商品資訊</th>
+                                        <th style="width: 100px;">單價</th>
+                                        <th style="width: 100px;">數量</th>
+                                        <th style="width: 120px;">小計</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model?.OrderItems != null)
+                                    {
+                                        @foreach (var item in Model.OrderItems)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <div class="product-image-small">
+                                                        @if (!string.IsNullOrEmpty(item.Product.ImageUrl))
+                                                        {
+                                                            <img src="@item.Product.ImageUrl" class="img-thumbnail" alt="@item.Product.Name">
+                                                        }
+                                                        else
+                                                        {
+                                                            <div class="img-thumbnail product-placeholder d-flex align-items-center justify-content-center">
+                                                                <i class="fas fa-image text-muted"></i>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="product-info">
+                                                        <h6 class="mb-1">@item.Product.Name</h6>
+                                                        <p class="text-muted mb-1 small">@item.Product.Category</p>
+                                                        <small class="text-muted">SKU: @item.Product.Id</small>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="price-info">
+                                                        @if (item.Product.OriginalPrice.HasValue && item.Product.OriginalPrice > item.Product.Price)
+                                                        {
+                                                            <div class="text-muted text-decoration-line-through small">
+                                                                NT$ @item.Product.OriginalPrice.Value.ToString("N0")
+                                                            </div>
+                                                        }
+                                                        <div class="text-primary fw-bold">
+                                                            NT$ @item.Product.Price.ToString("N0")
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-secondary">@item.Quantity</span>
+                                                </td>
+                                                <td>
+                                                    <span class="fw-bold text-primary">
+                                                        NT$ @((item.Product.Price * item.Quantity).ToString("N0"))
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 配送資訊 -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-truck"></i>
+                            配送資訊
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="receiverName" class="form-label">收件人姓名 <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="receiverName" name="ReceiverName" 
+                                       value="@Model?.ReceiverName" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="receiverPhone" class="form-label">聯絡電話 <span class="text-danger">*</span></label>
+                                <input type="tel" class="form-control" id="receiverPhone" name="ReceiverPhone" 
+                                       value="@Model?.ReceiverPhone" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="receiverEmail" class="form-label">電子郵件 <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="receiverEmail" name="ReceiverEmail" 
+                                   value="@Model?.ReceiverEmail" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="shippingAddress" class="form-label">配送地址 <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="shippingAddress" name="ShippingAddress" rows="3" required>@Model?.ShippingAddress</textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="shippingMethod" class="form-label">配送方式 <span class="text-danger">*</span></label>
+                                <select class="form-select" id="shippingMethod" name="ShippingMethod" required>
+                                    <option value="">請選擇配送方式</option>
+                                    <option value="Standard" @(Model?.ShippingMethod == "Standard" ? "selected" : "")>標準配送 (3-5 個工作天) - NT$ 60</option>
+                                    <option value="Express" @(Model?.ShippingMethod == "Express" ? "selected" : "")>快速配送 (1-2 個工作天) - NT$ 120</option>
+                                    <option value="SameDay" @(Model?.ShippingMethod == "SameDay" ? "selected" : "")>當日配送 (限台北市) - NT$ 200</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="expectedDelivery" class="form-label">預計送達</label>
+                                <input type="text" class="form-control" id="expectedDelivery" readonly>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="deliveryNote" class="form-label">配送備註</label>
+                            <textarea class="form-control" id="deliveryNote" name="DeliveryNote" rows="2" 
+                                      placeholder="例如：請在上班時間配送、請按門鈴等">@Model?.DeliveryNote</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 付款方式 -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-credit-card"></i>
+                            付款方式
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="PaymentMethod" id="creditCard" value="CreditCard" checked>
+                                    <label class="form-check-label" for="creditCard">
+                                        <i class="fab fa-cc-visa text-primary"></i>
+                                        <i class="fab fa-cc-mastercard text-danger"></i>
+                                        <i class="fab fa-cc-jcb text-warning"></i>
+                                        信用卡
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="PaymentMethod" id="bankTransfer" value="BankTransfer">
+                                    <label class="form-check-label" for="bankTransfer">
+                                        <i class="fas fa-university text-info"></i>
+                                        銀行轉帳
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="PaymentMethod" id="convenienceStore" value="ConvenienceStore">
+                                    <label class="form-check-label" for="convenienceStore">
+                                        <i class="fas fa-store text-success"></i>
+                                        超商取貨付款
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="PaymentMethod" id="gamePoints" value="GamePoints">
+                                    <label class="form-check-label" for="gamePoints">
+                                        <i class="fas fa-coins text-warning"></i>
+                                        遊戲點數支付
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 信用卡資訊 (預設顯示) -->
+                        <div id="creditCardInfo" class="payment-method-info">
+                            <hr>
+                            <div class="row">
+                                <div class="col-12 mb-3">
+                                    <label for="cardNumber" class="form-label">信用卡號碼 <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="cardNumber" name="CardNumber" 
+                                           placeholder="1234 5678 9012 3456" maxlength="19">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="expiryDate" class="form-label">有效期限 <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="expiryDate" name="ExpiryDate" 
+                                           placeholder="MM/YY" maxlength="5">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="cvv" class="form-label">安全碼 <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="cvv" name="CVV" 
+                                           placeholder="123" maxlength="4">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="cardholderName" class="form-label">持卡人姓名 <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="cardholderName" name="CardholderName" 
+                                       placeholder="請輸入持卡人姓名">
+                            </div>
+                        </div>
+
+                        <!-- 銀行轉帳資訊 -->
+                        <div id="bankTransferInfo" class="payment-method-info" style="display: none;">
+                            <hr>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>銀行轉帳資訊：</strong><br>
+                                銀行：台灣銀行 (004)<br>
+                                帳號：1234-5678-9012-3456<br>
+                                戶名：GameCore 遊戲公司<br>
+                                <small class="text-muted">請在備註欄位填寫您的訂單編號</small>
+                            </div>
+                        </div>
+
+                        <!-- 超商取貨資訊 -->
+                        <div id="convenienceStoreInfo" class="payment-method-info" style="display: none;">
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="storeType" class="form-label">超商類型 <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="storeType" name="StoreType">
+                                        <option value="">請選擇超商</option>
+                                        <option value="7-11">7-ELEVEN</option>
+                                        <option value="FamilyMart">全家便利商店</option>
+                                        <option value="HiLife">萊爾富</option>
+                                        <option value="OK">OK 超商</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="storeName" class="form-label">門市名稱 <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="storeName" name="StoreName" 
+                                           placeholder="請輸入門市名稱">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="storeAddress" class="form-label">門市地址 <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="storeAddress" name="StoreAddress" 
+                                       placeholder="請輸入門市地址">
+                            </div>
+                        </div>
+
+                        <!-- 遊戲點數支付資訊 -->
+                        <div id="gamePointsInfo" class="payment-method-info" style="display: none;">
+                            <hr>
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>遊戲點數支付：</strong><br>
+                                您目前的遊戲點數：<span id="currentPoints" class="fw-bold">@Model?.CurrentGamePoints?.ToString("N0") ?? "0"</span> 點<br>
+                                所需點數：<span id="requiredPoints" class="fw-bold text-danger">0</span> 點<br>
+                                <small class="text-muted">點數不足時將無法使用此付款方式</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 發票資訊 -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-receipt"></i>
+                            發票資訊
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="InvoiceType" id="personalInvoice" value="Personal" checked>
+                                    <label class="form-check-label" for="personalInvoice">
+                                        個人發票
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="InvoiceType" id="companyInvoice" value="Company">
+                                    <label class="form-check-label" for="companyInvoice">
+                                        公司發票
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="InvoiceMethod" id="emailInvoice" value="Email" checked>
+                                    <label class="form-check-label" for="emailInvoice">
+                                        電子發票 (Email)
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="InvoiceMethod" id="paperInvoice" value="Paper">
+                                    <label class="form-check-label" for="paperInvoice">
+                                        紙本發票
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="companyInvoiceInfo" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="companyName" class="form-label">公司名稱</label>
+                                    <input type="text" class="form-control" id="companyName" name="CompanyName" 
+                                           placeholder="請輸入公司名稱">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="taxId" class="form-label">統一編號</label>
+                                    <input type="text" class="form-control" id="taxId" name="TaxId" 
+                                           placeholder="請輸入統一編號">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側：訂單摘要 -->
+            <div class="col-lg-4 mb-4">
+                <div class="card shadow-sm sticky-top" style="top: 2rem;">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-calculator"></i>
+                            訂單摘要
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- 商品統計 -->
+                        <div class="order-summary mb-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>商品總數</span>
+                                <span id="orderTotalItems">@(Model?.OrderItems?.Count ?? 0)</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>商品總價</span>
+                                <span id="orderSubtotal">NT$ 0</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>運費</span>
+                                <span id="orderShipping">NT$ 0</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2" id="discountRow" style="display: none;">
+                                <span>優惠折扣</span>
+                                <span id="orderDiscount" class="text-success">-NT$ 0</span>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between">
+                                <strong>總計</strong>
+                                <strong class="text-primary" id="orderTotalAmount">NT$ 0</strong>
+                            </div>
+                        </div>
+
+                        <!-- 優惠券 -->
+                        <div class="coupon-section mb-3">
+                            <label for="checkoutCouponCode" class="form-label">優惠券</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="checkoutCouponCode" placeholder="輸入優惠券代碼">
+                                <button class="btn btn-outline-primary" type="button" onclick="applyCheckoutCoupon()">
+                                    使用
+                                </button>
+                            </div>
+                            <div id="checkoutCouponMessage" class="mt-2"></div>
+                        </div>
+
+                        <!-- 結帳按鈕 -->
+                        <div class="checkout-section">
+                            <button type="submit" class="btn btn-primary w-100 mb-2" id="submitOrderBtn">
+                                <i class="fas fa-lock"></i> 確認結帳
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary w-100" onclick="goBackToCart()">
+                                <i class="fas fa-arrow-left"></i> 返回購物車
+                            </button>
+                        </div>
+
+                        <!-- 安全提示 -->
+                        <div class="security-notes mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-shield-alt text-success"></i>
+                                安全提示：
+                            </small>
+                            <ul class="small text-muted mt-1">
+                                <li>所有交易均經過 SSL 加密</li>
+                                <li>我們不會儲存您的信用卡資訊</li>
+                                <li>支援 7 天無條件退換貨</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- 確認結帳 Modal -->
+<div class="modal fade" id="confirmCheckoutModal" tabindex="-1" aria-labelledby="confirmCheckoutModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmCheckoutModalLabel">
+                    <i class="fas fa-check-circle text-success"></i> 確認訂單
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>請確認以下訂單資訊：</p>
+                <div id="orderConfirmationDetails"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">返回修改</button>
+                <button type="button" class="btn btn-primary" onclick="submitOrder()">確認結帳</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .sticky-top {
+            z-index: 1020;
+        }
+
+        .product-image-small {
+            width: 60px;
+            height: 60px;
+        }
+
+        .product-image-small img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .product-placeholder {
+            width: 100%;
+            height: 100%;
+            background-color: #f8f9fc;
+            color: #858796;
+        }
+
+        .product-info h6 {
+            font-size: 0.9rem;
+            line-height: 1.3;
+        }
+
+        .product-info p {
+            font-size: 0.8rem;
+        }
+
+        .price-info .text-decoration-line-through {
+            font-size: 0.8rem;
+        }
+
+        .payment-method-info {
+            padding: 1rem;
+            background-color: #f8f9fc;
+            border-radius: 0.375rem;
+            margin-top: 1rem;
+        }
+
+        .form-check-input:checked {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+
+        .form-check-label {
+            font-weight: 500;
+        }
+
+        .form-check-label i {
+            margin-right: 0.5rem;
+        }
+
+        .card-header {
+            background-color: #f8f9fc;
+            border-bottom: 1px solid #e3e6f0;
+        }
+
+        .table th {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #495057;
+            border-top: none;
+            border-bottom: 2px solid #e3e6f0;
+        }
+
+        .table td {
+            vertical-align: middle;
+            border-top: 1px solid #e3e6f0;
+        }
+
+        .badge {
+            font-size: 0.8rem;
+        }
+
+        .alert {
+            border-radius: 0.5rem;
+        }
+
+        .security-notes ul {
+            padding-left: 1rem;
+            margin-bottom: 0;
+        }
+
+        .security-notes li {
+            margin-bottom: 0.25rem;
+        }
+
+        .order-summary .d-flex {
+            font-size: 0.9rem;
+        }
+
+        .order-summary hr {
+            margin: 0.75rem 0;
+        }
+
+        .checkout-section .btn {
+            padding: 0.75rem 1rem;
+            font-weight: 500;
+        }
+
+        .coupon-section .input-group {
+            max-width: 100%;
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 991.98px) {
+            .sticky-top {
+                position: static !important;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        let orderItems = @Html.Raw(Json.Serialize(Model?.OrderItems ?? new List<GameCore.Core.Entities.OrderItem>()));
+        let currentShippingCost = 60;
+        let currentDiscount = 0;
+        let appliedCoupon = null;
+
+        // 頁面載入完成後初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCheckout();
+            updateOrderSummary();
+            setupEventListeners();
+        });
+
+        // 初始化結帳頁面
+        function initializeCheckout() {
+            // 設定預設配送日期
+            updateExpectedDelivery();
+            
+            // 檢查遊戲點數是否足夠
+            if (orderItems.length > 0) {
+                updateGamePointsInfo();
+            }
+        }
+
+        // 設定事件監聽器
+        function setupEventListeners() {
+            // 配送方式變更
+            document.getElementById('shippingMethod').addEventListener('change', function() {
+                updateShippingCost();
+                updateExpectedDelivery();
+            });
+
+            // 付款方式變更
+            document.querySelectorAll('input[name="PaymentMethod"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    showPaymentMethodInfo(this.value);
+                });
+            });
+
+            // 發票類型變更
+            document.getElementById('companyInvoice').addEventListener('change', function() {
+                document.getElementById('companyInvoiceInfo').style.display = 
+                    this.checked ? 'block' : 'none';
+            });
+
+            // 表單提交
+            document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                showOrderConfirmation();
+            });
+
+            // 信用卡號碼格式化
+            document.getElementById('cardNumber').addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\s/g, '');
+                value = value.replace(/\D/g, '');
+                value = value.replace(/(\d{4})/g, '$1 ').trim();
+                e.target.value = value;
+            });
+
+            // 有效期限格式化
+            document.getElementById('expiryDate').addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length >= 2) {
+                    value = value.substring(0, 2) + '/' + value.substring(2, 4);
+                }
+                e.target.value = value;
+            });
+        }
+
+        // 更新配送費用
+        function updateShippingCost() {
+            const shippingMethod = document.getElementById('shippingMethod').value;
+            switch (shippingMethod) {
+                case 'Standard':
+                    currentShippingCost = 60;
+                    break;
+                case 'Express':
+                    currentShippingCost = 120;
+                    break;
+                case 'SameDay':
+                    currentShippingCost = 200;
+                    break;
+                default:
+                    currentShippingCost = 0;
+            }
+            document.getElementById('orderShipping').textContent = `NT$ ${currentShippingCost.toLocaleString()}`;
+            updateOrderSummary();
+        }
+
+        // 更新預計送達日期
+        function updateExpectedDelivery() {
+            const shippingMethod = document.getElementById('shippingMethod').value;
+            const today = new Date();
+            let deliveryDate = new Date(today);
+            
+            switch (shippingMethod) {
+                case 'Standard':
+                    deliveryDate.setDate(today.getDate() + 5);
+                    break;
+                case 'Express':
+                    deliveryDate.setDate(today.getDate() + 2);
+                    break;
+                case 'SameDay':
+                    deliveryDate.setDate(today.getDate());
+                    break;
+                default:
+                    deliveryDate = null;
+            }
+            
+            if (deliveryDate) {
+                const options = { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    weekday: 'long'
+                };
+                document.getElementById('expectedDelivery').value = deliveryDate.toLocaleDateString('zh-TW', options);
+            } else {
+                document.getElementById('expectedDelivery').value = '請選擇配送方式';
+            }
+        }
+
+        // 顯示付款方式相關資訊
+        function showPaymentMethodInfo(method) {
+            // 隱藏所有付款方式資訊
+            document.querySelectorAll('.payment-method-info').forEach(info => {
+                info.style.display = 'none';
+            });
+            
+            // 顯示對應的付款方式資訊
+            switch (method) {
+                case 'CreditCard':
+                    document.getElementById('creditCardInfo').style.display = 'block';
+                    break;
+                case 'BankTransfer':
+                    document.getElementById('bankTransferInfo').style.display = 'block';
+                    break;
+                case 'ConvenienceStore':
+                    document.getElementById('convenienceStoreInfo').style.display = 'block';
+                    break;
+                case 'GamePoints':
+                    document.getElementById('gamePointsInfo').style.display = 'block';
+                    updateGamePointsInfo();
+                    break;
+            }
+        }
+
+        // 更新遊戲點數資訊
+        function updateGamePointsInfo() {
+            if (orderItems.length === 0) return;
+            
+            const totalAmount = orderItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+            const requiredPoints = Math.ceil(totalAmount * 10); // 1 元 = 10 點
+            
+            document.getElementById('requiredPoints').textContent = requiredPoints.toLocaleString();
+            
+            const currentPoints = @(Model?.CurrentGamePoints ?? 0);
+            if (currentPoints < requiredPoints) {
+                document.getElementById('gamePoints').disabled = true;
+                document.getElementById('gamePointsInfo').innerHTML += 
+                    '<div class="alert alert-danger mt-2">點數不足，無法使用此付款方式</div>';
+            }
+        }
+
+        // 更新訂單摘要
+        function updateOrderSummary() {
+            if (orderItems.length === 0) return;
+            
+            const subtotal = orderItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+            const total = subtotal + currentShippingCost - currentDiscount;
+            
+            document.getElementById('orderSubtotal').textContent = `NT$ ${subtotal.toLocaleString()}`;
+            document.getElementById('orderTotalAmount').textContent = `NT$ ${total.toLocaleString()}`;
+            
+            // 顯示/隱藏折扣行
+            if (currentDiscount > 0) {
+                document.getElementById('discountRow').style.display = 'flex';
+                document.getElementById('orderDiscount').textContent = `-NT$ ${currentDiscount.toLocaleString()}`;
+            } else {
+                document.getElementById('discountRow').style.display = 'none';
+            }
+        }
+
+        // 使用優惠券
+        function applyCheckoutCoupon() {
+            const couponCode = document.getElementById('checkoutCouponCode').value.trim();
+            if (!couponCode) {
+                showToast('請輸入優惠券代碼', 'warning');
+                return;
+            }
+            
+            fetch('/api/store/coupon/apply', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    couponCode: couponCode
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    appliedCoupon = data.data;
+                    currentDiscount = appliedCoupon.discountAmount || 0;
+                    
+                    document.getElementById('checkoutCouponMessage').innerHTML = 
+                        `<div class="text-success"><i class="fas fa-check-circle"></i> ${data.message}</div>`;
+                    
+                    updateOrderSummary();
+                    showToast('優惠券使用成功', 'success');
+                } else {
+                    document.getElementById('checkoutCouponMessage').innerHTML = 
+                        `<div class="text-danger"><i class="fas fa-times-circle"></i> ${data.message}</div>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('checkoutCouponMessage').innerHTML = 
+                    '<div class="text-danger"><i class="fas fa-times-circle"></i> 優惠券驗證失敗，請稍後再試</div>';
+            });
+        }
+
+        // 顯示訂單確認
+        function showOrderConfirmation() {
+            if (!validateForm()) {
+                return;
+            }
+            
+            const confirmationDetails = generateOrderConfirmation();
+            document.getElementById('orderConfirmationDetails').innerHTML = confirmationDetails;
+            
+            const modal = new bootstrap.Modal(document.getElementById('confirmCheckoutModal'));
+            modal.show();
+        }
+
+        // 驗證表單
+        function validateForm() {
+            const requiredFields = [
+                'receiverName', 'receiverPhone', 'receiverEmail', 'shippingAddress', 'shippingMethod'
+            ];
+            
+            for (const fieldId of requiredFields) {
+                const field = document.getElementById(fieldId);
+                if (!field.value.trim()) {
+                    showToast(`請填寫 ${field.previousElementSibling.textContent.replace('*', '').trim()}`, 'warning');
+                    field.focus();
+                    return false;
+                }
+            }
+            
+            // 驗證付款方式相關欄位
+            const paymentMethod = document.querySelector('input[name="PaymentMethod"]:checked').value;
+            if (paymentMethod === 'CreditCard') {
+                const cardFields = ['cardNumber', 'expiryDate', 'cvv', 'cardholderName'];
+                for (const fieldId of cardFields) {
+                    const field = document.getElementById(fieldId);
+                    if (!field.value.trim()) {
+                        showToast(`請填寫信用卡 ${field.previousElementSibling.textContent.replace('*', '').trim()}`, 'warning');
+                        field.focus();
+                        return false;
+                    }
+                }
+            }
+            
+            return true;
+        }
+
+        // 生成訂單確認資訊
+        function generateOrderConfirmation() {
+            const receiverName = document.getElementById('receiverName').value;
+            const receiverPhone = document.getElementById('receiverPhone').value;
+            const shippingAddress = document.getElementById('shippingAddress').value;
+            const shippingMethod = document.getElementById('shippingMethod').options[document.getElementById('shippingMethod').selectedIndex].text;
+            const paymentMethod = document.querySelector('input[name="PaymentMethod"]:checked').nextElementSibling.textContent.trim();
+            
+            let html = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>收件人：</strong> ${receiverName}<br>
+                        <strong>電話：</strong> ${receiverPhone}<br>
+                        <strong>地址：</strong> ${shippingAddress}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>配送方式：</strong> ${shippingMethod}<br>
+                        <strong>付款方式：</strong> ${paymentMethod}<br>
+                        <strong>總金額：</strong> <span class="text-primary fw-bold">${document.getElementById('orderTotalAmount').textContent}</span>
+                    </div>
+                </div>
+            `;
+            
+            return html;
+        }
+
+        // 提交訂單
+        function submitOrder() {
+            const submitBtn = document.getElementById('submitOrderBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 處理中...';
+            
+            // 收集表單數據
+            const formData = new FormData(document.getElementById('checkoutForm'));
+            const orderData = {
+                receiverName: formData.get('ReceiverName'),
+                receiverPhone: formData.get('ReceiverPhone'),
+                receiverEmail: formData.get('ReceiverEmail'),
+                shippingAddress: formData.get('ShippingAddress'),
+                shippingMethod: formData.get('ShippingMethod'),
+                deliveryNote: formData.get('DeliveryNote'),
+                paymentMethod: formData.get('PaymentMethod'),
+                invoiceType: formData.get('InvoiceType'),
+                invoiceMethod: formData.get('InvoiceMethod'),
+                companyName: formData.get('CompanyName'),
+                taxId: formData.get('TaxId'),
+                couponCode: appliedCoupon?.code || null,
+                items: orderItems.map(item => ({
+                    productId: item.product.id,
+                    quantity: item.quantity
+                }))
+            };
+            
+            // 根據付款方式添加額外資訊
+            if (orderData.paymentMethod === 'CreditCard') {
+                orderData.cardNumber = formData.get('CardNumber');
+                orderData.expiryDate = formData.get('ExpiryDate');
+                orderData.cvv = formData.get('CVV');
+                orderData.cardholderName = formData.get('CardholderName');
+            } else if (orderData.paymentMethod === 'ConvenienceStore') {
+                orderData.storeType = formData.get('StoreType');
+                orderData.storeName = formData.get('StoreName');
+                orderData.storeAddress = formData.get('StoreAddress');
+            }
+            
+            fetch('/api/store/checkout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(orderData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('訂單建立成功！', 'success');
+                    // 跳轉到訂單確認頁面
+                    setTimeout(() => {
+                        window.location.href = `/Store/OrderConfirmation/${data.data.orderId}`;
+                    }, 1500);
+                } else {
+                    showToast(`訂單建立失敗：${data.message}`, 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-lock"></i> 確認結帳';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('訂單建立時發生錯誤，請稍後再試。', 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-lock"></i> 確認結帳';
+            })
+            .finally(() => {
+                bootstrap.Modal.getInstance(document.getElementById('confirmCheckoutModal')).hide();
+            });
+        }
+
+        // 返回購物車
+        function goBackToCart() {
+            window.location.href = '/Store/Cart';
+        }
+
+        // 顯示提示訊息
+        function showToast(message, type = 'info') {
+            if (type === 'success') {
+                alert('✅ ' + message);
+            } else if (type === 'error') {
+                alert('❌ ' + message);
+            } else if (type === 'warning') {
+                alert('⚠️ ' + message);
+            } else {
+                alert(message);
+            }
+        }
+    </script>
+}

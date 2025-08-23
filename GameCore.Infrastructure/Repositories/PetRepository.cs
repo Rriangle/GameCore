@@ -1,153 +1,334 @@
-using Microsoft.EntityFrameworkCore;
 using GameCore.Core.Entities;
 using GameCore.Core.Interfaces;
-using GameCore.Core.Services;
 using GameCore.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace GameCore.Infrastructure.Repositories
 {
-    /// <summary>
-    /// 寵物 Repository 實作
-    /// 處理寵物相關的資料存取邏輯
-    /// </summary>
-    public class PetRepository : Repository<Pet>, IPetRepository
+    public class PetRepository : IPetRepository
     {
-        public PetRepository(GameCoreDbContext context) : base(context)
+        private readonly GameCoreDbContext _context;
+        private readonly ILogger<PetRepository> _logger;
+
+        public PetRepository(GameCoreDbContext context, ILogger<PetRepository> logger)
         {
+            _context = context;
+            _logger = logger;
         }
 
-        /// <summary>
-        /// 根據使用者 ID 取得寵物 (包含使用者資訊)
-        /// </summary>
-        public async Task<Pet?> GetByUserIdAsync(int userId)
+        public async Task<Pet> GetByIdAsync(int id)
         {
-            return await _dbSet
-                .Include(p => p.User)
-                .FirstOrDefaultAsync(p => p.UserId == userId);
+            return await _context.Pets
+                .Include(p => p.Owner)
+                .FirstOrDefaultAsync(p => p.Id == id);
         }
 
-        /// <summary>
-        /// 取得需要每日衰減的所有寵物
-        /// </summary>
-        public async Task<IEnumerable<Pet>> GetPetsForDailyDecayAsync()
+        public async Task<IEnumerable<Pet>> GetByOwnerIdAsync(int ownerId)
         {
-            // 取得所有寵物進行每日衰減
-            return await _dbSet.ToListAsync();
-        }
-
-        /// <summary>
-        /// 更新寵物最後互動時間 (用於冷卻計算)
-        /// 由於資料庫結構沒有專門的互動時間表，我們使用快取或其他方式處理
-        /// </summary>
-        public async Task UpdateLastInteractionAsync(int userId, PetInteractionType interactionType, DateTime interactionTime)
-        {
-            // 這裡可以使用 Redis 快取或建立臨時表來記錄互動時間
-            // 為了簡化，我們暫時使用記憶體快取
-            var cacheKey = $"pet_interaction_{userId}_{interactionType}";
-            
-            // 實際專案中應該使用 IMemoryCache 或 Redis
-            // 這裡先用簡單的方式處理
-            await Task.CompletedTask;
-        }
-
-        /// <summary>
-        /// 取得最後互動時間
-        /// </summary>
-        public async Task<DateTime?> GetLastInteractionTimeAsync(int userId, PetInteractionType interactionType)
-        {
-            // 對應上面的邏輯，從快取中取得最後互動時間
-            // 為了簡化實作，返回 null (表示沒有冷卻)
-            await Task.CompletedTask;
-            return null;
-        }
-
-        /// <summary>
-        /// 取得寵物等級排行榜
-        /// </summary>
-        public async Task<IEnumerable<Pet>> GetLevelLeaderboardAsync(int top = 10)
-        {
-            return await _dbSet
-                .Include(p => p.User)
-                .ThenInclude(u => u.UserIntroduce)
-                .OrderByDescending(p => p.Level)
-                .ThenByDescending(p => p.Experience)
-                .Take(top)
+            return await _context.Pets
+                .Include(p => p.Owner)
+                .Where(p => p.OwnerId == ownerId && p.IsActive)
                 .ToListAsync();
         }
 
-        /// <summary>
-        /// 取得特定等級範圍的寵物數量統計
-        /// </summary>
-        public async Task<int> GetPetCountByLevelRangeAsync(int minLevel, int maxLevel)
+        public async Task<IEnumerable<Pet>> GetBySpeciesAsync(string species)
         {
-            return await _dbSet
-                .CountAsync(p => p.Level >= minLevel && p.Level <= maxLevel);
+            return await _context.Pets
+                .Include(p => p.Owner)
+                .Where(p => p.Species == species && p.IsActive)
+                .ToListAsync();
         }
 
-        /// <summary>
-        /// 取得寵物狀態統計 (健康度分佈)
-        /// </summary>
-        public async Task<PetHealthStats> GetHealthStatsAsync()
+        public async Task<IEnumerable<Pet>> GetByColorAsync(string color)
         {
-            var allPets = await _dbSet.ToListAsync();
-
-            if (!allPets.Any())
-            {
-                return new PetHealthStats();
-            }
-
-            var stats = new PetHealthStats
-            {
-                TotalPetCount = allPets.Count,
-                ExcellentHealthCount = allPets.Count(p => p.Health >= 80),
-                GoodHealthCount = allPets.Count(p => p.Health >= 60 && p.Health < 80),
-                AverageHealthCount = allPets.Count(p => p.Health >= 40 && p.Health < 60),
-                PoorHealthCount = allPets.Count(p => p.Health >= 20 && p.Health < 40),
-                CriticalHealthCount = allPets.Count(p => p.Health < 20),
-                AverageHealth = allPets.Average(p => p.Health),
-                AverageLevel = allPets.Average(p => p.Level)
-            };
-
-            return stats;
+            return await _context.Pets
+                .Include(p => p.Owner)
+                .Where(p => p.Color == color && p.IsActive)
+                .ToListAsync();
         }
 
-        /// <summary>
-        /// 搜尋寵物 (根據名稱或主人暱稱)
-        /// </summary>
-        public async Task<PagedResult<Pet>> SearchPetsAsync(string searchTerm, int page = 1, int pageSize = 20)
+        public async Task<IEnumerable<Pet>> GetAllAsync()
         {
-            var query = _dbSet
-                .Include(p => p.User)
-                .ThenInclude(u => u.UserIntroduce)
-                .AsQueryable();
+            return await _context.Pets
+                .Include(p => p.Owner)
+                .Where(p => p.IsActive)
+                .ToListAsync();
+        }
 
-            if (!string.IsNullOrWhiteSpace(searchTerm))
+        public async Task<Pet> AddAsync(Pet pet)
+        {
+            await _context.Pets.AddAsync(pet);
+            return pet;
+        }
+
+        public async Task UpdateAsync(Pet pet)
+        {
+            _context.Pets.Update(pet);
+        }
+
+        public async Task DeleteAsync(int id)
+        {
+            var pet = await GetByIdAsync(id);
+            if (pet != null)
             {
-                var term = searchTerm.ToLower();
-                query = query.Where(p => 
-                    p.PetName.ToLower().Contains(term) ||
-                    (p.User.UserIntroduce != null && p.User.UserIntroduce.UserNickName.ToLower().Contains(term)));
+                pet.IsActive = false;
+                pet.UpdatedAt = DateTime.UtcNow;
+                _context.Pets.Update(pet);
             }
+        }
 
-            var totalCount = await query.CountAsync();
+        public async Task<bool> ExistsAsync(int id)
+        {
+            return await _context.Pets.AnyAsync(p => p.Id == id && p.IsActive);
+        }
 
-            var items = await query
+        public async Task<int> GetPetCountAsync()
+        {
+            return await _context.Pets.CountAsync(p => p.IsActive);
+        }
+
+        public async Task<int> GetPetCountByOwnerAsync(int ownerId)
+        {
+            return await _context.Pets.CountAsync(p => p.OwnerId == ownerId && p.IsActive);
+        }
+
+        public async Task<IEnumerable<Pet>> GetPetsByLevelAsync(int minLevel, int maxLevel)
+        {
+            return await _context.Pets
+                .Include(p => p.Owner)
+                .Where(p => p.Level >= minLevel && p.Level <= maxLevel && p.IsActive)
+                .OrderByDescending(p => p.Level)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Pet>> GetPetsByAgeAsync(int minAge, int maxAge)
+        {
+            return await _context.Pets
+                .Include(p => p.Owner)
+                .Where(p => p.Age >= minAge && p.Age <= maxAge && p.IsActive)
+                .OrderBy(p => p.Age)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Pet>> GetPetsByHealthAsync(int minHealth)
+        {
+            return await _context.Pets
+                .Include(p => p.Owner)
+                .Where(p => p.Health >= minHealth && p.IsActive)
+                .OrderByDescending(p => p.Health)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Pet>> GetPetsByHappinessAsync(int minHappiness)
+        {
+            return await _context.Pets
+                .Include(p => p.Owner)
+                .Where(p => p.Happiness >= minHappiness && p.IsActive)
+                .OrderByDescending(p => p.Happiness)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Pet>> GetPetsByEnergyAsync(int minEnergy)
+        {
+            return await _context.Pets
+                .Include(p => p.Owner)
+                .Where(p => p.Energy >= minEnergy && p.IsActive)
+                .OrderByDescending(p => p.Energy)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Pet>> GetPetsByDateRangeAsync(DateTime startDate, DateTime endDate)
+        {
+            return await _context.Pets
+                .Include(p => p.Owner)
+                .Where(p => p.CreatedAt >= startDate && p.CreatedAt <= endDate && p.IsActive)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Pet>> GetPetsByLastFeedAsync(DateTime lastFeed)
+        {
+            return await _context.Pets
+                .Include(p => p.Owner)
+                .Where(p => p.LastFeedTime <= lastFeed && p.IsActive)
+                .OrderBy(p => p.LastFeedTime)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Pet>> GetPetsByLastCleanAsync(DateTime lastClean)
+        {
+            return await _context.Pets
+                .Include(p => p.Owner)
+                .Where(p => p.LastCleanTime <= lastClean && p.IsActive)
+                .OrderBy(p => p.LastCleanTime)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Pet>> GetPetsByLastPlayAsync(DateTime lastPlay)
+        {
+            return await _context.Pets
+                .Include(p => p.Owner)
+                .Where(p => p.LastPlayTime <= lastPlay && p.IsActive)
+                .OrderBy(p => p.LastPlayTime)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Pet>> GetHungryPetsAsync()
+        {
+            var threshold = DateTime.UtcNow.AddHours(-6);
+            return await _context.Pets
+                .Include(p => p.Owner)
+                .Where(p => p.LastFeedTime <= threshold && p.IsActive)
+                .OrderBy(p => p.LastFeedTime)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Pet>> GetDirtyPetsAsync()
+        {
+            var threshold = DateTime.UtcNow.AddHours(-12);
+            return await _context.Pets
+                .Include(p => p.Owner)
+                .Where(p => p.LastCleanTime <= threshold && p.IsActive)
+                .OrderBy(p => p.LastCleanTime)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Pet>> GetBoredPetsAsync()
+        {
+            var threshold = DateTime.UtcNow.AddHours(-8);
+            return await _context.Pets
+                .Include(p => p.Owner)
+                .Where(p => p.LastPlayTime <= threshold && p.IsActive)
+                .OrderBy(p => p.LastPlayTime)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Pet>> GetTiredPetsAsync()
+        {
+            return await _context.Pets
+                .Include(p => p.Owner)
+                .Where(p => p.Energy <= 20 && p.IsActive)
+                .OrderBy(p => p.Energy)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Pet>> GetSickPetsAsync()
+        {
+            return await _context.Pets
+                .Include(p => p.Owner)
+                .Where(p => p.Health <= 30 && p.IsActive)
+                .OrderBy(p => p.Health)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Pet>> GetSadPetsAsync()
+        {
+            return await _context.Pets
+                .Include(p => p.Owner)
+                .Where(p => p.Happiness <= 30 && p.IsActive)
+                .OrderBy(p => p.Happiness)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Pet>> SearchPetsAsync(string searchTerm)
+        {
+            return await _context.Pets
+                .Include(p => p.Owner)
+                .Where(p => p.IsActive && 
+                           (p.Name.Contains(searchTerm) || 
+                            p.Species.Contains(searchTerm) ||
+                            p.Color.Contains(searchTerm) ||
+                            p.Owner.Username.Contains(searchTerm)))
+                .ToListAsync();
+        }
+
+        public async Task<Pet> GetActivePetByOwnerAsync(int ownerId)
+        {
+            return await _context.Pets
+                .Include(p => p.Owner)
+                .FirstOrDefaultAsync(p => p.OwnerId == ownerId && p.IsActive);
+        }
+
+        public async Task<IEnumerable<Pet>> GetTopPetsByLevelAsync(int count)
+        {
+            return await _context.Pets
+                .Include(p => p.Owner)
+                .Where(p => p.IsActive)
                 .OrderByDescending(p => p.Level)
                 .ThenByDescending(p => p.Experience)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
+                .Take(count)
                 .ToListAsync();
+        }
 
-            var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+        public async Task<IEnumerable<Pet>> GetRecentlyCreatedPetsAsync(int count)
+        {
+            return await _context.Pets
+                .Include(p => p.Owner)
+                .Where(p => p.IsActive)
+                .OrderByDescending(p => p.CreatedAt)
+                .Take(count)
+                .ToListAsync();
+        }
 
-            return new PagedResult<Pet>
+        public async Task UpdatePetStatsAsync(int petId, int health, int happiness, int energy)
+        {
+            var pet = await GetByIdAsync(petId);
+            if (pet != null)
             {
-                Items = items,
-                TotalCount = totalCount,
-                CurrentPage = page,
-                PageSize = pageSize,
-                TotalPages = totalPages
-            };
+                pet.Health = Math.Max(0, Math.Min(100, health));
+                pet.Happiness = Math.Max(0, Math.Min(100, happiness));
+                pet.Energy = Math.Max(0, Math.Min(100, energy));
+                pet.UpdatedAt = DateTime.UtcNow;
+                _context.Pets.Update(pet);
+            }
+        }
+
+        public async Task UpdatePetActivityAsync(int petId, string activityType)
+        {
+            var pet = await GetByIdAsync(petId);
+            if (pet != null)
+            {
+                var now = DateTime.UtcNow;
+                switch (activityType.ToLower())
+                {
+                    case "feed":
+                        pet.LastFeedTime = now;
+                        break;
+                    case "clean":
+                        pet.LastCleanTime = now;
+                        break;
+                    case "play":
+                        pet.LastPlayTime = now;
+                        break;
+                    case "rest":
+                        pet.LastRestTime = now;
+                        break;
+                }
+                pet.UpdatedAt = now;
+                _context.Pets.Update(pet);
+            }
+        }
+
+        public async Task AddExperienceAsync(int petId, int experience)
+        {
+            var pet = await GetByIdAsync(petId);
+            if (pet != null)
+            {
+                pet.Experience += experience;
+                
+                // Level up logic
+                var requiredExp = pet.Level * 100;
+                while (pet.Experience >= requiredExp)
+                {
+                    pet.Experience -= requiredExp;
+                    pet.Level++;
+                    requiredExp = pet.Level * 100;
+                }
+                
+                pet.UpdatedAt = DateTime.UtcNow;
+                _context.Pets.Update(pet);
+            }
         }
     }
 }

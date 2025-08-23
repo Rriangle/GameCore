@@ -1,0 +1,945 @@
+@model GameCore.Core.ViewModels.PostDetailViewModel
+@{
+    ViewData["Title"] = Model?.Post?.Title ?? "貼文詳情";
+    ViewData["ActivePage"] = "Forum";
+}
+
+<div class="container-fluid">
+    <!-- 頁面標題和導航 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="/Forum" class="text-decoration-none">
+                            <i class="fas fa-comments"></i> 論壇
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="/Forum/Posts/@Model?.Post?.ForumId" class="text-decoration-none">
+                            @Model?.Forum?.Name ?? "版面"
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        @Model?.Post?.Title ?? "貼文"
+                    </li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">
+                        <i class="fas fa-file-alt text-primary"></i>
+                        @Model?.Post?.Title ?? "貼文詳情"
+                    </h1>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/Forum/Posts/@Model?.Post?.ForumId" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> 返回版面
+                    </a>
+                    @if (User.Identity?.Name == Model?.Post?.Author?.Username || User.IsInRole("Admin") || User.IsInRole("Moderator"))
+                    {
+                        <a href="/Forum/Post/Edit/@Model?.Post?.Id" class="btn btn-outline-primary">
+                            <i class="fas fa-edit"></i> 編輯貼文
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model?.Post != null)
+    {
+        <div class="row">
+            <!-- 左側：貼文內容和回覆 -->
+            <div class="col-lg-8 mb-4">
+                <!-- 貼文內容 -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="post-header">
+                                <h2 class="h4 mb-2">@Model.Post.Title</h2>
+                                <div class="post-meta">
+                                    <span class="badge bg-primary me-2">@Model.Post.Type</span>
+                                    @if (Model.Post.IsSticky)
+                                    {
+                                        <span class="badge bg-warning me-2">置頂</span>
+                                    }
+                                    @if (Model.Post.IsLocked)
+                                    {
+                                        <span class="badge bg-secondary me-2">已鎖定</span>
+                                    }
+                                    @if (Model.Post.IsPinned)
+                                    {
+                                        <span class="badge bg-info me-2">精華</span>
+                                    }
+                                </div>
+                            </div>
+                            <div class="post-actions">
+                                <button class="btn btn-sm btn-outline-primary me-2" onclick="likePost(@Model.Post.Id)">
+                                    <i class="fas fa-thumbs-up"></i> 讚 <span id="likeCount">@(Model.Post.LikeCount ?? 0)</span>
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary me-2" onclick="bookmarkPost(@Model.Post.Id)">
+                                    <i class="fas fa-bookmark"></i> 收藏
+                                </button>
+                                <button class="btn btn-sm btn-outline-info" onclick="sharePost()">
+                                    <i class="fas fa-share"></i> 分享
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="post-author mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="author-avatar me-3">
+                                    @if (!string.IsNullOrEmpty(Model.Post.Author?.Avatar))
+                                    {
+                                        <img src="@Model.Post.Author.Avatar" class="rounded-circle" width="50" height="50" alt="頭像">
+                                    }
+                                    else
+                                    {
+                                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                            <i class="fas fa-user text-white"></i>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="author-info">
+                                    <h6 class="mb-1">@Model.Post.Author?.Username</h6>
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock"></i> @Model.Post.CreateTime.ToString("yyyy/MM/dd HH:mm")
+                                        @if (Model.Post.UpdateTime.HasValue && Model.Post.UpdateTime != Model.Post.CreateTime)
+                                        {
+                                            <span class="ms-2">(編輯於 @Model.Post.UpdateTime.Value.ToString("MM/dd HH:mm"))</span>
+                                        }
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="post-content mb-3">
+                            @if (!string.IsNullOrEmpty(Model.Post.Content))
+                            {
+                                <div class="content-text">
+                                    @Html.Raw(Model.Post.Content.Replace("\n", "<br>"))
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="text-muted">此貼文沒有內容</p>
+                            }
+                        </div>
+                        
+                        @if (Model.Post.Tags != null && Model.Post.Tags.Any())
+                        {
+                            <div class="post-tags mb-3">
+                                <strong>標籤：</strong>
+                                @foreach (var tag in Model.Post.Tags)
+                                {
+                                    <span class="badge bg-light text-dark me-1">@tag</span>
+                                }
+                            </div>
+                        }
+                        
+                        <div class="post-stats">
+                            <div class="row text-center">
+                                <div class="col-3">
+                                    <div class="stat-item">
+                                        <h6 class="text-primary mb-1">@(Model.Post.ViewCount ?? 0)</h6>
+                                        <small class="text-muted">瀏覽</small>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="stat-item">
+                                        <h6 class="text-success mb-1">@(Model.Post.ReplyCount ?? 0)</h6>
+                                        <small class="text-muted">回覆</small>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="stat-item">
+                                        <h6 class="text-info mb-1">@(Model.Post.LikeCount ?? 0)</h6>
+                                        <small class="text-muted">讚</small>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="stat-item">
+                                        <h6 class="text-warning mb-1">@(Model.Post.ShareCount ?? 0)</h6>
+                                        <small class="text-muted">分享</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 回覆列表 -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-comments"></i>
+                            回覆 (@(Model.Post.ReplyCount ?? 0))
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (Model.Replies != null && Model.Replies.Any())
+                        {
+                            <div class="replies-list">
+                                @foreach (var reply in Model.Replies)
+                                {
+                                    <div class="reply-item p-3 border-bottom" id="reply-@reply.Id">
+                                        <div class="d-flex">
+                                            <div class="reply-author me-3">
+                                                @if (!string.IsNullOrEmpty(reply.Author?.Avatar))
+                                                {
+                                                    <img src="@reply.Author.Avatar" class="rounded-circle" width="40" height="40" alt="頭像">
+                                                }
+                                                else
+                                                {
+                                                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                        <i class="fas fa-user text-white"></i>
+                                                    </div>
+                                                }
+                                            </div>
+                                            <div class="reply-content flex-grow-1">
+                                                <div class="reply-header mb-2">
+                                                    <h6 class="mb-1">@reply.Author?.Username</h6>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-clock"></i> @reply.CreateTime.ToString("yyyy/MM/dd HH:mm")
+                                                        @if (reply.UpdateTime.HasValue && reply.UpdateTime != reply.CreateTime)
+                                                        {
+                                                            <span class="ms-2">(編輯於 @reply.UpdateTime.Value.ToString("MM/dd HH:mm"))</span>
+                                                        }
+                                                    </small>
+                                                </div>
+                                                <div class="reply-text mb-2">
+                                                    @if (!string.IsNullOrEmpty(reply.Content))
+                                                    {
+                                                        @Html.Raw(reply.Content.Replace("\n", "<br>"))
+                                                    }
+                                                </div>
+                                                <div class="reply-actions">
+                                                    <button class="btn btn-sm btn-outline-primary me-2" onclick="likeReply(@reply.Id)">
+                                                        <i class="fas fa-thumbs-up"></i> 讚 <span id="replyLikeCount-@reply.Id">@(reply.LikeCount ?? 0)</span>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-secondary me-2" onclick="quoteReply(@reply.Id, '@reply.Author?.Username')">
+                                                        <i class="fas fa-quote-left"></i> 引用
+                                                    </button>
+                                                    @if (User.Identity?.Name == reply.Author?.Username || User.IsInRole("Admin") || User.IsInRole("Moderator"))
+                                                    {
+                                                        <button class="btn btn-sm btn-outline-warning me-2" onclick="editReply(@reply.Id)">
+                                                            <i class="fas fa-edit"></i> 編輯
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteReply(@reply.Id)">
+                                                            <i class="fas fa-trash"></i> 刪除
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4">
+                                <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                                <h6 class="text-muted">目前沒有回覆</h6>
+                                <p class="text-muted">成為第一個回覆的人吧！</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- 回覆表單 -->
+                @if (!Model.Post.IsLocked)
+                {
+                    <div class="card shadow-sm">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="fas fa-reply"></i>
+                                發表回覆
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="replyForm">
+                                <div class="mb-3">
+                                    <label for="replyContent" class="form-label">回覆內容 <span class="text-danger">*</span></label>
+                                    <textarea class="form-control" id="replyContent" name="Content" rows="5" 
+                                              placeholder="輸入您的回覆內容..." required></textarea>
+                                    <div class="form-text">支援 Markdown 語法</div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="notifyAuthor" name="NotifyAuthor">
+                                        <label class="form-check-label" for="notifyAuthor">
+                                            通知貼文作者
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="reply-tools">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="insertEmoji('😊')">
+                                            😊 表情
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="insertMarkdown('**粗體**')">
+                                            <strong>B</strong>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="insertMarkdown('*斜體*')">
+                                            <em>I</em>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="insertMarkdown('[連結](URL)')">
+                                            🔗
+                                        </button>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-paper-plane"></i> 發表回覆
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center py-4">
+                            <i class="fas fa-lock fa-3x text-muted mb-3"></i>
+                            <h6 class="text-muted">此貼文已被鎖定</h6>
+                            <p class="text-muted">無法發表新的回覆</p>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- 右側：相關資訊 -->
+            <div class="col-lg-4 mb-4">
+                <!-- 版面資訊 -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-folder"></i>
+                            版面資訊
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="mb-2">@Model.Forum?.Name</h6>
+                        <p class="text-muted small mb-3">@Model.Forum?.Description</p>
+                        <div class="forum-stats">
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <div class="stat-item">
+                                        <h6 class="text-primary mb-1">@(Model.Forum?.PostCount ?? 0)</h6>
+                                        <small class="text-muted">貼文</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="stat-item">
+                                        <h6 class="text-success mb-1">@(Model.Forum?.ReplyCount ?? 0)</h6>
+                                        <small class="text-muted">回覆</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="stat-item">
+                                        <h6 class="text-info mb-1">@(Model.Forum?.SubscriberCount ?? 0)</h6>
+                                        <small class="text-muted">訂閱</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <a href="/Forum/Posts/@Model.Forum?.Id" class="btn btn-outline-primary btn-sm w-100">
+                                <i class="fas fa-list"></i> 查看版面
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 相關貼文 -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-link"></i>
+                            相關貼文
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.RelatedPosts != null && Model.RelatedPosts.Any())
+                        {
+                            <div class="related-posts">
+                                @foreach (var relatedPost in Model.RelatedPosts.Take(5))
+                                {
+                                    <div class="related-post mb-2">
+                                        <a href="/Forum/Post/@relatedPost.Id" class="text-decoration-none">
+                                            <h6 class="mb-1 text-dark">@relatedPost.Title</h6>
+                                            <small class="text-muted">
+                                                @relatedPost.Author?.Username • @relatedPost.CreateTime.ToString("MM/dd")
+                                            </small>
+                                        </a>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted small">暫無相關貼文</p>
+                        }
+                    </div>
+                </div>
+
+                <!-- 快速操作 -->
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-tools"></i>
+                            快速操作
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary btn-sm" onclick="reportPost(@Model.Post.Id)">
+                                <i class="fas fa-flag"></i> 檢舉貼文
+                            </button>
+                            @if (User.IsInRole("Admin") || User.IsInRole("Moderator"))
+                            {
+                                <button class="btn btn-outline-warning btn-sm" onclick="toggleSticky(@Model.Post.Id)">
+                                    <i class="fas fa-thumbtack"></i> @(Model.Post.IsSticky ? "取消置頂" : "置頂")
+                                </button>
+                                <button class="btn btn-outline-info btn-sm" onclick="togglePinned(@Model.Post.Id)">
+                                    <i class="fas fa-star"></i> @(Model.Post.IsPinned ? "取消精華" : "設為精華")
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm" onclick="toggleLocked(@Model.Post.Id)">
+                                    <i class="fas fa-lock"></i> @(Model.Post.IsLocked ? "解鎖" : "鎖定")
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- 貼文不存在 -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-exclamation-triangle text-warning fa-4x mb-3"></i>
+                        <h4 class="text-warning">貼文不存在</h4>
+                        <p class="text-muted">指定的貼文不存在或已被刪除。</p>
+                        <a href="/Forum" class="btn btn-primary">
+                            <i class="fas fa-arrow-left"></i> 返回論壇
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- 刪除回覆確認 Modal -->
+<div class="modal fade" id="deleteReplyModal" tabindex="-1" aria-labelledby="deleteReplyModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteReplyModalLabel">
+                    <i class="fas fa-exclamation-triangle text-danger"></i> 確認刪除回覆
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>您確定要刪除這則回覆嗎？</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>警告：</strong> 此操作無法復原。
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteReply()">確認刪除</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .post-content .content-text {
+            line-height: 1.6;
+            font-size: 1rem;
+        }
+
+        .reply-item {
+            transition: background-color 0.2s ease;
+        }
+
+        .reply-item:hover {
+            background-color: #f8f9fc;
+        }
+
+        .reply-item:last-child {
+            border-bottom: none !important;
+        }
+
+        .stat-item h6 {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .stat-item small {
+            font-size: 0.75rem;
+        }
+
+        .related-post {
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            transition: background-color 0.2s ease;
+        }
+
+        .related-post:hover {
+            background-color: #f8f9fc;
+        }
+
+        .reply-tools .btn {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .post-actions .btn {
+            font-size: 0.8rem;
+        }
+
+        .badge {
+            font-size: 0.7rem;
+        }
+
+        .card-header {
+            background-color: #f8f9fc;
+            border-bottom: 1px solid #e3e6f0;
+        }
+
+        .breadcrumb {
+            background-color: transparent;
+            padding: 0;
+            margin-bottom: 1rem;
+        }
+
+        .breadcrumb-item a {
+            color: #007bff;
+        }
+
+        .breadcrumb-item.active {
+            color: #6c757d;
+        }
+
+        .author-avatar img {
+            object-fit: cover;
+        }
+
+        .reply-author img {
+            object-fit: cover;
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 767.98px) {
+            .post-actions {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .post-actions .btn {
+                width: 100%;
+            }
+            
+            .reply-actions {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .reply-actions .btn {
+                width: 100%;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        let currentPostId = @(Model?.Post?.Id ?? 0);
+        let replyToDelete = null;
+        let quotedReply = null;
+
+        // 頁面載入完成後初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 回覆表單提交
+            document.getElementById('replyForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                submitReply();
+            });
+
+            // 增加瀏覽次數
+            incrementViewCount();
+        });
+
+        // 增加瀏覽次數
+        function incrementViewCount() {
+            fetch(`/api/forum/post/view/${currentPostId}`, {
+                method: 'POST'
+            }).catch(error => console.error('Error incrementing view count:', error));
+        }
+
+        // 讚貼文
+        function likePost(postId) {
+            fetch('/api/forum/post/like', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    postId: postId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('讚成功', 'success');
+                    // 更新讚數顯示
+                    const likeCountElement = document.getElementById('likeCount');
+                    if (likeCountElement) {
+                        const currentCount = parseInt(likeCountElement.textContent);
+                        likeCountElement.textContent = currentCount + 1;
+                    }
+                } else {
+                    showToast(`讚失敗：${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('讚時發生錯誤，請稍後再試。', 'error');
+            });
+        }
+
+        // 收藏貼文
+        function bookmarkPost(postId) {
+            fetch('/api/forum/post/bookmark', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    postId: postId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('收藏成功', 'success');
+                } else {
+                    showToast(`收藏失敗：${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('收藏時發生錯誤，請稍後再試。', 'error');
+            });
+        }
+
+        // 分享貼文
+        function sharePost() {
+            const url = window.location.href;
+            const title = '@Model?.Post?.Title';
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: title,
+                    url: url
+                });
+            } else {
+                // 複製連結到剪貼簿
+                navigator.clipboard.writeText(url).then(() => {
+                    showToast('連結已複製到剪貼簿', 'success');
+                }).catch(() => {
+                    // 降級方案
+                    const textArea = document.createElement('textarea');
+                    textArea.value = url;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    showToast('連結已複製到剪貼簿', 'success');
+                });
+            }
+        }
+
+        // 讚回覆
+        function likeReply(replyId) {
+            fetch('/api/forum/reply/like', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    replyId: replyId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('讚成功', 'success');
+                    // 更新讚數顯示
+                    const likeCountElement = document.getElementById(`replyLikeCount-${replyId}`);
+                    if (likeCountElement) {
+                        const currentCount = parseInt(likeCountElement.textContent);
+                        likeCountElement.textContent = currentCount + 1;
+                    }
+                } else {
+                    showToast(`讚失敗：${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('讚時發生錯誤，請稍後再試。', 'error');
+            });
+        }
+
+        // 引用回覆
+        function quoteReply(replyId, authorName) {
+            quotedReply = { id: replyId, author: authorName };
+            const replyContent = document.querySelector(`#reply-${replyId} .reply-text`).textContent;
+            const quoteText = `> @${authorName} 說：\n${replyContent}\n\n`;
+            
+            const textarea = document.getElementById('replyContent');
+            textarea.value = quoteText + textarea.value;
+            textarea.focus();
+            textarea.scrollTop = textarea.scrollHeight;
+            
+            showToast('已引用回覆', 'info');
+        }
+
+        // 編輯回覆
+        function editReply(replyId) {
+            // 這裡可以實現內嵌編輯功能
+            showToast('編輯功能開發中', 'info');
+        }
+
+        // 刪除回覆
+        function deleteReply(replyId) {
+            replyToDelete = replyId;
+            const modal = new bootstrap.Modal(document.getElementById('deleteReplyModal'));
+            modal.show();
+        }
+
+        // 確認刪除回覆
+        function confirmDeleteReply() {
+            if (!replyToDelete) return;
+            
+            fetch(`/api/forum/reply/delete/${replyToDelete}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('回覆刪除成功', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('deleteReplyModal')).hide();
+                    // 從頁面移除回覆
+                    const replyElement = document.getElementById(`reply-${replyToDelete}`);
+                    if (replyElement) {
+                        replyElement.remove();
+                    }
+                    // 更新回覆數量
+                    const replyCount = document.querySelector('.card-header h5');
+                    if (replyCount) {
+                        const currentText = replyCount.textContent;
+                        const newCount = parseInt(currentText.match(/\d+/)[0]) - 1;
+                        replyCount.innerHTML = `<i class="fas fa-comments"></i> 回覆 (${newCount})`;
+                    }
+                } else {
+                    showToast(`刪除失敗：${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('刪除時發生錯誤，請稍後再試。', 'error');
+            })
+            .finally(() => {
+                replyToDelete = null;
+            });
+        }
+
+        // 提交回覆
+        function submitReply() {
+            const content = document.getElementById('replyContent').value.trim();
+            if (!content) {
+                showToast('請輸入回覆內容', 'warning');
+                return;
+            }
+            
+            const notifyAuthor = document.getElementById('notifyAuthor').checked;
+            
+            fetch('/api/forum/reply/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    postId: currentPostId,
+                    content: content,
+                    notifyAuthor: notifyAuthor
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('回覆發表成功', 'success');
+                    // 清空表單
+                    document.getElementById('replyContent').value = '';
+                    // 重新整理頁面以顯示新回覆
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(`回覆發表失敗：${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('發表回覆時發生錯誤，請稍後再試。', 'error');
+            });
+        }
+
+        // 插入表情
+        function insertEmoji(emoji) {
+            const textarea = document.getElementById('replyContent');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+            textarea.value = text.substring(0, start) + emoji + text.substring(end);
+            textarea.focus();
+            textarea.setSelectionRange(start + emoji.length, start + emoji.length);
+        }
+
+        // 插入 Markdown
+        function insertMarkdown(markdown) {
+            const textarea = document.getElementById('replyContent');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+            const selectedText = text.substring(start, end);
+            
+            let newText;
+            if (markdown.includes('**') && selectedText) {
+                newText = `**${selectedText}**`;
+            } else if (markdown.includes('*') && selectedText) {
+                newText = `*${selectedText}*`;
+            } else if (markdown.includes('[') && selectedText) {
+                newText = `[${selectedText}](URL)`;
+            } else {
+                newText = markdown;
+            }
+            
+            textarea.value = text.substring(0, start) + newText + text.substring(end);
+            textarea.focus();
+            textarea.setSelectionRange(start + newText.length, start + newText.length);
+        }
+
+        // 檢舉貼文
+        function reportPost(postId) {
+            const reason = prompt('請輸入檢舉原因：');
+            if (reason && reason.trim()) {
+                fetch('/api/forum/post/report', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        postId: postId,
+                        reason: reason.trim()
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('檢舉成功，感謝您的回報', 'success');
+                    } else {
+                        showToast(`檢舉失敗：${data.message}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('檢舉時發生錯誤，請稍後再試。', 'error');
+                });
+            }
+        }
+
+        // 切換置頂狀態
+        function toggleSticky(postId) {
+            fetch(`/api/forum/post/toggle-sticky/${postId}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('置頂狀態已更新', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(`操作失敗：${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('操作時發生錯誤，請稍後再試。', 'error');
+            });
+        }
+
+        // 切換精華狀態
+        function togglePinned(postId) {
+            fetch(`/api/forum/post/toggle-pinned/${postId}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('精華狀態已更新', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(`操作失敗：${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('操作時發生錯誤，請稍後再試。', 'error');
+            });
+        }
+
+        // 切換鎖定狀態
+        function toggleLocked(postId) {
+            fetch(`/api/forum/post/toggle-locked/${postId}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('鎖定狀態已更新', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(`操作失敗：${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('操作時發生錯誤，請稍後再試。', 'error');
+            });
+        }
+
+        // 顯示提示訊息
+        function showToast(message, type = 'info') {
+            if (type === 'success') {
+                alert('✅ ' + message);
+            } else if (type === 'error') {
+                alert('❌ ' + message);
+            } else if (type === 'warning') {
+                alert('⚠️ ' + message);
+            } else {
+                alert(message);
+            }
+        }
+    </script>
+}

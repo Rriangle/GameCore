@@ -1,0 +1,799 @@
+@model GameCore.Core.ViewModels.ManagerDashboardViewModel
+@{
+    ViewData["Title"] = "管理儀表板";
+    ViewData["ActivePage"] = "Manager";
+}
+
+<div class="container-fluid">
+    <!-- 頁面標題 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">
+                        <i class="fas fa-tachometer-alt text-primary"></i>
+                        管理儀表板
+                    </h1>
+                    <p class="text-muted mb-0">系統管理和監控中心</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-info" onclick="refreshDashboard()">
+                        <i class="fas fa-sync-alt"></i> 重新整理
+                    </button>
+                    <button class="btn btn-outline-warning" onclick="exportReport()">
+                        <i class="fas fa-download"></i> 匯出報告
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 系統概況統計 -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow-sm h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                總用戶數
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@(Model?.TotalUsers ?? 0)</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow-sm h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                今日活躍用戶
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@(Model?.ActiveUsersToday ?? 0)</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow-sm h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                總貼文數
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@(Model?.TotalPosts ?? 0)</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-file-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow-sm h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                今日訂單
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@(Model?.OrdersToday ?? 0)</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 系統狀態和快速操作 -->
+    <div class="row mb-4">
+        <!-- 系統狀態 -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-server"></i>
+                        系統狀態
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="system-status-item">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="status-indicator @(Model?.DatabaseStatus == "Healthy" ? "healthy" : "unhealthy")"></span>
+                                    <strong class="ms-2">資料庫</strong>
+                                </div>
+                                <small class="text-muted">@(Model?.DatabaseStatus ?? "Unknown")</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="system-status-item">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="status-indicator @(Model?.CacheStatus == "Healthy" ? "healthy" : "unhealthy")"></span>
+                                    <strong class="ms-2">快取系統</strong>
+                                </div>
+                                <small class="text-muted">@(Model?.CacheStatus ?? "Unknown")</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="system-status-item">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="status-indicator @(Model?.FileSystemStatus == "Healthy" ? "healthy" : "unhealthy")"></span>
+                                    <strong class="ms-2">檔案系統</strong>
+                                </div>
+                                <small class="text-muted">@(Model?.FileSystemStatus ?? "Unknown")</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="system-status-item">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="status-indicator @(Model?.ExternalServicesStatus == "Healthy" ? "healthy" : "unhealthy")"></span>
+                                    <strong class="ms-2">外部服務</strong>
+                                </div>
+                                <small class="text-muted">@(Model?.ExternalServicesStatus ?? "Unknown")</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="system-info">
+                                <small class="text-muted">
+                                    <strong>系統版本：</strong> @(Model?.SystemVersion ?? "Unknown")<br>
+                                    <strong>運行時間：</strong> @(Model?.Uptime ?? "Unknown")<br>
+                                    <strong>最後更新：</strong> @(Model?.LastUpdateTime?.ToString("yyyy/MM/dd HH:mm") ?? "Unknown")
+                                </small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="system-actions">
+                                <button class="btn btn-sm btn-outline-primary me-2" onclick="checkSystemHealth()">
+                                    <i class="fas fa-heartbeat"></i> 健康檢查
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="viewSystemLogs()">
+                                    <i class="fas fa-list"></i> 系統日誌
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 快速操作 -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt"></i>
+                        快速操作
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary btn-sm" onclick="createUser()">
+                            <i class="fas fa-user-plus"></i> 創建用戶
+                        </button>
+                        <button class="btn btn-outline-success btn-sm" onclick="createForum()">
+                            <i class="fas fa-comments"></i> 創建論壇
+                        </button>
+                        <button class="btn btn-outline-info btn-sm" onclick="sendNotification()">
+                            <i class="fas fa-bell"></i> 發送通知
+                        </button>
+                        <button class="btn btn-outline-warning btn-sm" onclick="backupDatabase()">
+                            <i class="fas fa-database"></i> 備份資料庫
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="systemMaintenance()">
+                            <i class="fas fa-tools"></i> 系統維護
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 最近活動和系統監控 -->
+    <div class="row">
+        <!-- 最近活動 -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history"></i>
+                        最近活動
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="recent-activities">
+                        @if (Model?.RecentActivities != null && Model.RecentActivities.Any())
+                        {
+                            @foreach (var activity in Model.RecentActivities.Take(10))
+                            {
+                                <div class="activity-item d-flex align-items-center mb-3">
+                                    <div class="activity-icon me-3">
+                                        @switch (activity.Type)
+                                        {
+                                            case "User":
+                                                <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                                    <i class="fas fa-user text-white fa-sm"></i>
+                                                </div>
+                                                break;
+                                            case "Forum":
+                                                <div class="rounded-circle bg-success d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                                    <i class="fas fa-comments text-white fa-sm"></i>
+                                                </div>
+                                                break;
+                                            case "Store":
+                                                <div class="rounded-circle bg-warning d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                                    <i class="fas fa-shopping-cart text-white fa-sm"></i>
+                                                </div>
+                                                break;
+                                            case "System":
+                                                <div class="rounded-circle bg-info d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                                    <i class="fas fa-cog text-white fa-sm"></i>
+                                                </div>
+                                                break;
+                                            default:
+                                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                                    <i class="fas fa-info text-white fa-sm"></i>
+                                                </div>
+                                                break;
+                                        }
+                                    </div>
+                                    <div class="activity-content flex-grow-1">
+                                        <div class="activity-text small">@activity.Description</div>
+                                        <div class="activity-time text-muted" style="font-size: 0.75rem;">
+                                            @activity.CreateTime.ToString("MM/dd HH:mm")
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center py-3">
+                                <i class="fas fa-info-circle fa-2x text-muted mb-2"></i>
+                                <p class="text-muted small mb-0">暫無活動記錄</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 系統監控 -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line"></i>
+                        系統監控
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="system-metrics">
+                        <div class="metric-item mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="small">CPU 使用率</span>
+                                <span class="small text-muted">@(Model?.CpuUsage ?? 0)%</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar @(Model?.CpuUsage > 80 ? "bg-danger" : Model?.CpuUsage > 60 ? "bg-warning" : "bg-success")" 
+                                     style="width: @(Model?.CpuUsage ?? 0)%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-item mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="small">記憶體使用率</span>
+                                <span class="small text-muted">@(Model?.MemoryUsage ?? 0)%</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar @(Model?.MemoryUsage > 80 ? "bg-danger" : Model?.MemoryUsage > 60 ? "bg-warning" : "bg-success")" 
+                                     style="width: @(Model?.MemoryUsage ?? 0)%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-item mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="small">磁碟使用率</span>
+                                <span class="small text-muted">@(Model?.DiskUsage ?? 0)%</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar @(Model?.DiskUsage > 80 ? "bg-danger" : Model?.DiskUsage > 60 ? "bg-warning" : "bg-success")" 
+                                     style="width: @(Model?.DiskUsage ?? 0)%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-item mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="small">網路流量</span>
+                                <span class="small text-muted">@(Model?.NetworkTraffic ?? 0) MB/s</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar bg-info" style="width: @(Math.Min(Model?.NetworkTraffic ?? 0, 100))%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="system-info">
+                        <small class="text-muted">
+                            <strong>最後更新：</strong> @(Model?.MetricsUpdateTime?.ToString("HH:mm:ss") ?? "Unknown")<br>
+                            <strong>監控狀態：</strong> 
+                            <span class="badge @(Model?.MonitoringStatus == "Active" ? "bg-success" : "bg-danger")">
+                                @(Model?.MonitoringStatus ?? "Unknown")
+                            </span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 管理員列表 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-user-shield"></i>
+                            管理員列表
+                        </h5>
+                        <button class="btn btn-primary btn-sm" onclick="createManager()">
+                            <i class="fas fa-plus"></i> 新增管理員
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>帳號</th>
+                                    <th>姓名</th>
+                                    <th>角色</th>
+                                    <th>狀態</th>
+                                    <th>最後登入</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model?.Managers != null && Model.Managers.Any())
+                                {
+                                    @foreach (var manager in Model.Managers)
+                                    {
+                                        <tr>
+                                            <td>@manager.Account</td>
+                                            <td>@manager.Name</td>
+                                            <td>
+                                                <span class="badge bg-primary">@manager.Role?.Name</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge @(manager.IsActive ? "bg-success" : "bg-secondary")">
+                                                    @(manager.IsActive ? "啟用" : "停用")
+                                                </span>
+                                            </td>
+                                            <td>@(manager.LastLoginTime?.ToString("yyyy/MM/dd HH:mm") ?? "從未登入")</td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button class="btn btn-outline-primary" onclick="editManager(@manager.Id)">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-warning" onclick="toggleManagerStatus(@manager.Id, @manager.IsActive.ToString().ToLower())">
+                                                        <i class="fas fa-power-off"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-danger" onclick="deleteManager(@manager.Id)">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4">
+                                            <i class="fas fa-user-shield fa-2x text-muted mb-2"></i>
+                                            <p class="text-muted mb-0">暫無管理員資料</p>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 創建管理員 Modal -->
+<div class="modal fade" id="createManagerModal" tabindex="-1" aria-labelledby="createManagerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createManagerModalLabel">
+                    <i class="fas fa-user-plus"></i> 新增管理員
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createManagerForm">
+                    <div class="mb-3">
+                        <label for="managerAccount" class="form-label">帳號 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="managerAccount" name="Account" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="managerPassword" class="form-label">密碼 <span class="text-danger">*</span></label>
+                        <input type="password" class="form-control" id="managerPassword" name="Password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="managerName" class="form-label">姓名 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="managerName" name="Name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="managerEmail" class="form-label">電子郵件</label>
+                        <input type="email" class="form-control" id="managerEmail" name="Email">
+                    </div>
+                    <div class="mb-3">
+                        <label for="managerRole" class="form-label">角色 <span class="text-danger">*</span></label>
+                        <select class="form-select" id="managerRole" name="RoleId" required>
+                            <option value="">請選擇角色</option>
+                            @if (Model?.Roles != null)
+                            {
+                                @foreach (var role in Model.Roles)
+                                {
+                                    <option value="@role.Id">@role.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="submitCreateManager()">創建</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .border-left-primary {
+            border-left: 0.25rem solid #4e73df !important;
+        }
+
+        .border-left-success {
+            border-left: 0.25rem solid #1cc88a !important;
+        }
+
+        .border-left-info {
+            border-left: 0.25rem solid #36b9cc !important;
+        }
+
+        .border-left-warning {
+            border-left: 0.25rem solid #f6c23e !important;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-indicator.healthy {
+            background-color: #28a745;
+        }
+
+        .status-indicator.unhealthy {
+            background-color: #dc3545;
+        }
+
+        .activity-item {
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            transition: background-color 0.2s ease;
+        }
+
+        .activity-item:hover {
+            background-color: #f8f9fc;
+        }
+
+        .metric-item .progress {
+            background-color: #e9ecef;
+        }
+
+        .system-info small {
+            line-height: 1.6;
+        }
+
+        .btn-group-sm .btn {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .card-header {
+            background-color: #f8f9fc;
+            border-bottom: 1px solid #e3e6f0;
+        }
+
+        .table th {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .table td {
+            vertical-align: middle;
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 767.98px) {
+            .btn-group-sm {
+                flex-direction: column;
+            }
+            
+            .btn-group-sm .btn {
+                margin-bottom: 0.25rem;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        // 頁面載入完成後初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 自動重新整理監控數據
+            setInterval(refreshMetrics, 30000); // 每30秒更新一次
+        });
+
+        // 重新整理儀表板
+        function refreshDashboard() {
+            location.reload();
+        }
+
+        // 匯出報告
+        function exportReport() {
+            // 這裡可以實現匯出功能
+            showToast('報告匯出功能開發中', 'info');
+        }
+
+        // 檢查系統健康狀態
+        function checkSystemHealth() {
+            fetch('/api/manager/health-check')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('系統健康檢查完成', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(`健康檢查失敗：${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('健康檢查時發生錯誤', 'error');
+            });
+        }
+
+        // 查看系統日誌
+        function viewSystemLogs() {
+            // 這裡可以實現查看日誌功能
+            showToast('系統日誌功能開發中', 'info');
+        }
+
+        // 創建用戶
+        function createUser() {
+            // 跳轉到用戶管理頁面
+            window.location.href = '/Manager/Users/Create';
+        }
+
+        // 創建論壇
+        function createForum() {
+            // 跳轉到論壇管理頁面
+            window.location.href = '/Manager/Forums/Create';
+        }
+
+        // 發送通知
+        function sendNotification() {
+            // 跳轉到通知管理頁面
+            window.location.href = '/Manager/Notifications/Send';
+        }
+
+        // 備份資料庫
+        function backupDatabase() {
+            if (confirm('確定要備份資料庫嗎？這可能需要一些時間。')) {
+                fetch('/api/manager/backup-database', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('資料庫備份已開始', 'success');
+                    } else {
+                        showToast(`備份失敗：${data.message}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('備份時發生錯誤', 'error');
+                });
+            }
+        }
+
+        // 系統維護
+        function systemMaintenance() {
+            if (confirm('確定要進入系統維護模式嗎？這將暫時停止某些服務。')) {
+                fetch('/api/manager/maintenance-mode', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('系統已進入維護模式', 'success');
+                    } else {
+                        showToast(`維護模式啟動失敗：${data.message}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('啟動維護模式時發生錯誤', 'error');
+                });
+            }
+        }
+
+        // 創建管理員
+        function createManager() {
+            const modal = new bootstrap.Modal(document.getElementById('createManagerModal'));
+            modal.show();
+        }
+
+        // 提交創建管理員
+        function submitCreateManager() {
+            const account = document.getElementById('managerAccount').value.trim();
+            const password = document.getElementById('managerPassword').value;
+            const name = document.getElementById('managerName').value.trim();
+            const email = document.getElementById('managerEmail').value.trim();
+            const roleId = document.getElementById('managerRole').value;
+
+            if (!account || !password || !name || !roleId) {
+                showToast('請填寫所有必填欄位', 'warning');
+                return;
+            }
+
+            fetch('/api/manager/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    account: account,
+                    password: password,
+                    name: name,
+                    email: email,
+                    roleId: parseInt(roleId)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('管理員創建成功', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('createManagerModal')).hide();
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(`創建失敗：${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('創建管理員時發生錯誤', 'error');
+            });
+        }
+
+        // 編輯管理員
+        function editManager(managerId) {
+            // 跳轉到編輯頁面
+            window.location.href = `/Manager/Users/Edit/${managerId}`;
+        }
+
+        // 切換管理員狀態
+        function toggleManagerStatus(managerId, currentStatus) {
+            const newStatus = currentStatus === 'true' ? false : true;
+            const action = newStatus ? '啟用' : '停用';
+            
+            if (confirm(`確定要${action}這個管理員嗎？`)) {
+                fetch(`/api/manager/toggle-status/${managerId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        isActive: newStatus
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(`管理員已${action}`, 'success');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showToast(`${action}失敗：${data.message}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast(`${action}管理員時發生錯誤`, 'error');
+                });
+            }
+        }
+
+        // 刪除管理員
+        function deleteManager(managerId) {
+            if (confirm('確定要刪除這個管理員嗎？此操作無法復原。')) {
+                fetch(`/api/manager/delete/${managerId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('管理員已刪除', 'success');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showToast(`刪除失敗：${data.message}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('刪除管理員時發生錯誤', 'error');
+                });
+            }
+        }
+
+        // 重新整理監控數據
+        function refreshMetrics() {
+            // 這裡可以實現 AJAX 更新監控數據
+            // 為了簡單起見，我們不實現自動更新
+        }
+
+        // 顯示提示訊息
+        function showToast(message, type = 'info') {
+            if (type === 'success') {
+                alert('✅ ' + message);
+            } else if (type === 'error') {
+                alert('❌ ' + message);
+            } else if (type === 'warning') {
+                alert('⚠️ ' + message);
+            } else {
+                alert(message);
+            }
+        }
+    </script>
+}

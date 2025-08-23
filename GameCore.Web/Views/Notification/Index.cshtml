@@ -1,0 +1,622 @@
+@model GameCore.Core.ViewModels.NotificationViewModel
+@{
+    ViewData["Title"] = "通知";
+    ViewData["ActivePage"] = "Notification";
+}
+
+<div class="container-fluid">
+    <!-- 頁面標題 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">
+                        <i class="fas fa-bell text-primary"></i>
+                        通知
+                    </h1>
+                    <p class="text-muted mb-0">查看和管理您的通知</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-secondary" onclick="markAllAsRead()">
+                        <i class="fas fa-check-double"></i> 全部標記已讀
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="clearAllNotifications()">
+                        <i class="fas fa-trash"></i> 清空所有通知
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通知統計 -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <div class="notification-stat">
+                        <i class="fas fa-bell fa-2x text-primary mb-2"></i>
+                        <h4 class="text-primary mb-1">@(Model?.TotalCount ?? 0)</h4>
+                        <small class="text-muted">總通知數</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <div class="notification-stat">
+                        <i class="fas fa-envelope fa-2x text-warning mb-2"></i>
+                        <h4 class="text-warning mb-1">@(Model?.UnreadCount ?? 0)</h4>
+                        <small class="text-muted">未讀通知</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <div class="notification-stat">
+                        <i class="fas fa-users fa-2x text-info mb-2"></i>
+                        <h4 class="text-info mb-1">@(Model?.SystemCount ?? 0)</h4>
+                        <small class="text-muted">系統通知</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <div class="notification-stat">
+                        <i class="fas fa-user fa-2x text-success mb-2"></i>
+                        <h4 class="text-success mb-1">@(Model?.UserCount ?? 0)</h4>
+                        <small class="text-muted">用戶通知</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 篩選和搜尋 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="typeFilter" class="form-label">通知類型</label>
+                            <select class="form-select" id="typeFilter" onchange="filterNotifications()">
+                                <option value="">全部類型</option>
+                                <option value="System">系統通知</option>
+                                <option value="User">用戶通知</option>
+                                <option value="Forum">論壇通知</option>
+                                <option value="Store">商城通知</option>
+                                <option value="Game">遊戲通知</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="statusFilter" class="form-label">狀態</label>
+                            <select class="form-select" id="statusFilter" onchange="filterNotifications()">
+                                <option value="">全部狀態</option>
+                                <option value="Unread">未讀</option>
+                                <option value="Read">已讀</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="searchInput" class="form-label">搜尋</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="searchInput" 
+                                       placeholder="搜尋通知內容...">
+                                <button class="btn btn-primary" type="button" onclick="searchNotifications()">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通知列表 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list"></i>
+                            通知列表
+                        </h5>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="refreshNotifications()">
+                                <i class="fas fa-sync-alt"></i> 重新整理
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="notifications-list" id="notificationsList">
+                        @if (Model?.Notifications != null && Model.Notifications.Any())
+                        {
+                            @foreach (var notification in Model.Notifications)
+                            {
+                                <div class="notification-item p-3 border-bottom @(notification.IsRead ? "" : "unread")" 
+                                     id="notification-@notification.Id" data-id="@notification.Id">
+                                    <div class="d-flex align-items-start">
+                                        <div class="notification-icon me-3">
+                                            @switch (notification.Type)
+                                            {
+                                                case "System":
+                                                    <div class="rounded-circle bg-info d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                        <i class="fas fa-cog text-white"></i>
+                                                    </div>
+                                                    break;
+                                                case "User":
+                                                    <div class="rounded-circle bg-success d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                        <i class="fas fa-user text-white"></i>
+                                                    </div>
+                                                    break;
+                                                case "Forum":
+                                                    <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                        <i class="fas fa-comments text-white"></i>
+                                                    </div>
+                                                    break;
+                                                case "Store":
+                                                    <div class="rounded-circle bg-warning d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                        <i class="fas fa-shopping-cart text-white"></i>
+                                                    </div>
+                                                    break;
+                                                case "Game":
+                                                    <div class="rounded-circle bg-danger d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                        <i class="fas fa-gamepad text-white"></i>
+                                                    </div>
+                                                    break;
+                                                default:
+                                                    <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                        <i class="fas fa-bell text-white"></i>
+                                                    </div>
+                                                    break;
+                                            }
+                                        </div>
+                                        <div class="notification-content flex-grow-1">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <h6 class="mb-1">@notification.Title</h6>
+                                                <div class="notification-actions">
+                                                    @if (!notification.IsRead)
+                                                    {
+                                                        <button class="btn btn-sm btn-outline-primary me-2" onclick="markAsRead(@notification.Id)">
+                                                            <i class="fas fa-check"></i> 標記已讀
+                                                        </button>
+                                                    }
+                                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteNotification(@notification.Id)">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <p class="text-muted mb-2">@notification.Message</p>
+                                            <div class="notification-meta">
+                                                <small class="text-muted me-3">
+                                                    <i class="fas fa-tag"></i> @notification.Type
+                                                </small>
+                                                <small class="text-muted me-3">
+                                                    <i class="fas fa-clock"></i> @notification.CreateTime.ToString("yyyy/MM/dd HH:mm")
+                                                </small>
+                                                @if (notification.SourceType.HasValue && !string.IsNullOrEmpty(notification.SourceId))
+                                                {
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-link"></i> 
+                                                        <a href="#" onclick="goToSource('@notification.SourceType', '@notification.SourceId')" class="text-decoration-none">
+                                                            查看詳情
+                                                        </a>
+                                                    </small>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center py-5">
+                                <i class="fas fa-bell-slash fa-4x text-muted mb-3"></i>
+                                <h5 class="text-muted">目前沒有通知</h5>
+                                <p class="text-muted">當有新的通知時，它們會出現在這裡</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分頁控制 -->
+    @if (Model?.Notifications != null && Model.Notifications.Any())
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <nav aria-label="通知分頁">
+                    <ul class="pagination justify-content-center" id="pagination">
+                        @{
+                            var totalPages = Math.Ceiling((double)(Model.TotalCount / Model.PageSize));
+                            var currentPage = Model.CurrentPage;
+                            
+                            // 上一頁
+                            if (currentPage > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="/Notification?page=@(currentPage - 1)">上一頁</a>
+                                </li>
+                            }
+                            
+                            // 頁碼
+                            for (int i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++)
+                            {
+                                <li class="page-item @(i == currentPage ? "active" : "")">
+                                    <a class="page-link" href="/Notification?page=@i">@i</a>
+                                </li>
+                            }
+                            
+                            // 下一頁
+                            if (currentPage < totalPages)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="/Notification?page=@(currentPage + 1)">下一頁</a>
+                                </li>
+                            }
+                        }
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- 刪除確認 Modal -->
+<div class="modal fade" id="deleteNotificationModal" tabindex="-1" aria-labelledby="deleteNotificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteNotificationModalLabel">
+                    <i class="fas fa-exclamation-triangle text-danger"></i> 確認刪除通知
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>您確定要刪除這則通知嗎？</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>警告：</strong> 此操作無法復原。
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteNotification()">確認刪除</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .notification-item {
+            transition: background-color 0.2s ease;
+        }
+
+        .notification-item:hover {
+            background-color: #f8f9fc;
+        }
+
+        .notification-item.unread {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+
+        .notification-item.unread:hover {
+            background-color: #bbdefb;
+        }
+
+        .notification-stat {
+            padding: 1rem;
+        }
+
+        .notification-stat i {
+            display: block;
+        }
+
+        .notification-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .notification-meta {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .notification-meta small {
+            margin-bottom: 0.25rem;
+        }
+
+        .card-header {
+            background-color: #f8f9fc;
+            border-bottom: 1px solid #e3e6f0;
+        }
+
+        .btn-sm {
+            font-size: 0.8rem;
+            padding: 0.375rem 0.5rem;
+        }
+
+        .pagination .page-link {
+            color: #007bff;
+        }
+
+        .pagination .page-item.active .page-link {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 767.98px) {
+            .notification-actions {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+            
+            .notification-meta {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .notification-meta small {
+                margin-bottom: 0.5rem;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        let notificationToDelete = null;
+
+        // 頁面載入完成後初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 搜尋框 Enter 鍵事件
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchNotifications();
+                }
+            });
+        });
+
+        // 篩選通知
+        function filterNotifications() {
+            const typeFilter = document.getElementById('typeFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            const currentUrl = new URL(window.location);
+            
+            if (typeFilter) {
+                currentUrl.searchParams.set('type', typeFilter);
+            } else {
+                currentUrl.searchParams.delete('type');
+            }
+            
+            if (statusFilter) {
+                currentUrl.searchParams.set('status', statusFilter);
+            } else {
+                currentUrl.searchParams.delete('status');
+            }
+            
+            // 重置頁碼
+            currentUrl.searchParams.delete('page');
+            
+            window.location.href = currentUrl.toString();
+        }
+
+        // 搜尋通知
+        function searchNotifications() {
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            if (searchTerm === '') {
+                location.href = '/Notification';
+            } else {
+                location.href = `/Notification?search=${encodeURIComponent(searchTerm)}`;
+            }
+        }
+
+        // 標記通知為已讀
+        function markAsRead(notificationId) {
+            fetch(`/api/notification/mark-read/${notificationId}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 更新 UI
+                    const notificationItem = document.getElementById(`notification-${notificationId}`);
+                    if (notificationItem) {
+                        notificationItem.classList.remove('unread');
+                        notificationItem.querySelector('.notification-actions .btn-outline-primary').style.display = 'none';
+                    }
+                    
+                    // 更新統計
+                    updateNotificationStats();
+                    
+                    showToast('通知已標記為已讀', 'success');
+                } else {
+                    showToast(`標記失敗：${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('標記通知時發生錯誤', 'error');
+            });
+        }
+
+        // 標記所有通知為已讀
+        function markAllAsRead() {
+            if (confirm('確定要將所有通知標記為已讀嗎？')) {
+                fetch('/api/notification/mark-all-read', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // 更新所有通知的 UI
+                        document.querySelectorAll('.notification-item.unread').forEach(item => {
+                            item.classList.remove('unread');
+                            item.querySelector('.notification-actions .btn-outline-primary').style.display = 'none';
+                        });
+                        
+                        // 更新統計
+                        updateNotificationStats();
+                        
+                        showToast('所有通知已標記為已讀', 'success');
+                    } else {
+                        showToast(`標記失敗：${data.message}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('標記通知時發生錯誤', 'error');
+                });
+            }
+        }
+
+        // 刪除通知
+        function deleteNotification(notificationId) {
+            notificationToDelete = notificationId;
+            const modal = new bootstrap.Modal(document.getElementById('deleteNotificationModal'));
+            modal.show();
+        }
+
+        // 確認刪除通知
+        function confirmDeleteNotification() {
+            if (!notificationToDelete) return;
+            
+            fetch(`/api/notification/delete/${notificationToDelete}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 從頁面移除通知
+                    const notificationItem = document.getElementById(`notification-${notificationToDelete}`);
+                    if (notificationItem) {
+                        notificationItem.remove();
+                    }
+                    
+                    // 更新統計
+                    updateNotificationStats();
+                    
+                    // 檢查是否還有通知
+                    if (document.querySelectorAll('.notification-item').length === 0) {
+                        document.getElementById('notificationsList').innerHTML = `
+                            <div class="text-center py-5">
+                                <i class="fas fa-bell-slash fa-4x text-muted mb-3"></i>
+                                <h5 class="text-muted">目前沒有通知</h5>
+                                <p class="text-muted">當有新的通知時，它們會出現在這裡</p>
+                            </div>
+                        `;
+                    }
+                    
+                    showToast('通知已刪除', 'success');
+                } else {
+                    showToast(`刪除失敗：${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('刪除通知時發生錯誤', 'error');
+            })
+            .finally(() => {
+                bootstrap.Modal.getInstance(document.getElementById('deleteNotificationModal')).hide();
+                notificationToDelete = null;
+            });
+        }
+
+        // 清空所有通知
+        function clearAllNotifications() {
+            if (confirm('確定要清空所有通知嗎？此操作無法復原。')) {
+                fetch('/api/notification/clear-all', {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // 清空頁面
+                        document.getElementById('notificationsList').innerHTML = `
+                            <div class="text-center py-5">
+                                <i class="fas fa-bell-slash fa-4x text-muted mb-3"></i>
+                                <h5 class="text-muted">目前沒有通知</h5>
+                                <p class="text-muted">當有新的通知時，它們會出現在這裡</p>
+                            </div>
+                        `;
+                        
+                        // 更新統計
+                        updateNotificationStats();
+                        
+                        showToast('所有通知已清空', 'success');
+                    } else {
+                        showToast(`清空失敗：${data.message}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('清空通知時發生錯誤', 'error');
+                });
+            }
+        }
+
+        // 重新整理通知
+        function refreshNotifications() {
+            location.reload();
+        }
+
+        // 更新通知統計
+        function updateNotificationStats() {
+            // 這裡可以發送請求更新統計數據，或者直接更新頁面
+            // 為了簡單起見，我們重新整理頁面
+            setTimeout(() => location.reload(), 1000);
+        }
+
+        // 前往通知來源
+        function goToSource(sourceType, sourceId) {
+            let url = '';
+            
+            switch (sourceType) {
+                case 'Forum':
+                    url = `/Forum/Post/${sourceId}`;
+                    break;
+                case 'Store':
+                    url = `/Store/Product/${sourceId}`;
+                    break;
+                case 'User':
+                    url = `/User/Profile/${sourceId}`;
+                    break;
+                default:
+                    url = '/';
+                    break;
+            }
+            
+            if (url !== '/') {
+                window.open(url, '_blank');
+            }
+        }
+
+        // 顯示提示訊息
+        function showToast(message, type = 'info') {
+            if (type === 'success') {
+                alert('✅ ' + message);
+            } else if (type === 'error') {
+                alert('❌ ' + message);
+            } else if (type === 'warning') {
+                alert('⚠️ ' + message);
+            } else {
+                alert(message);
+            }
+        }
+    </script>
+}

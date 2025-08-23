@@ -1,0 +1,748 @@
+@model List<GameCore.Core.Entities.Forum>
+@{
+    ViewData["Title"] = "遊戲論壇";
+    ViewData["ActivePage"] = "Forum";
+}
+
+<div class="container-fluid">
+    <!-- 頁面標題 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-comments text-primary"></i>
+                遊戲論壇
+            </h1>
+            <p class="text-muted">與其他玩家討論遊戲攻略、分享心得、結交朋友</p>
+        </div>
+    </div>
+
+    <!-- 論壇統計 -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-comments fa-2x mb-2"></i>
+                    <h4>@(Model?.Count ?? 0)</h4>
+                    <p class="mb-0">活躍版面</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-file-alt fa-2x mb-2"></i>
+                    <h4 id="totalPosts">0</h4>
+                    <p class="mb-0">總貼文數</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-2x mb-2"></i>
+                    <h4 id="totalUsers">0</h4>
+                    <p class="mb-0">活躍用戶</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-clock fa-2x mb-2"></i>
+                    <h4 id="todayPosts">0</h4>
+                    <p class="mb-0">今日新貼</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 快速操作 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary" onclick="refreshForums()">
+                        <i class="fas fa-sync-alt"></i> 重新整理
+                    </button>
+                    <button class="btn btn-outline-info" onclick="showForumStats()">
+                        <i class="fas fa-chart-bar"></i> 詳細統計
+                    </button>
+                </div>
+                <div class="d-flex gap-2">
+                    @if (User.IsInRole("Admin") || User.IsInRole("Moderator"))
+                    {
+                        <a href="/Forum/Create" class="btn btn-success">
+                            <i class="fas fa-plus"></i> 創建版面
+                        </a>
+                    }
+                    <a href="/Forum/MyPosts" class="btn btn-outline-secondary">
+                        <i class="fas fa-list"></i> 我的貼文
+                    </a>
+                    <a href="/Forum/Subscriptions" class="btn btn-outline-secondary">
+                        <i class="fas fa-bell"></i> 我的訂閱
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 論壇版面列表 -->
+    <div class="row" id="forumsContainer">
+        @if (Model != null && Model.Any())
+        {
+            @foreach (var forum in Model)
+            {
+                <div class="col-12 mb-4">
+                    <div class="card shadow-sm forum-card">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <div class="forum-info">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <h5 class="mb-0 me-3">
+                                                <a href="/Forum/Posts/@forum.Id" class="text-decoration-none text-dark">
+                                                    @forum.Name
+                                                </a>
+                                            </h5>
+                                            @if (!forum.IsActive)
+                                            {
+                                                <span class="badge bg-secondary">已關閉</span>
+                                            }
+                                            @if (forum.IsSticky)
+                                            {
+                                                <span class="badge bg-warning">置頂</span>
+                                            }
+                                        </div>
+                                        <p class="text-muted mb-2">@forum.Description</p>
+                                        <div class="forum-meta">
+                                            <small class="text-muted me-3">
+                                                <i class="fas fa-folder"></i> @forum.Category
+                                            </small>
+                                            <small class="text-muted me-3">
+                                                <i class="fas fa-user"></i> 版主: @(forum.Moderator?.Username ?? "未指定")
+                                            </small>
+                                            <small class="text-muted">
+                                                <i class="fas fa-clock"></i> 建立於 @forum.CreateTime.ToString("yyyy/MM/dd")
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="forum-stats text-center">
+                                        <div class="row">
+                                            <div class="col-4">
+                                                <div class="stat-item">
+                                                    <h6 class="text-primary mb-1">@(forum.PostCount ?? 0)</h6>
+                                                    <small class="text-muted">貼文</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="stat-item">
+                                                    <h6 class="text-success mb-1">@(forum.ReplyCount ?? 0)</h6>
+                                                    <small class="text-muted">回覆</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="stat-item">
+                                                    <h6 class="text-info mb-1">@(forum.SubscriberCount ?? 0)</h6>
+                                                    <small class="text-muted">訂閱</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2">
+                                            @if (forum.IsSubscribed)
+                                            {
+                                                <button class="btn btn-sm btn-outline-primary" onclick="unsubscribeForum(@forum.Id)">
+                                                    <i class="fas fa-bell-slash"></i> 取消訂閱
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-sm btn-primary" onclick="subscribeForum(@forum.Id)">
+                                                    <i class="fas fa-bell"></i> 訂閱
+                                                </button>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="forum-actions">
+                                    <a href="/Forum/Posts/@forum.Id" class="btn btn-outline-primary btn-sm me-2">
+                                        <i class="fas fa-eye"></i> 瀏覽版面
+                                    </a>
+                                    @if (User.IsInRole("Admin") || User.IsInRole("Moderator"))
+                                    {
+                                        <a href="/Forum/Edit/@forum.Id" class="btn btn-outline-secondary btn-sm me-2">
+                                            <i class="fas fa-edit"></i> 編輯
+                                        </a>
+                                        <button class="btn btn-outline-danger btn-sm" onclick="deleteForum(@forum.Id, '@forum.Name')">
+                                            <i class="fas fa-trash"></i> 刪除
+                                        </button>
+                                    }
+                                </div>
+                                <div class="forum-last-activity">
+                                    @if (forum.LastPost != null)
+                                    {
+                                        <small class="text-muted">
+                                            最新: <a href="/Forum/Post/@forum.LastPost.Id" class="text-decoration-none">
+                                                @forum.LastPost.Title
+                                            </a>
+                                            by @forum.LastPost.Author?.Username
+                                            @forum.LastPost.CreateTime.ToString("MM/dd HH:mm")
+                                        </small>
+                                    }
+                                    else
+                                    {
+                                        <small class="text-muted">尚無貼文</small>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-comments fa-4x text-muted mb-3"></i>
+                        <h4 class="text-muted">目前沒有論壇版面</h4>
+                        <p class="text-muted">論壇版面將由管理員創建。</p>
+                        @if (User.IsInRole("Admin") || User.IsInRole("Moderator"))
+                        {
+                            <a href="/Forum/Create" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> 創建第一個版面
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- 熱門標籤 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tags"></i>
+                        熱門標籤
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="popular-tags" id="popularTags">
+                        <div class="text-center text-muted py-3">
+                            <i class="fas fa-spinner fa-spin"></i> 載入中...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 最新貼文預覽 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-fire"></i>
+                        最新貼文
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="latest-posts" id="latestPosts">
+                        <div class="text-center text-muted py-3">
+                            <i class="fas fa-spinner fa-spin"></i> 載入中...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 論壇統計 Modal -->
+<div class="modal fade" id="forumStatsModal" tabindex="-1" aria-labelledby="forumStatsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="forumStatsModalLabel">
+                    <i class="fas fa-chart-bar"></i> 論壇詳細統計
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body text-center">
+                                <h4 id="modalTotalPosts">0</h4>
+                                <p class="mb-0">總貼文數</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <h4 id="modalTotalReplies">0</h4>
+                                <p class="mb-0">總回覆數</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body text-center">
+                                <h4 id="modalTotalUsers">0</h4>
+                                <p class="mb-0">活躍用戶</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body text-center">
+                                <h4 id="modalTodayPosts">0</h4>
+                                <p class="mb-0">今日新貼</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <h6>版面活躍度排行</h6>
+                    <div class="forum-activity-ranking" id="forumActivityRanking">
+                        <!-- 排行將由 JavaScript 動態生成 -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 刪除確認 Modal -->
+<div class="modal fade" id="deleteForumModal" tabindex="-1" aria-labelledby="deleteForumModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteForumModalLabel">
+                    <i class="fas fa-exclamation-triangle text-danger"></i> 確認刪除版面
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>您確定要刪除版面 "<span id="deleteForumName"></span>" 嗎？</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>警告：</strong> 此操作將永久刪除該版面及其所有貼文和回覆，無法復原。
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteForum()">確認刪除</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .forum-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .forum-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        }
+
+        .forum-info h5 a:hover {
+            color: #007bff !important;
+        }
+
+        .forum-meta small {
+            font-size: 0.85rem;
+        }
+
+        .stat-item h6 {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .stat-item small {
+            font-size: 0.75rem;
+        }
+
+        .forum-actions .btn {
+            font-size: 0.8rem;
+        }
+
+        .forum-last-activity small {
+            font-size: 0.8rem;
+        }
+
+        .forum-last-activity a:hover {
+            color: #007bff !important;
+        }
+
+        .popular-tags .tag-item {
+            display: inline-block;
+            margin: 0.25rem;
+            padding: 0.5rem 1rem;
+            background-color: #f8f9fc;
+            border: 1px solid #e3e6f0;
+            border-radius: 2rem;
+            color: #495057;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .popular-tags .tag-item:hover {
+            background-color: #007bff;
+            border-color: #007bff;
+            color: white;
+            text-decoration: none;
+        }
+
+        .latest-posts .post-item {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e3e6f0;
+        }
+
+        .latest-posts .post-item:last-child {
+            border-bottom: none;
+        }
+
+        .latest-posts .post-title {
+            font-weight: 500;
+            color: #495057;
+            text-decoration: none;
+        }
+
+        .latest-posts .post-title:hover {
+            color: #007bff;
+        }
+
+        .latest-posts .post-meta {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+
+        .card-header {
+            background-color: #f8f9fc;
+            border-bottom: 1px solid #e3e6f0;
+        }
+
+        .badge {
+            font-size: 0.7rem;
+        }
+
+        .btn-sm {
+            font-size: 0.8rem;
+            padding: 0.375rem 0.5rem;
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 767.98px) {
+            .forum-stats {
+                margin-top: 1rem;
+            }
+            
+            .forum-actions {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .forum-actions .btn {
+                width: 100%;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        let forums = @Html.Raw(Json.Serialize(Model ?? new List<GameCore.Core.Entities.Forum>()));
+        let forumToDelete = null;
+
+        // 頁面載入完成後初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadForumStats();
+            loadPopularTags();
+            loadLatestPosts();
+        });
+
+        // 載入論壇統計
+        function loadForumStats() {
+            // 這裡應該調用 API 獲取統計資料
+            // 暫時使用模擬資料
+            const stats = {
+                totalPosts: 1250,
+                totalUsers: 89,
+                todayPosts: 23
+            };
+            
+            document.getElementById('totalPosts').textContent = stats.totalPosts.toLocaleString();
+            document.getElementById('totalUsers').textContent = stats.totalUsers.toLocaleString();
+            document.getElementById('todayPosts').textContent = stats.todayPosts.toLocaleString();
+        }
+
+        // 載入熱門標籤
+        function loadPopularTags() {
+            // 這裡應該調用 API 獲取熱門標籤
+            const tags = [
+                { name: '攻略', count: 156 },
+                { name: '心得', count: 89 },
+                { name: '問題', count: 67 },
+                { name: '討論', count: 45 },
+                { name: '分享', count: 34 },
+                { name: '新手', count: 28 },
+                { name: '裝備', count: 23 },
+                { name: '寵物', count: 19 }
+            ];
+            
+            const container = document.getElementById('popularTags');
+            let html = '';
+            
+            tags.forEach(tag => {
+                html += `
+                    <a href="/Forum/Search?tag=${encodeURIComponent(tag.name)}" class="tag-item">
+                        ${tag.name} <span class="badge bg-secondary">${tag.count}</span>
+                    </a>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // 載入最新貼文
+        function loadLatestPosts() {
+            // 這裡應該調用 API 獲取最新貼文
+            const posts = [
+                {
+                    id: 1,
+                    title: '新手求教：如何快速升級？',
+                    author: '新手玩家',
+                    createTime: '2025/01/16 14:30',
+                    forum: '新手專區'
+                },
+                {
+                    id: 2,
+                    title: '分享我的寵物培養心得',
+                    author: '寵物達人',
+                    createTime: '2025/01/16 13:45',
+                    forum: '寵物討論'
+                },
+                {
+                    id: 3,
+                    title: '裝備強化攻略分享',
+                    author: '裝備專家',
+                    createTime: '2025/01/16 12:20',
+                    forum: '裝備攻略'
+                },
+                {
+                    id: 4,
+                    title: '遊戲 Bug 回報',
+                    author: '測試員',
+                    createTime: '2025/01/16 11:15',
+                    forum: '問題回報'
+                },
+                {
+                    id: 5,
+                    title: '週末活動預告',
+                    author: '官方小編',
+                    createTime: '2025/01/16 10:30',
+                    forum: '官方公告'
+                }
+            ];
+            
+            const container = document.getElementById('latestPosts');
+            let html = '';
+            
+            posts.forEach(post => {
+                html += `
+                    <div class="post-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <a href="/Forum/Post/${post.id}" class="post-title">${post.title}</a>
+                                <div class="post-meta">
+                                    <i class="fas fa-user"></i> ${post.author} | 
+                                    <i class="fas fa-clock"></i> ${post.createTime} | 
+                                    <i class="fas fa-folder"></i> ${post.forum}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // 重新整理論壇
+        function refreshForums() {
+            location.reload();
+        }
+
+        // 顯示論壇統計
+        function showForumStats() {
+            // 更新 Modal 中的統計資料
+            document.getElementById('modalTotalPosts').textContent = document.getElementById('totalPosts').textContent;
+            document.getElementById('modalTotalReplies').textContent = '1,890';
+            document.getElementById('modalTotalUsers').textContent = document.getElementById('totalUsers').textContent;
+            document.getElementById('modalTodayPosts').textContent = document.getElementById('todayPosts').textContent;
+            
+            // 生成版面活躍度排行
+            const rankingContainer = document.getElementById('forumActivityRanking');
+            let html = '';
+            
+            if (forums.length > 0) {
+                const sortedForums = [...forums].sort((a, b) => (b.postCount || 0) - (a.postCount || 0));
+                
+                sortedForums.slice(0, 5).forEach((forum, index) => {
+                    html += `
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <span class="badge bg-${index === 0 ? 'warning' : index === 1 ? 'secondary' : index === 2 ? 'danger' : 'info'} me-2">
+                                    ${index + 1}
+                                </span>
+                                <span>${forum.name}</span>
+                            </div>
+                            <span class="text-muted">${forum.postCount || 0} 貼文</span>
+                        </div>
+                    `;
+                });
+            } else {
+                html = '<p class="text-muted">暫無資料</p>';
+            }
+            
+            rankingContainer.innerHTML = html;
+            
+            const modal = new bootstrap.Modal(document.getElementById('forumStatsModal'));
+            modal.show();
+        }
+
+        // 訂閱論壇
+        function subscribeForum(forumId) {
+            fetch('/api/forum/subscribe', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    forumId: forumId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('訂閱成功', 'success');
+                    // 更新按鈕狀態
+                    const button = event.target.closest('button');
+                    button.innerHTML = '<i class="fas fa-bell-slash"></i> 取消訂閱';
+                    button.className = 'btn btn-sm btn-outline-primary';
+                    button.onclick = () => unsubscribeForum(forumId);
+                } else {
+                    showToast(`訂閱失敗：${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('訂閱時發生錯誤，請稍後再試。', 'error');
+            });
+        }
+
+        // 取消訂閱論壇
+        function unsubscribeForum(forumId) {
+            fetch('/api/forum/unsubscribe', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    forumId: forumId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('取消訂閱成功', 'success');
+                    // 更新按鈕狀態
+                    const button = event.target.closest('button');
+                    button.innerHTML = '<i class="fas fa-bell"></i> 訂閱';
+                    button.className = 'btn btn-sm btn-primary';
+                    button.onclick = () => subscribeForum(forumId);
+                } else {
+                    showToast(`取消訂閱失敗：${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('取消訂閱時發生錯誤，請稍後再試。', 'error');
+            });
+        }
+
+        // 刪除論壇
+        function deleteForum(forumId, forumName) {
+            forumToDelete = { id: forumId, name: forumName };
+            document.getElementById('deleteForumName').textContent = forumName;
+            
+            const modal = new bootstrap.Modal(document.getElementById('deleteForumModal'));
+            modal.show();
+        }
+
+        // 確認刪除論壇
+        function confirmDeleteForum() {
+            if (!forumToDelete) return;
+            
+            fetch(`/api/forum/delete/${forumToDelete.id}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('版面刪除成功', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('deleteForumModal')).hide();
+                    // 從頁面移除該版面
+                    const forumCard = document.querySelector(`[data-forum-id="${forumToDelete.id}"]`);
+                    if (forumCard) {
+                        forumCard.remove();
+                    }
+                    // 重新整理頁面
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(`刪除失敗：${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('刪除時發生錯誤，請稍後再試。', 'error');
+            })
+            .finally(() => {
+                forumToDelete = null;
+            });
+        }
+
+        // 顯示提示訊息
+        function showToast(message, type = 'info') {
+            if (type === 'success') {
+                alert('✅ ' + message);
+            } else if (type === 'error') {
+                alert('❌ ' + message);
+            } else if (type === 'warning') {
+                alert('⚠️ ' + message);
+            } else {
+                alert(message);
+            }
+        }
+    </script>
+}

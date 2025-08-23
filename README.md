@@ -2,6 +2,11 @@
 
 ![GameCore Logo](https://via.placeholder.com/800x200/7557ff/ffffff?text=GameCore+%E9%81%8A%E6%88%B2%E7%A4%BE%E7%BE%A4%E5%B9%B3%E5%8F%B0)
 
+> **🚨 專案狀態**: 🟡 進行中 (34% 完成)  
+> **📊 進度報告**: [PROGRESS.md](./PROGRESS.md) | [架構差異分析](./ARCH-GAP-ANALYSIS.md)  
+> **🎯 目標**: 產生「可編譯、可運行、可部署」且完成度 100% 的專案  
+> **⏰ 預估完工**: 2024-12-21 01:00 UTC
+
 ## 🎮 專案概述
 
 GameCore 是一個功能完整的遊戲社群平台，整合了遊戲熱度觀測、論壇社群、官方商城、玩家自由市場（C2C）、寵物養成與小遊戲、即時訊息/群組與通知等功能。

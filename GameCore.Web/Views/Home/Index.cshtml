@@ -730,14 +730,14 @@
                 const tileGrid = document.getElementById('tileGrid');
                 if (tileGrid) {
                     tileGrid.innerHTML = boards.map((b, i) => `
-                        <a class="tile colorful" href="/Forum/${b.key}" data-board="${b.key}">
-                            <div class="name">${b.name}</div>
-                            <div class="meta">${b.intro}</div>
-                            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px">
-                                <span class="mini">今日新貼 ${Math.floor(Math.random()*40)+6}</span>
-                                <span class="mini">活躍 ${Math.floor(Math.random()*200)+40}</span>
-                            </div>
-                        </a>
+                                        <a class="tile colorful" href="/Forum/${b.key}" data-board="${b.key}">
+                    <div class="name">${b.name}</div>
+                    <div class="meta">${b.intro}</div>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px">
+                        <span class="mini">今日新貼 ${Math.floor(Math.random()*40)+6}</span>
+                        <span class="mini">活躍 ${Math.floor(Math.random()*200)+40}</span>
+                    </div>
+                </a>
                     `).join('');
                 }
             }
@@ -797,7 +797,7 @@
                             <div>
                                 <div style="font-weight:900">${post.title}</div>
                                 <div class="meta">
-                                    <span>@${post.author}</span>
+                                    <span>${post.author}</span>
                                     <span>｜</span>
                                     <span>${post.time}</span>
                                 </div>

@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # SQL Server 資料庫
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=GameCore123!
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - gamecore-network
+
+  # GameCore Web 應用程式
+  gamecore-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:80"
+      - "5001:443"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=GameCore;User Id=sa;Password=GameCore123!;TrustServerCertificate=true
+      - ASPNETCORE_URLS=http://+:80;https://+:443
+    depends_on:
+      - sqlserver
+    networks:
+      - gamecore-network
+    volumes:
+      - ./logs:/app/logs
+
+  # Redis 快取 (可選)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - gamecore-network
+    volumes:
+      - redis_data:/data
+
+volumes:
+  sqlserver_data:
+  redis_data:
+
+networks:
+  gamecore-network:
+    driver: bridge

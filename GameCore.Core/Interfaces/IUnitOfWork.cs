@@ -1,3 +1,5 @@
+using GameCore.Core.Entities;
+
 namespace GameCore.Core.Interfaces
 {
     /// <summary>

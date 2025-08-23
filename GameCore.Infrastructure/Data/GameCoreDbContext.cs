@@ -138,7 +138,7 @@ namespace GameCore.Infrastructure.Data
         /// <summary>
         /// 版內主題表
         /// </summary>
-        public DbSet<Thread> Threads { get; set; }
+        public DbSet<GameCore.Core.Entities.Thread> Threads { get; set; }
 
         /// <summary>
         /// 主題回覆表
@@ -457,7 +457,7 @@ namespace GameCore.Infrastructure.Data
                 .HasDatabaseName("IX_MiniGame_UserId_StartTime");
 
             // 論壇相關索引
-            modelBuilder.Entity<Thread>()
+            modelBuilder.Entity<GameCore.Core.Entities.Thread>()
                 .HasIndex(t => new { t.ForumId, t.UpdatedAt })
                 .HasDatabaseName("IX_Threads_ForumId_UpdatedAt");
 
@@ -578,28 +578,22 @@ namespace GameCore.Infrastructure.Data
             #region 設定資料驗證約束
             // 寵物屬性值約束 (0-100)
             modelBuilder.Entity<Pet>()
-                .Property(p => p.Hunger)
                 .HasCheckConstraint("CK_Pet_Hunger", "[Hunger] >= 0 AND [Hunger] <= 100");
 
             modelBuilder.Entity<Pet>()
-                .Property(p => p.Mood)
                 .HasCheckConstraint("CK_Pet_Mood", "[Mood] >= 0 AND [Mood] <= 100");
 
             modelBuilder.Entity<Pet>()
-                .Property(p => p.Stamina)
                 .HasCheckConstraint("CK_Pet_Stamina", "[Stamina] >= 0 AND [Stamina] <= 100");
 
             modelBuilder.Entity<Pet>()
-                .Property(p => p.Cleanliness)
                 .HasCheckConstraint("CK_Pet_Cleanliness", "[Cleanliness] >= 0 AND [Cleanliness] <= 100");
 
             modelBuilder.Entity<Pet>()
-                .Property(p => p.Health)
                 .HasCheckConstraint("CK_Pet_Health", "[Health] >= 0 AND [Health] <= 100");
 
             // 寵物等級約束 (1-250)
             modelBuilder.Entity<Pet>()
-                .Property(p => p.Level)
                 .HasCheckConstraint("CK_Pet_Level", "[Level] >= 1 AND [Level] <= 250");
             #endregion
         }

@@ -1,0 +1,504 @@
+@{
+    ViewData["Title"] = "註冊 - GameCore";
+    Layout = "~/Views/Shared/_AuthLayout.cshtml";
+}
+
+<!-- 註冊頁面 - 遵循使用者提供的設計風格 -->
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="logo-section">
+                <div class="logo-badge">GC</div>
+                <h1 class="logo-text">GameCore</h1>
+            </div>
+            <p class="auth-subtitle">加入 GameCore 開始您的遊戲之旅</p>
+        </div>
+
+        <!-- 註冊表單 -->
+        <form id="registerForm" class="auth-form">
+            <!-- 步驟指示器 -->
+            <div class="step-indicator">
+                <div class="step active" data-step="1">
+                    <div class="step-number">1</div>
+                    <div class="step-label">基本資料</div>
+                </div>
+                <div class="step" data-step="2">
+                    <div class="step-number">2</div>
+                    <div class="step-label">個人資訊</div>
+                </div>
+                <div class="step" data-step="3">
+                    <div class="step-number">3</div>
+                    <div class="step-label">完成註冊</div>
+                </div>
+            </div>
+
+            <!-- 步驟 1: 基本資料 -->
+            <div class="form-step active" id="step1">
+                <div class="form-group">
+                    <label for="userName" class="form-label">使用者名稱 *</label>
+                    <input type="text" id="userName" name="userName" class="form-input" 
+                           placeholder="請輸入使用者名稱（唯一）" required>
+                    <div class="input-hint">使用者名稱將顯示在遊戲中，註冊後無法更改</div>
+                    <div class="error-message" id="userNameError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="userAccount" class="form-label">登入帳號 *</label>
+                    <input type="text" id="userAccount" name="userAccount" class="form-input" 
+                           placeholder="請輸入登入帳號（英數字）" required>
+                    <div class="input-hint">用於登入的帳號，建議使用英文字母和數字</div>
+                    <div class="error-message" id="userAccountError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email" class="form-label">電子郵件 *</label>
+                    <input type="email" id="email" name="email" class="form-input" 
+                           placeholder="請輸入電子郵件" required>
+                    <div class="input-hint">用於接收重要通知和密碼重設</div>
+                    <div class="error-message" id="emailError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">密碼 *</label>
+                    <div class="password-input-container">
+                        <input type="password" id="password" name="password" class="form-input" 
+                               placeholder="請輸入密碼" required>
+                        <button type="button" class="password-toggle" id="passwordToggle">
+                            <i class="icon-eye" id="eyeIcon">👁️</i>
+                        </button>
+                    </div>
+                    <div class="password-strength" id="passwordStrength">
+                        <div class="strength-bar">
+                            <div class="strength-fill"></div>
+                        </div>
+                        <div class="strength-text">密碼強度：弱</div>
+                    </div>
+                    <div class="error-message" id="passwordError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword" class="form-label">確認密碼 *</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" class="form-input" 
+                           placeholder="請再次輸入密碼" required>
+                    <div class="error-message" id="confirmPasswordError"></div>
+                </div>
+
+                <button type="button" class="btn-primary btn-full" id="nextStep1">
+                    下一步
+                </button>
+            </div>
+
+            <!-- 步驟 2: 個人資訊 -->
+            <div class="form-step" id="step2">
+                <div class="form-group">
+                    <label for="nickName" class="form-label">暱稱 *</label>
+                    <input type="text" id="nickName" name="nickName" class="form-input" 
+                           placeholder="請輸入暱稱" required>
+                    <div class="input-hint">在論壇和社群中顯示的名稱</div>
+                    <div class="error-message" id="nickNameError"></div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="gender" class="form-label">性別 *</label>
+                        <select id="gender" name="gender" class="form-input" required>
+                            <option value="">請選擇</option>
+                            <option value="M">男性</option>
+                            <option value="F">女性</option>
+                            <option value="O">其他</option>
+                        </select>
+                        <div class="error-message" id="genderError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="dateOfBirth" class="form-label">出生日期 *</label>
+                        <input type="date" id="dateOfBirth" name="dateOfBirth" class="form-input" required>
+                        <div class="error-message" id="dateOfBirthError"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="cellphone" class="form-label">聯絡電話 *</label>
+                    <input type="tel" id="cellphone" name="cellphone" class="form-input" 
+                           placeholder="請輸入手機號碼" required>
+                    <div class="error-message" id="cellphoneError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="idNumber" class="form-label">身分證字號 *</label>
+                    <input type="text" id="idNumber" name="idNumber" class="form-input" 
+                           placeholder="請輸入身分證字號" required>
+                    <div class="input-hint">用於身分驗證，絕對保密</div>
+                    <div class="error-message" id="idNumberError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="address" class="form-label">地址 *</label>
+                    <textarea id="address" name="address" class="form-input" rows="3" 
+                              placeholder="請輸入完整地址" required></textarea>
+                    <div class="error-message" id="addressError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="userIntroduce" class="form-label">自我介紹</label>
+                    <textarea id="userIntroduce" name="userIntroduce" class="form-input" rows="4" 
+                              placeholder="告訴大家關於您的遊戲興趣（選填，最多200字）" maxlength="200"></textarea>
+                    <div class="char-count">
+                        <span id="charCount">0</span>/200
+                    </div>
+                </div>
+
+                <div class="form-buttons">
+                    <button type="button" class="btn-secondary" id="backStep1">
+                        上一步
+                    </button>
+                    <button type="button" class="btn-primary" id="nextStep2">
+                        下一步
+                    </button>
+                </div>
+            </div>
+
+            <!-- 步驟 3: 完成註冊 -->
+            <div class="form-step" id="step3">
+                <div class="summary-section">
+                    <h3>註冊資料確認</h3>
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <label>使用者名稱：</label>
+                            <span id="summaryUserName"></span>
+                        </div>
+                        <div class="summary-item">
+                            <label>登入帳號：</label>
+                            <span id="summaryUserAccount"></span>
+                        </div>
+                        <div class="summary-item">
+                            <label>電子郵件：</label>
+                            <span id="summaryEmail"></span>
+                        </div>
+                        <div class="summary-item">
+                            <label>暱稱：</label>
+                            <span id="summaryNickName"></span>
+                        </div>
+                        <div class="summary-item">
+                            <label>聯絡電話：</label>
+                            <span id="summaryCellphone"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="terms-section">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="agreeTerms" name="agreeTerms" required>
+                        <span class="checkmark"></span>
+                        我已閱讀並同意 <a href="/Terms" target="_blank">服務條款</a> 和 <a href="/Privacy" target="_blank">隱私政策</a>
+                    </label>
+                    <div class="error-message" id="agreeTermsError"></div>
+                </div>
+
+                <div class="newsletter-section">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="newsletter" name="newsletter">
+                        <span class="checkmark"></span>
+                        訂閱電子報，接收最新遊戲資訊和活動通知
+                    </label>
+                </div>
+
+                <div class="form-buttons">
+                    <button type="button" class="btn-secondary" id="backStep2">
+                        上一步
+                    </button>
+                    <button type="submit" class="btn-primary" id="registerBtn">
+                        <span class="btn-text">完成註冊</span>
+                        <div class="loading-spinner" id="registerSpinner"></div>
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <!-- 登入連結 -->
+        <div class="auth-footer">
+            <p>已經有帳戶了？ <a href="/Auth/Login" class="login-link">立即登入</a></p>
+        </div>
+    </div>
+
+    <!-- 背景裝飾 -->
+    <div class="auth-background">
+        <div class="floating-shape shape-1"></div>
+        <div class="floating-shape shape-2"></div>
+        <div class="floating-shape shape-3"></div>
+    </div>
+</div>
+
+<!-- Toast 通知 -->
+<div id="toastContainer" class="toast-container"></div>
+
+@section Scripts {
+    <script src="~/js/auth/register.js"></script>
+}
+
+<style>
+/* 註冊頁面專用樣式 - 擴展自登入頁面樣式 */
+.auth-card {
+    max-width: 520px;
+}
+
+.step-indicator {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 32px;
+    position: relative;
+}
+
+.step-indicator::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 25%;
+    right: 25%;
+    height: 2px;
+    background: var(--line);
+    z-index: 1;
+}
+
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    position: relative;
+    z-index: 2;
+}
+
+.step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 2px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    margin-bottom: 8px;
+    transition: all 0.3s ease;
+}
+
+.step.active .step-number {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+
+.step.completed .step-number {
+    background: var(--success-color, #10b981);
+    border-color: var(--success-color, #10b981);
+    color: white;
+}
+
+.step-label {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+}
+
+.step.active .step-label {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.form-step {
+    display: none;
+}
+
+.form-step.active {
+    display: block;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.input-hint {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+}
+
+.password-strength {
+    margin-top: 8px;
+}
+
+.strength-bar {
+    height: 4px;
+    background: var(--line);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+
+.strength-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--error-color, #ef4444);
+    transition: all 0.3s ease;
+    border-radius: 2px;
+}
+
+.strength-fill.weak {
+    width: 25%;
+    background: var(--error-color, #ef4444);
+}
+
+.strength-fill.fair {
+    width: 50%;
+    background: var(--warning-color, #f59e0b);
+}
+
+.strength-fill.good {
+    width: 75%;
+    background: var(--accent);
+}
+
+.strength-fill.strong {
+    width: 100%;
+    background: var(--success-color, #10b981);
+}
+
+.strength-text {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.form-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-secondary {
+    flex: 1;
+    padding: 14px 20px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(var(--blur));
+}
+
+.btn-secondary:hover {
+    background: var(--glass);
+    transform: translateY(-1px);
+}
+
+.btn-primary {
+    flex: 2;
+}
+
+.char-count {
+    text-align: right;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+}
+
+.summary-section {
+    margin-bottom: 24px;
+}
+
+.summary-section h3 {
+    margin: 0 0 16px 0;
+    color: var(--ink);
+    font-size: 18px;
+}
+
+.summary-grid {
+    display: grid;
+    gap: 12px;
+    background: var(--surface);
+    padding: 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line);
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.summary-item label {
+    font-weight: 600;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.summary-item span {
+    color: var(--ink);
+    font-weight: 500;
+}
+
+.terms-section {
+    margin-bottom: 16px;
+}
+
+.newsletter-section {
+    margin-bottom: 24px;
+}
+
+.checkbox-container a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.checkbox-container a:hover {
+    text-decoration: underline;
+}
+
+/* 響應式設計 */
+@media (max-width: 640px) {
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .form-buttons {
+        flex-direction: column;
+    }
+    
+    .btn-primary {
+        flex: 1;
+    }
+    
+    .step-indicator {
+        margin-bottom: 24px;
+    }
+    
+    .step-label {
+        display: none;
+    }
+    
+    .summary-grid {
+        gap: 8px;
+        padding: 12px;
+    }
+    
+    .summary-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+}
+
+@media (max-width: 480px) {
+    .auth-card {
+        max-width: none;
+        margin: 8px;
+        padding: 20px;
+    }
+}
+</style>

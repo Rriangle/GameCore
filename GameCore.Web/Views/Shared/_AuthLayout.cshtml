@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - GameCore</title>
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico" />
+    
+    <!-- CSS 變數定義 - 遵循使用者提供的風格 -->
+    <style>
+        :root {
+            /* 基礎色彩系統 */
+            --bg: #eef3f8;
+            --bg2: #ffffff;
+            --ink: #1f2937;
+            --muted: #64748b;
+            --line: #e5e7eb;
+            --surface: rgba(255,255,255,.75);
+            --glass: rgba(255,255,255,.45);
+            --accent: #7557ff;
+            --accent-2: #34d2ff;
+            --accent-3: #22c55e;
+            --radius: 18px;
+            --radius-sm: 12px;
+            --shadow: 0 18px 40px rgba(17,24,39,.12);
+            --blur: 14px;
+            
+            /* 狀態色彩 */
+            --success-color: #22c55e;
+            --error-color: #ff6b6b;
+            --warning-color: #f59e0b;
+        }
+
+        /* 深色主題 */
+        body.dark {
+            --bg: #0c111b;
+            --bg2: #0a0f18;
+            --ink: #e5edff;
+            --muted: #9fb1c9;
+            --line: #1e2b43;
+            --surface: rgba(22,30,48,.65);
+            --glass: rgba(18,24,39,.50);
+            --shadow: 0 18px 42px rgba(0,0,0,.35);
+        }
+
+        /* 基礎重置 */
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            color: var(--ink);
+            font: 16px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+            background: 
+                radial-gradient(900px 500px at -10% -10%, rgba(117,87,255,.10), transparent 60%), 
+                radial-gradient(800px 460px at 110% 10%, rgba(52,210,255,.10), transparent 50%), 
+                linear-gradient(180deg, var(--bg), var(--bg2));
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        button {
+            font-family: inherit;
+        }
+
+        /* 防止滾動當模態開啟時 */
+        body.noscroll {
+            overflow: hidden;
+        }
+
+        /* Loading 狀態 */
+        .loading {
+            pointer-events: none;
+        }
+
+        /* 主題切換按鈕 */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: var(--glass);
+            backdrop-filter: blur(var(--blur));
+            border: 1px solid var(--line);
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow);
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+            background: var(--surface);
+        }
+
+        .theme-toggle .icon {
+            font-size: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .theme-toggle:hover .icon {
+            transform: rotate(180deg);
+        }
+
+        /* 通用動畫類 */
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+
+        .slide-up {
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 語音協助功能 */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* 無障礙焦點樣式 */
+        *:focus {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        button:focus,
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        /* 高對比模式支援 */
+        @media (prefers-contrast: high) {
+            :root {
+                --line: #000000;
+                --muted: #333333;
+                --accent: #0000ff;
+            }
+        }
+
+        /* 減少動畫模式 */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* 打印樣式 */
+        @media print {
+            .theme-toggle,
+            .floating-shape,
+            .auth-background {
+                display: none;
+            }
+            
+            .auth-card {
+                box-shadow: none;
+                border: 1px solid #000;
+            }
+        }
+    </style>
+</head>
+<body class="fade-in">
+    <!-- 主題切換按鈕 -->
+    <button class="theme-toggle" id="themeToggle" aria-label="切換深色/淺色主題" title="切換主題">
+        <span class="icon" id="themeIcon">🌙</span>
+    </button>
+
+    <!-- 無障礙跳過連結 -->
+    <a href="#main-content" class="sr-only">跳到主要內容</a>
+
+    <!-- 主要內容 -->
+    <main id="main-content" role="main">
+        @RenderBody()
+    </main>
+
+    <!-- 基礎 JavaScript -->
+    <script>
+        // 主題切換功能
+        (function() {
+            const themeToggle = document.getElementById('themeToggle');
+            const themeIcon = document.getElementById('themeIcon');
+            const body = document.body;
+            
+            // 從 localStorage 讀取主題設定
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                body.classList.add('dark');
+                themeIcon.textContent = '☀️';
+            }
+            
+            // 主題切換事件
+            themeToggle.addEventListener('click', function() {
+                body.classList.toggle('dark');
+                const isDark = body.classList.contains('dark');
+                
+                themeIcon.textContent = isDark ? '☀️' : '🌙';
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                
+                // 觸發自定義事件讓其他組件知道主題已改變
+                window.dispatchEvent(new CustomEvent('themeChanged', {
+                    detail: { isDark }
+                }));
+            });
+        })();
+
+        // 鍵盤導航支援
+        document.addEventListener('keydown', function(e) {
+            // ESC 鍵關閉模態
+            if (e.key === 'Escape') {
+                const modals = document.querySelectorAll('.modal.show');
+                modals.forEach(modal => {
+                    modal.classList.remove('show');
+                    body.classList.remove('noscroll');
+                });
+            }
+        });
+
+        // Toast 通知系統
+        window.showToast = function(message, type = 'info', duration = 5000) {
+            const container = document.getElementById('toastContainer') || createToastContainer();
+            const toast = document.createElement('div');
+            toast.className = `toast ${type} slide-up`;
+            toast.innerHTML = `
+                <div class="toast-content">
+                    <div class="toast-message">${message}</div>
+                    <button class="toast-close" aria-label="關閉通知">×</button>
+                </div>
+            `;
+            
+            container.appendChild(toast);
+            
+            // 自動移除
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.style.animation = 'slideOut 0.3s ease';
+                    setTimeout(() => {
+                        if (toast.parentNode) {
+                            toast.parentNode.removeChild(toast);
+                        }
+                    }, 300);
+                }
+            }, duration);
+            
+            // 手動關閉
+            toast.querySelector('.toast-close').addEventListener('click', () => {
+                if (toast.parentNode) {
+                    toast.style.animation = 'slideOut 0.3s ease';
+                    setTimeout(() => {
+                        if (toast.parentNode) {
+                            toast.parentNode.removeChild(toast);
+                        }
+                    }, 300);
+                }
+            });
+        };
+
+        function createToastContainer() {
+            const container = document.createElement('div');
+            container.id = 'toastContainer';
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+            return container;
+        }
+
+        // 表單驗證輔助函數
+        window.validateEmail = function(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        };
+
+        window.validatePassword = function(password) {
+            const minLength = password.length >= 8;
+            const hasUpper = /[A-Z]/.test(password);
+            const hasLower = /[a-z]/.test(password);
+            const hasNumber = /\d/.test(password);
+            const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+            
+            let score = 0;
+            if (minLength) score++;
+            if (hasUpper) score++;
+            if (hasLower) score++;
+            if (hasNumber) score++;
+            if (hasSpecial) score++;
+            
+            return {
+                isValid: minLength && (hasUpper || hasLower) && hasNumber,
+                score: score,
+                strength: score <= 2 ? 'weak' : score <= 3 ? 'fair' : score <= 4 ? 'good' : 'strong'
+            };
+        };
+
+        // API 請求輔助函數
+        window.apiRequest = async function(url, options = {}) {
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'include'
+            };
+            
+            const requestOptions = {
+                ...defaultOptions,
+                ...options,
+                headers: {
+                    ...defaultOptions.headers,
+                    ...options.headers
+                }
+            };
+            
+            try {
+                const response = await fetch(url, requestOptions);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || `HTTP error! status: ${response.status}`);
+                }
+                
+                return data;
+            } catch (error) {
+                console.error('API request failed:', error);
+                throw error;
+            }
+        };
+
+        // 載入狀態管理
+        window.setLoading = function(element, isLoading) {
+            if (isLoading) {
+                element.classList.add('loading');
+                element.disabled = true;
+                if (element.querySelector('.loading-spinner')) {
+                    element.querySelector('.loading-spinner').style.display = 'block';
+                }
+            } else {
+                element.classList.remove('loading');
+                element.disabled = false;
+                if (element.querySelector('.loading-spinner')) {
+                    element.querySelector('.loading-spinner').style.display = 'none';
+                }
+            }
+        };
+
+        // 錯誤顯示輔助函數
+        window.showError = function(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.classList.add('show');
+            }
+        };
+
+        window.hideError = function(elementId) {
+            const errorElement = document.getElementById(elementId);
+            if (errorElement) {
+                errorElement.classList.remove('show');
+            }
+        };
+
+        // 頁面載入完成後的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 移除載入動畫
+            setTimeout(() => {
+                document.body.classList.add('loaded');
+            }, 100);
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+
+<style>
+/* Toast 通知樣式 */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    max-width: 400px;
+}
+
+.toast {
+    background: var(--glass);
+    backdrop-filter: blur(var(--blur));
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    position: relative;
+}
+
+.toast.success {
+    border-left: 4px solid var(--success-color);
+}
+
+.toast.error {
+    border-left: 4px solid var(--error-color);
+}
+
+.toast.warning {
+    border-left: 4px solid var(--warning-color);
+}
+
+.toast.info {
+    border-left: 4px solid var(--accent);
+}
+
+.toast-content {
+    display: flex;
+    align-items: flex-start;
+    padding: 16px;
+    gap: 12px;
+}
+
+.toast-message {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--ink);
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toast-close:hover {
+    color: var(--ink);
+}
+
+@keyframes slideOut {
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* 響應式調整 */
+@media (max-width: 480px) {
+    .toast-container {
+        left: 16px;
+        right: 16px;
+        top: 16px;
+        max-width: none;
+    }
+    
+    .theme-toggle {
+        top: 16px;
+        right: 16px;
+        width: 44px;
+        height: 44px;
+    }
+}
+</style>

@@ -187,6 +187,68 @@ namespace GameCore.Web.Controllers
             }
         }
 
+        [HttpPost("check-unique")]
+        [AllowAnonymous]
+        public async Task<IActionResult> CheckUnique([FromBody] CheckUniqueRequest request)
+        {
+            try
+            {
+                bool isUnique = false;
+                
+                switch (request.Field?.ToLower())
+                {
+                    case "username":
+                    case "user_name":
+                        isUnique = !await _userService.ExistsByUsernameAsync(request.Value);
+                        break;
+                    case "useraccount":
+                    case "user_account":
+                        isUnique = !await _userService.ExistsByAccountAsync(request.Value);
+                        break;
+                    case "email":
+                        isUnique = !await _userService.ExistsByEmailAsync(request.Value);
+                        break;
+                    case "nickname":
+                    case "user_nickname":
+                        isUnique = !await _userService.ExistsByNicknameAsync(request.Value);
+                        break;
+                    default:
+                        return BadRequest(new { message = "不支援的檢查欄位" });
+                }
+                
+                return Ok(new { isUnique });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while checking uniqueness for {Field}: {Value}", 
+                    request.Field, request.Value);
+                return StatusCode(500, new { message = "檢查過程中發生錯誤" });
+            }
+        }
+
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<IActionResult> GetCurrentUser()
+        {
+            try
+            {
+                var userId = int.Parse(User.FindFirst("UserId")?.Value ?? "0");
+                var result = await _userService.GetProfileAsync(userId);
+                
+                if (result.Success)
+                {
+                    return Ok(new { success = true, user = result.User });
+                }
+                
+                return NotFound(new { success = false, message = result.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while getting current user info");
+                return StatusCode(500, new { success = false, message = "伺服器錯誤，請稍後再試" });
+            }
+        }
+
         [HttpGet("leaderboard")]
         public async Task<IActionResult> GetLeaderboard([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         {

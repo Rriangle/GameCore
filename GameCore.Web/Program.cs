@@ -112,6 +112,7 @@ builder.Services.AddScoped<IPlayerMarketService, PlayerMarketService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IWalletService, WalletService>();
+builder.Services.AddScoped<IDailySignInService, DailySignInService>();
 
 // 設定 Logging
 builder.Logging.ClearProviders();

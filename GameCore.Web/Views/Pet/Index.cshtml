@@ -1,0 +1,920 @@
+@{
+    ViewData["Title"] = "我的寵物";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] | GameCore</title>
+    <style>
+        /* 繼承主要設計系統變數 */
+        :root {
+            --bg: #eef3f8;
+            --bg2: #ffffff;
+            --ink: #1f2937;
+            --muted: #64748b;
+            --line: #e5e7eb;
+            --surface: rgba(255,255,255,.75);
+            --glass: rgba(255,255,255,.45);
+            --accent: #7557ff;
+            --accent-2: #34d2ff;
+            --accent-3: #22c55e;
+            --accent-4: #ff6b9d;
+            --radius: 18px;
+            --radius-sm: 12px;
+            --shadow: 0 18px 40px rgba(17,24,39,.12);
+            --blur: 14px;
+            --pet-healthy: #22c55e;
+            --pet-warning: #f59e0b;
+            --pet-danger: #ef4444;
+        }
+
+        body.dark {
+            --bg: #0c111b;
+            --bg2: #0a0f18;
+            --ink: #e5edff;
+            --muted: #9fb1c9;
+            --line: #1e2b43;
+            --surface: rgba(22,30,48,.65);
+            --glass: rgba(18,24,39,.50);
+            --shadow: 0 18px 42px rgba(0,0,0,.35);
+        }
+
+        .pet-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: radial-gradient(900px 500px at -10% -10%, rgba(117,87,255,.10), transparent 60%),
+                        radial-gradient(800px 460px at 110% 10%, rgba(52,210,255,.10), transparent 50%),
+                        linear-gradient(180deg, var(--bg), var(--bg2));
+            min-height: 100vh;
+            color: var(--ink);
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+        }
+
+        .pet-header {
+            background: var(--glass);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(var(--blur));
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .pet-title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .pet-subtitle {
+            color: var(--muted);
+            font-size: 1.1rem;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 24px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .section-card {
+            background: var(--glass);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(var(--blur));
+            box-shadow: var(--shadow);
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 寵物顯示區域 */
+        .pet-display {
+            position: relative;
+            height: 300px;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #87CEEB, #FFB6C1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .pet-display:hover {
+            transform: scale(1.02);
+            box-shadow: 0 20px 40px rgba(0,0,0,.15);
+        }
+
+        .slime-pet {
+            width: 120px;
+            height: 120px;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            background: #ADD8E6;
+            position: relative;
+            animation: petBounce 2s ease-in-out infinite;
+            box-shadow: 0 10px 20px rgba(0,0,0,.2);
+        }
+
+        .slime-eyes {
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+        }
+
+        .slime-eye {
+            width: 12px;
+            height: 12px;
+            background: #000;
+            border-radius: 50%;
+            animation: petBlink 3s ease-in-out infinite;
+        }
+
+        .slime-mouth {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 10px;
+            border: 2px solid #000;
+            border-top: none;
+            border-radius: 0 0 20px 20px;
+        }
+
+        @keyframes petBounce {
+            0%, 100% { transform: translateY(0) scaleY(1); }
+            50% { transform: translateY(-10px) scaleY(0.95); }
+        }
+
+        @keyframes petBlink {
+            0%, 90%, 100% { transform: scaleY(1); }
+            95% { transform: scaleY(0.1); }
+        }
+
+        /* 寵物資訊 */
+        .pet-info {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .pet-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 4px;
+        }
+
+        .pet-level {
+            font-size: 1rem;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .pet-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            background: var(--accent-3);
+            color: white;
+        }
+
+        /* 屬性條 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--surface);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--line);
+        }
+
+        .stat-icon {
+            font-size: 1.5rem;
+            width: 40px;
+            text-align: center;
+        }
+
+        .stat-info {
+            flex: 1;
+        }
+
+        .stat-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .stat-bar {
+            height: 8px;
+            background: var(--line);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .stat-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .stat-fill.hunger { background: linear-gradient(90deg, #ef4444, #f59e0b); }
+        .stat-fill.mood { background: linear-gradient(90deg, #8b5cf6, #a855f7); }
+        .stat-fill.stamina { background: linear-gradient(90deg, #06b6d4, #0891b2); }
+        .stat-fill.cleanliness { background: linear-gradient(90deg, #10b981, #059669); }
+        .stat-fill.health { background: linear-gradient(90deg, #ef4444, #22c55e); }
+
+        .stat-value {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--muted);
+        }
+
+        /* 互動按鈕 */
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .action-btn {
+            padding: 16px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(0,0,0,.15);
+        }
+
+        .action-btn.feed {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+        }
+
+        .action-btn.bathe {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            color: white;
+        }
+
+        .action-btn.play {
+            background: linear-gradient(135deg, #a855f7, #9333ea);
+            color: white;
+        }
+
+        .action-btn.rest {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 經驗條 */
+        .exp-section {
+            margin-bottom: 20px;
+        }
+
+        .exp-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .exp-bar {
+            height: 12px;
+            background: var(--line);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .exp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-2));
+            border-radius: 6px;
+            transition: width 0.5s ease;
+        }
+
+        /* 換色區域 */
+        .color-section {
+            border-top: 1px solid var(--line);
+            padding-top: 20px;
+        }
+
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .color-option {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+            border-color: var(--accent);
+        }
+
+        .color-option.selected {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent);
+        }
+
+        .recolor-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--accent-4), #ec4899);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .recolor-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 107, 157, 0.3);
+        }
+
+        .recolor-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 載入和成功動畫 */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--muted);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--line);
+            border-top: 2px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .success-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--glass);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-sm);
+            padding: 16px 20px;
+            backdrop-filter: blur(var(--blur));
+            box-shadow: var(--shadow);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+        }
+
+        .success-message.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .success-message.success {
+            border-left: 4px solid var(--accent-3);
+        }
+
+        .success-message.error {
+            border-left: 4px solid var(--pet-danger);
+        }
+
+        /* 創建寵物界面 */
+        .create-pet-section {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .create-pet-icon {
+            font-size: 5rem;
+            margin-bottom: 24px;
+            opacity: 0.7;
+        }
+
+        .create-pet-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .create-pet-desc {
+            color: var(--muted);
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+
+        .create-pet-form {
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        .create-pet-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--line);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            color: var(--ink);
+            font-size: 1rem;
+            margin-bottom: 16px;
+        }
+
+        .create-pet-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .create-pet-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(117, 87, 255, 0.3);
+        }
+
+        /* 警告訊息 */
+        .warning-section {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(239, 68, 68, 0.1));
+            border: 1px solid var(--pet-warning);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .warning-title {
+            color: var(--pet-warning);
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .warning-list {
+            color: var(--pet-danger);
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        .warning-list li {
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="pet-container">
+        <!-- 頁面標題 -->
+        <div class="pet-header">
+            <h1 class="pet-title">我的史萊姆寵物</h1>
+            <p class="pet-subtitle">照顧你的可愛史萊姆，與它一起成長冒險！</p>
+        </div>
+
+        <!-- 主要內容 -->
+        <div id="mainContent">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>載入寵物資訊中...</p>
+            </div>
+        </div>
+
+        <!-- 成功訊息 -->
+        <div id="successMessage" class="success-message">
+            <div id="messageContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // 全域變數
+        let petData = null;
+        let selectedColor = null;
+        let availableColors = [];
+
+        // 頁面載入時初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPetData();
+            loadAvailableColors();
+        });
+
+        // 載入寵物資料
+        async function loadPetData() {
+            try {
+                const response = await fetch('/api/pet');
+                const result = await response.json();
+                
+                if (result.success) {
+                    if (result.hasPet) {
+                        petData = result.data;
+                        renderPetInterface();
+                    } else {
+                        renderCreatePetInterface();
+                    }
+                } else {
+                    showMessage('載入寵物資料失敗', 'error');
+                }
+            } catch (error) {
+                console.error('載入寵物資料失敗:', error);
+                showMessage('載入寵物資料失敗', 'error');
+            }
+        }
+
+        // 載入可用顏色
+        async function loadAvailableColors() {
+            try {
+                const response = await fetch('/api/pet/colors');
+                const result = await response.json();
+                
+                if (result.success) {
+                    availableColors = result.data;
+                }
+            } catch (error) {
+                console.error('載入顏色選項失敗:', error);
+            }
+        }
+
+        // 渲染寵物界面
+        function renderPetInterface() {
+            const content = `
+                <div class="main-layout">
+                    <!-- 左側：寵物顯示和互動 -->
+                    <div>
+                        <div class="section-card">
+                            <div class="pet-display" style="background: linear-gradient(135deg, ${petData.skinColor}, ${petData.backgroundColor})" onclick="interactWithPet()">
+                                <div class="slime-pet" style="background: ${petData.skinColor}">
+                                    <div class="slime-eyes">
+                                        <div class="slime-eye"></div>
+                                        <div class="slime-eye"></div>
+                                    </div>
+                                    <div class="slime-mouth"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="pet-info">
+                                <div class="pet-name">${petData.petName}</div>
+                                <div class="pet-level">等級 ${petData.level} • 經驗 ${petData.experience}</div>
+                                <div class="pet-status">${petData.petStatus}</div>
+                            </div>
+
+                            ${petData.lowStatsWarnings.length > 0 ? `
+                                <div class="warning-section">
+                                    <div class="warning-title">
+                                        ⚠️ 寵物需要照料
+                                    </div>
+                                    <ul class="warning-list">
+                                        ${petData.lowStatsWarnings.map(warning => `<li>${warning}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+
+                            <div class="action-buttons">
+                                <button class="action-btn feed" onclick="performAction('feed')" ${!petData.canAdventure ? 'disabled' : ''}>
+                                    🍎 餵食
+                                </button>
+                                <button class="action-btn bathe" onclick="performAction('bathe')" ${!petData.canAdventure ? 'disabled' : ''}>
+                                    🛁 洗澡
+                                </button>
+                                <button class="action-btn play" onclick="performAction('play')" ${!petData.canAdventure ? 'disabled' : ''}>
+                                    🎮 玩耍
+                                </button>
+                                <button class="action-btn rest" onclick="performAction('rest')" ${!petData.canAdventure ? 'disabled' : ''}>
+                                    😴 休息
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右側：屬性和其他功能 -->
+                    <div>
+                        <!-- 寵物屬性 -->
+                        <div class="section-card">
+                            <div class="section-title">
+                                📊 寵物屬性
+                            </div>
+                            
+                            <div class="stats-grid">
+                                ${renderStatBar('🍎', '飢餓值', petData.hunger, 'hunger')}
+                                ${renderStatBar('😊', '心情值', petData.mood, 'mood')}
+                                ${renderStatBar('⚡', '體力值', petData.stamina, 'stamina')}
+                                ${renderStatBar('🧼', '清潔值', petData.cleanliness, 'cleanliness')}
+                                ${renderStatBar('❤️', '健康度', petData.health, 'health')}
+                            </div>
+                        </div>
+
+                        <!-- 經驗等級 -->
+                        <div class="section-card">
+                            <div class="section-title">
+                                🌟 經驗等級
+                            </div>
+                            
+                            <div class="exp-section">
+                                <div class="exp-info">
+                                    <span>等級 ${petData.level}</span>
+                                    <span>${Math.floor(petData.levelProgress)}%</span>
+                                </div>
+                                <div class="exp-bar">
+                                    <div class="exp-fill" style="width: ${petData.levelProgress}%"></div>
+                                </div>
+                                <div style="font-size: 0.875rem; color: var(--muted); margin-top: 8px;">
+                                    ${petData.experience} / ${petData.experience + petData.requiredExperienceForNextLevel} EXP
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 換色功能 -->
+                        <div class="section-card">
+                            <div class="section-title">
+                                🎨 寵物換色
+                            </div>
+                            
+                            <div class="color-section">
+                                <div class="color-palette">
+                                    ${renderColorPalette()}
+                                </div>
+                                <button class="recolor-btn" onclick="recolorPet()" disabled id="recolorBtn">
+                                    換色 (2000點數)
+                                </button>
+                                <div style="font-size: 0.875rem; color: var(--muted); margin-top: 8px; text-align: center;">
+                                    選擇新顏色後點擊換色按鈕
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('mainContent').innerHTML = content;
+        }
+
+        // 渲染創建寵物界面
+        function renderCreatePetInterface() {
+            const content = `
+                <div class="section-card">
+                    <div class="create-pet-section">
+                        <div class="create-pet-icon">🥚</div>
+                        <div class="create-pet-title">歡迎來到寵物世界！</div>
+                        <div class="create-pet-desc">
+                            您還沒有寵物，讓我們為您建立一隻可愛的史萊姆吧！<br>
+                            史萊姆會陪伴您在GameCore的冒險旅程，記得要好好照顧它哦～
+                        </div>
+                        
+                        <div class="create-pet-form">
+                            <input type="text" class="create-pet-input" id="petNameInput" placeholder="寵物名稱 (預設: 小可愛)" maxlength="50">
+                            <button class="create-pet-btn" onclick="createPet()">
+                                🐾 建立我的史萊姆
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('mainContent').innerHTML = content;
+        }
+
+        // 渲染屬性條
+        function renderStatBar(icon, name, value, type) {
+            return `
+                <div class="stat-item">
+                    <div class="stat-icon">${icon}</div>
+                    <div class="stat-info">
+                        <div class="stat-name">${name}</div>
+                        <div class="stat-bar">
+                            <div class="stat-fill ${type}" style="width: ${value}%"></div>
+                        </div>
+                    </div>
+                    <div class="stat-value">${value}/100</div>
+                </div>
+            `;
+        }
+
+        // 渲染顏色選擇器
+        function renderColorPalette() {
+            return availableColors.map(color => `
+                <div class="color-option" 
+                     style="background: ${color.skinColor}" 
+                     onclick="selectColor('${color.colorId}', '${color.skinColor}', '${color.backgroundColor}')"
+                     title="${color.colorName}">
+                </div>
+            `).join('');
+        }
+
+        // 建立寵物
+        async function createPet() {
+            try {
+                const petName = document.getElementById('petNameInput').value.trim() || '小可愛';
+                
+                const response = await fetch('/api/pet', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ petName })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage(result.message, 'success');
+                    setTimeout(() => {
+                        loadPetData();
+                    }, 1500);
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('建立寵物失敗:', error);
+                showMessage('建立寵物失敗，請稍後再試', 'error');
+            }
+        }
+
+        // 執行寵物互動
+        async function performAction(action) {
+            try {
+                const response = await fetch(`/api/pet/actions/${action}`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage(result.message, 'success');
+                    
+                    // 更新寵物資料
+                    setTimeout(() => {
+                        loadPetData();
+                    }, 1000);
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('寵物互動失敗:', error);
+                showMessage('寵物互動失敗，請稍後再試', 'error');
+            }
+        }
+
+        // 選擇顏色
+        function selectColor(colorId, skinColor, backgroundColor) {
+            // 移除之前的選中狀態
+            document.querySelectorAll('.color-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            // 設定新的選中狀態
+            event.target.classList.add('selected');
+            
+            selectedColor = { colorId, skinColor, backgroundColor };
+            document.getElementById('recolorBtn').disabled = false;
+        }
+
+        // 寵物換色
+        async function recolorPet() {
+            if (!selectedColor) {
+                showMessage('請先選擇顏色', 'error');
+                return;
+            }
+
+            if (!confirm(`確定要花費2000點數為寵物換色嗎？`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/pet/recolor', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        skinColor: selectedColor.skinColor,
+                        backgroundColor: selectedColor.backgroundColor,
+                        confirmPayment: true
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage(result.message, 'success');
+                    
+                    // 重新載入寵物資料
+                    setTimeout(() => {
+                        loadPetData();
+                    }, 1000);
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('寵物換色失敗:', error);
+                showMessage('寵物換色失敗，請稍後再試', 'error');
+            }
+        }
+
+        // 與寵物互動（點擊寵物）
+        function interactWithPet() {
+            // 簡單的點擊反饋動畫
+            const pet = document.querySelector('.slime-pet');
+            pet.style.transform = 'scale(1.1)';
+            setTimeout(() => {
+                pet.style.transform = 'scale(1)';
+            }, 200);
+        }
+
+        // 顯示訊息
+        function showMessage(message, type = 'success') {
+            const messageElement = document.getElementById('successMessage');
+            const contentElement = document.getElementById('messageContent');
+            
+            contentElement.textContent = message;
+            messageElement.className = `success-message ${type} show`;
+            
+            setTimeout(() => {
+                messageElement.classList.remove('show');
+            }, 3000);
+        }
+
+        // 主題切換支援
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark');
+        }
+    </script>
+</body>
+</html>

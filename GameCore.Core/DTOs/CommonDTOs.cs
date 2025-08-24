@@ -1,3 +1,5 @@
+using GameCore.Core.Enums;
+
 namespace GameCore.Core.DTOs
 {
     #region Forum DTOs

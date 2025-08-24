@@ -4,93 +4,70 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace GameCore.Core.Entities
 {
     /// <summary>
-    /// 簽到記錄實體
+    /// 簽到記錄表 (對應 SignInRecords)
     /// </summary>
     [Table("SignInRecords")]
     public class SignInRecord
     {
         [Key]
-        public int SignInId { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Id { get; set; }
 
         [Required]
         public int UserId { get; set; }
 
         [Required]
+        [Column(TypeName = "date")]
         public DateTime SignInDate { get; set; }
 
         [Required]
-        public int PointsEarned { get; set; }
+        public int Points { get; set; } = 0;
 
         [Required]
-        public int ExperienceEarned { get; set; }
+        public int Experience { get; set; } = 0;
 
         [Required]
-        public bool IsHoliday { get; set; }
+        public bool IsWeekend { get; set; } = false;
 
         [Required]
-        public bool IsConsecutive { get; set; }
+        public bool IsPerfect { get; set; } = false;
 
         [Required]
-        public int ConsecutiveDays { get; set; }
+        public DateTime CreateTime { get; set; } = DateTime.UtcNow;
 
-        [Required]
-        public bool IsMonthlyPerfect { get; set; }
-
-        [Required]
-        public DateTime CreatedAt { get; set; }
-
-        [Required]
-        public DateTime UpdatedAt { get; set; }
-
-        // 導航屬性
-        [ForeignKey("UserId")]
+        // Navigation property
         public virtual User User { get; set; } = null!;
     }
 
     /// <summary>
-    /// 簽到統計實體
+    /// 簽到統計表 (對應 UserSignInStats)
     /// </summary>
-    [Table("SignInStatistics")]
-    public class SignInStatistics
+    [Table("UserSignInStats")]
+    public class UserSignInStats
     {
         [Key]
-        public int StatisticsId { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int LogId { get; set; }
+
+        [Required]
+        public DateTime SignTime { get; set; } = DateTime.UtcNow;
 
         [Required]
         public int UserId { get; set; }
 
         [Required]
-        public int Year { get; set; }
+        public int PointsChanged { get; set; } = 0;
 
         [Required]
-        public int Month { get; set; }
+        public int ExpGained { get; set; } = 0;
 
         [Required]
-        public int TotalSignInDays { get; set; }
+        public DateTime PointsChangedTime { get; set; } = DateTime.UtcNow;
 
         [Required]
-        public int ConsecutiveDays { get; set; }
+        public DateTime ExpGainedTime { get; set; } = DateTime.UtcNow;
 
-        [Required]
-        public int MaxConsecutiveDays { get; set; }
-
-        [Required]
-        public int TotalPointsEarned { get; set; }
-
-        [Required]
-        public int TotalExperienceEarned { get; set; }
-
-        [Required]
-        public bool IsMonthlyPerfect { get; set; }
-
-        [Required]
-        public DateTime CreatedAt { get; set; }
-
-        [Required]
-        public DateTime UpdatedAt { get; set; }
-
-        // 導航屬性
-        [ForeignKey("UserId")]
+        // Navigation property
         public virtual User User { get; set; } = null!;
     }
 }

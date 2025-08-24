@@ -4,48 +4,40 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace GameCore.Core.Entities
 {
     /// <summary>
-    /// 遊戲主檔表 - 列出平台所有遊戲
+    /// 遊戲表 (對應 Games)
     /// </summary>
-    [Table("games")]
+    [Table("Games")]
     public class Game
     {
-        /// <summary>
-        /// 遊戲編號 (主鍵)
-        /// </summary>
         [Key]
-        [Column("game_id")]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int GameId { get; set; }
+        public int Id { get; set; }
 
-        /// <summary>
-        /// 遊戲名稱
-        /// </summary>
-        [Column("name")]
-        [StringLength(200)]
-        public string? Name { get; set; }
-
-        /// <summary>
-        /// 遊戲類型 (FPS/MOBA等)
-        /// </summary>
-        [Column("genre")]
+        [Required]
         [StringLength(100)]
-        public string? Genre { get; set; }
+        public string Name { get; set; } = string.Empty;
 
-        /// <summary>
-        /// 建立時間
-        /// </summary>
-        [Column("created_at")]
-        public DateTime? CreatedAt { get; set; }
+        [StringLength(500)]
+        public string? Description { get; set; }
 
-        // 導航屬性
-        public virtual ICollection<GameSourceMap> GameSourceMaps { get; set; } = new List<GameSourceMap>();
-        public virtual ICollection<GameMetricDaily> GameMetricDailies { get; set; } = new List<GameMetricDaily>();
-        public virtual ICollection<PopularityIndexDaily> PopularityIndexDailies { get; set; } = new List<PopularityIndexDaily>();
-        public virtual ICollection<LeaderboardSnapshot> LeaderboardSnapshots { get; set; } = new List<LeaderboardSnapshot>();
-        public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
-        public virtual ICollection<PostMetricSnapshot> PostMetricSnapshots { get; set; } = new List<PostMetricSnapshot>();
-        public virtual Forum? Forum { get; set; }
-        public virtual ICollection<GameProductDetails> GameProductDetails { get; set; } = new List<GameProductDetails>();
+        [Required]
+        [StringLength(50)]
+        public string Category { get; set; } = string.Empty;
+
+        [StringLength(255)]
+        public string? ImageUrl { get; set; }
+
+        [Required]
+        public bool IsActive { get; set; } = true;
+
+        [Required]
+        public DateTime CreateTime { get; set; } = DateTime.UtcNow;
+
+        [Required]
+        public DateTime UpdateTime { get; set; } = DateTime.UtcNow;
+
+        // Navigation properties
+        public virtual ICollection<MiniGameRecord> MiniGameRecords { get; set; } = new List<MiniGameRecord>();
     }
 
     /// <summary>

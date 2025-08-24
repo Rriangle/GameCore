@@ -1,6 +1,5 @@
 using GameCore.Core.Entities;
 using GameCore.Core.Interfaces;
-using GameCore.Core.Services;
 using Microsoft.Extensions.Logging;
 
 namespace GameCore.Core.Services
@@ -28,7 +27,9 @@ namespace GameCore.Core.Services
         {
             try
             {
-                var today = DateTime.UtcNow.Date;
+                // 使用 Asia/Taipei 時區
+                var taipeiTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Taipei");
+                var today = TimeZoneInfo.ConvertTime(DateTime.UtcNow, taipeiTimeZone).Date;
                 
                 // 檢查今天是否已經簽到
                 var todaySignIn = await _signInRepository.GetByUserIdAndDateAsync(userId, today);
@@ -52,11 +53,14 @@ namespace GameCore.Core.Services
                     };
                 }
 
-                // 檢查是否為假日
-                var isHoliday = IsHoliday(today);
+                // 檢查是否為週末
+                var isWeekend = IsWeekend(today);
                 
-                // 計算獎勵
-                var (points, experience) = CalculateRewards(today, isHoliday);
+                // 計算連續簽到天數
+                var consecutiveDays = await CalculateConsecutiveDays(userId);
+                
+                // 計算獎勵 (按照規格)
+                var (points, experience) = CalculateRewards(isWeekend, consecutiveDays, today);
                 
                 // 創建簽到記錄
                 var signInRecord = new SignInRecord
@@ -65,8 +69,9 @@ namespace GameCore.Core.Services
                     SignInDate = today,
                     Points = points,
                     Experience = experience,
-                    IsHoliday = isHoliday,
-                    CreatedAt = DateTime.UtcNow
+                    IsWeekend = isWeekend,
+                    IsPerfect = false, // 稍後檢查
+                    CreateTime = DateTime.UtcNow
                 };
 
                 _signInRepository.Add(signInRecord);
@@ -76,13 +81,29 @@ namespace GameCore.Core.Services
                 user.Experience += experience;
                 _userRepository.Update(user);
 
-                // 更新或創建簽到統計
-                await UpdateSignInStatistics(userId, today);
+                // 檢查是否為月度完美簽到
+                var isMonthlyPerfect = await CheckMonthlyPerfectSignIn(userId, today);
+                if (isMonthlyPerfect)
+                {
+                    signInRecord.IsPerfect = true;
+                    // 額外獎勵已在 CalculateRewards 中計算
+                }
+
+                // 創建簽到統計記錄
+                var signInStats = new UserSignInStats
+                {
+                    UserId = userId,
+                    SignTime = DateTime.UtcNow,
+                    PointsChanged = points,
+                    ExpGained = experience,
+                    PointsChangedTime = DateTime.UtcNow,
+                    ExpGainedTime = DateTime.UtcNow
+                };
 
                 await _unitOfWork.SaveChangesAsync();
 
-                _logger.LogInformation("用戶簽到成功: {UserId}, 日期: {Date}, 點數: {Points}, 經驗值: {Experience}", 
-                    userId, today, points, experience);
+                _logger.LogInformation("用戶簽到成功: {UserId}, 日期: {Date}, 點數: {Points}, 經驗值: {Experience}, 連續天數: {ConsecutiveDays}", 
+                    userId, today, points, experience, consecutiveDays + 1);
 
                 return new SignInResult
                 {
@@ -90,7 +111,9 @@ namespace GameCore.Core.Services
                     Message = "簽到成功！",
                     Points = points,
                     Experience = experience,
-                    IsHoliday = isHoliday
+                    IsWeekend = isWeekend,
+                    ConsecutiveDays = consecutiveDays + 1,
+                    IsMonthlyPerfect = isMonthlyPerfect
                 };
             }
             catch (Exception ex)
@@ -108,31 +131,26 @@ namespace GameCore.Core.Services
         {
             try
             {
-                var today = DateTime.UtcNow.Date;
+                var taipeiTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Taipei");
+                var today = TimeZoneInfo.ConvertTime(DateTime.UtcNow, taipeiTimeZone).Date;
                 
                 // 檢查今天是否已經簽到
                 var todaySignIn = await _signInRepository.GetByUserIdAndDateAsync(userId, today);
                 var isSignedInToday = todaySignIn != null;
 
-                // 獲取簽到統計
-                var statistics = await _signInRepository.GetStatisticsByUserIdAsync(userId);
-                
                 // 計算連續簽到天數
                 var consecutiveDays = await CalculateConsecutiveDays(userId);
 
-                // 檢查是否為假日
-                var isHoliday = IsHoliday(today);
+                // 檢查是否為週末
+                var isWeekend = IsWeekend(today);
 
                 return new SignInStatusResult
                 {
                     Success = true,
                     IsSignedInToday = isSignedInToday,
-                    IsHoliday = isHoliday,
+                    IsWeekend = isWeekend,
                     ConsecutiveDays = consecutiveDays,
-                    MonthlyPerfectDays = statistics?.MonthlyPerfectDays ?? 0,
-                    TotalSignInDays = statistics?.TotalSignInDays ?? 0,
-                    TotalPoints = statistics?.TotalPoints ?? 0,
-                    TotalExperience = statistics?.TotalExperience ?? 0
+                    Today = today
                 };
             }
             catch (Exception ex)
@@ -158,8 +176,9 @@ namespace GameCore.Core.Services
                     SignInDate = r.SignInDate,
                     Points = r.Points,
                     Experience = r.Experience,
-                    IsHoliday = r.IsHoliday,
-                    CreatedAt = r.CreatedAt
+                    IsWeekend = r.IsWeekend,
+                    IsPerfect = r.IsPerfect,
+                    CreateTime = r.CreateTime
                 });
             }
             catch (Exception ex)
@@ -169,85 +188,12 @@ namespace GameCore.Core.Services
             }
         }
 
-        public async Task<SignInStatisticsDto> GetSignInStatisticsAsync(int userId)
-        {
-            try
-            {
-                var statistics = await _signInRepository.GetStatisticsByUserIdAsync(userId);
-                if (statistics == null)
-                {
-                    return new SignInStatisticsDto
-                    {
-                        Success = false,
-                        Message = "統計資料不存在"
-                    };
-                }
-
-                var consecutiveDays = await CalculateConsecutiveDays(userId);
-
-                return new SignInStatisticsDto
-                {
-                    Success = true,
-                    TotalSignInDays = statistics.TotalSignInDays,
-                    ConsecutiveDays = consecutiveDays,
-                    MonthlyPerfectDays = statistics.MonthlyPerfectDays,
-                    TotalPoints = statistics.TotalPoints,
-                    TotalExperience = statistics.TotalExperience,
-                    LastSignInDate = statistics.LastSignInDate,
-                    CreatedAt = statistics.CreatedAt,
-                    UpdatedAt = statistics.UpdatedAt
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "獲取簽到統計失敗: {UserId}", userId);
-                return new SignInStatisticsDto
-                {
-                    Success = false,
-                    Message = "獲取統計失敗"
-                };
-            }
-        }
-
-        public async Task<IEnumerable<SignInCalendarDto>> GetMonthlySignInCalendarAsync(int userId, int year, int month)
-        {
-            try
-            {
-                var startDate = new DateTime(year, month, 1);
-                var endDate = startDate.AddMonths(1).AddDays(-1);
-                
-                var records = await _signInRepository.GetByUserIdAndDateRangeAsync(userId, startDate, endDate);
-                var calendar = new List<SignInCalendarDto>();
-
-                for (var date = startDate; date <= endDate; date = date.AddDays(1))
-                {
-                    var record = records.FirstOrDefault(r => r.SignInDate.Date == date.Date);
-                    var isHoliday = IsHoliday(date);
-
-                    calendar.Add(new SignInCalendarDto
-                    {
-                        Date = date,
-                        IsSignedIn = record != null,
-                        IsHoliday = isHoliday,
-                        Points = record?.Points ?? 0,
-                        Experience = record?.Experience ?? 0
-                    });
-                }
-
-                return calendar;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "獲取月度簽到日曆失敗: 用戶 {UserId}, 年月 {Year}-{Month}", userId, year, month);
-                return Enumerable.Empty<SignInCalendarDto>();
-            }
-        }
-
         public async Task<bool> IsSignedInTodayAsync(int userId)
         {
             try
             {
-                var today = DateTime.UtcNow.Date;
+                var taipeiTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Taipei");
+                var today = TimeZoneInfo.ConvertTime(DateTime.UtcNow, taipeiTimeZone).Date;
                 var todaySignIn = await _signInRepository.GetByUserIdAndDateAsync(userId, today);
                 return todaySignIn != null;
             }
@@ -271,87 +217,59 @@ namespace GameCore.Core.Services
             }
         }
 
-        public async Task<bool> IsMonthlyPerfectAsync(int userId, int year, int month)
+        private bool IsWeekend(DateTime date)
         {
-            try
-            {
-                var startDate = new DateTime(year, month, 1);
-                var endDate = startDate.AddMonths(1).AddDays(-1);
-                var daysInMonth = DateTime.DaysInMonth(year, month);
-                
-                var records = await _signInRepository.GetByUserIdAndDateRangeAsync(userId, startDate, endDate);
-                var signInDays = records.Count;
-
-                return signInDays == daysInMonth;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "檢查月度完美簽到失敗: 用戶 {UserId}, 年月 {Year}-{Month}", userId, year, month);
-                return false;
-            }
+            return date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
         }
 
-        private bool IsHoliday(DateTime date)
+        private (int points, int experience) CalculateRewards(bool isWeekend, int consecutiveDays, DateTime signInDate)
         {
-            // 簡單的假日判斷邏輯
-            // 週末
-            if (date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday)
+            int points = 0;
+            int experience = 0;
+
+            // 基礎獎勵
+            if (isWeekend)
             {
-                return true;
+                points = 30;  // 週末: +30 points
+                experience = 200;  // 週末: +200 exp
+            }
+            else
+            {
+                points = 20;  // 平日: +20 points
+                experience = 0;   // 平日: 0 exp
             }
 
-            // 國定假日（台灣）
-            var holidays = new[]
+            // 7天連續簽到獎勵
+            if (consecutiveDays >= 6) // 今天是第7天
             {
-                new DateTime(date.Year, 1, 1),   // 元旦
-                new DateTime(date.Year, 2, 28),  // 和平紀念日
-                new DateTime(date.Year, 4, 4),   // 兒童節
-                new DateTime(date.Year, 4, 5),   // 清明節
-                new DateTime(date.Year, 5, 1),   // 勞動節
-                new DateTime(date.Year, 6, 3),   // 端午節
-                new DateTime(date.Year, 9, 29),  // 中秋節
-                new DateTime(date.Year, 10, 10), // 國慶日
-                new DateTime(date.Year, 12, 25)  // 聖誕節
-            };
-
-            return holidays.Any(h => h.Date == date.Date);
-        }
-
-        private (int points, int experience) CalculateRewards(DateTime date, bool isHoliday)
-        {
-            var basePoints = 10;
-            var baseExperience = 5;
-
-            // 假日獎勵
-            if (isHoliday)
-            {
-                basePoints = (int)(basePoints * 1.5);
-                baseExperience = (int)(baseExperience * 1.5);
+                points += 40;  // +40 points
+                experience += 300;  // +300 exp
             }
 
-            // 特殊日期獎勵
-            if (date.Day == 1) // 每月第一天
+            // 月度完美簽到獎勵 (每月最後一天)
+            var lastDayOfMonth = new DateTime(signInDate.Year, signInDate.Month, DateTime.DaysInMonth(signInDate.Year, signInDate.Month));
+            if (signInDate.Date == lastDayOfMonth.Date)
             {
-                basePoints += 20;
-                baseExperience += 10;
+                // 檢查是否整月都有簽到
+                var isMonthlyPerfect = CheckMonthlyPerfectSignIn(signInDate).Result;
+                if (isMonthlyPerfect)
+                {
+                    points += 200;  // +200 points
+                    experience += 2000;  // +2000 exp
+                }
             }
 
-            if (date.DayOfWeek == DayOfWeek.Monday) // 每週第一天
-            {
-                basePoints += 10;
-                baseExperience += 5;
-            }
-
-            return (basePoints, baseExperience);
+            return (points, experience);
         }
 
         private async Task<int> CalculateConsecutiveDays(int userId)
         {
             try
             {
-                var today = DateTime.UtcNow.Date;
+                var taipeiTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Taipei");
+                var today = TimeZoneInfo.ConvertTime(DateTime.UtcNow, taipeiTimeZone).Date;
                 var consecutiveDays = 0;
-                var currentDate = today;
+                var currentDate = today.AddDays(-1); // 從昨天開始檢查
 
                 while (true)
                 {
@@ -374,48 +292,26 @@ namespace GameCore.Core.Services
             }
         }
 
-        private async Task UpdateSignInStatistics(int userId, DateTime signInDate)
+        private async Task<bool> CheckMonthlyPerfectSignIn(int userId, DateTime signInDate)
         {
             try
             {
-                var statistics = await _signInRepository.GetStatisticsByUserIdAsync(userId);
-                if (statistics == null)
-                {
-                    // 創建新的統計記錄
-                    statistics = new SignInStatistics
-                    {
-                        UserId = userId,
-                        TotalSignInDays = 1,
-                        MonthlyPerfectDays = 0,
-                        TotalPoints = 0,
-                        TotalExperience = 0,
-                        LastSignInDate = signInDate,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
-                    };
-                    _signInRepository.AddStatistics(statistics);
-                }
-                else
-                {
-                    // 更新現有統計
-                    statistics.TotalSignInDays++;
-                    statistics.LastSignInDate = signInDate;
-                    statistics.UpdatedAt = DateTime.UtcNow;
-                    _signInRepository.UpdateStatistics(statistics);
-                }
-
-                // 檢查月度完美簽到
                 var year = signInDate.Year;
                 var month = signInDate.Month;
-                if (await IsMonthlyPerfectAsync(userId, year, month))
-                {
-                    statistics.MonthlyPerfectDays++;
-                    _signInRepository.UpdateStatistics(statistics);
-                }
+                var daysInMonth = DateTime.DaysInMonth(year, month);
+                
+                var startDate = new DateTime(year, month, 1);
+                var endDate = new DateTime(year, month, daysInMonth);
+                
+                var records = await _signInRepository.GetByUserIdAndDateRangeAsync(userId, startDate, endDate);
+                var signInDays = records.Count;
+
+                return signInDays == daysInMonth;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "更新簽到統計失敗: 用戶 {UserId}", userId);
+                _logger.LogError(ex, "檢查月度完美簽到失敗: 用戶 {UserId}, 年月 {Year}-{Month}", userId, signInDate.Year, signInDate.Month);
+                return false;
             }
         }
     }

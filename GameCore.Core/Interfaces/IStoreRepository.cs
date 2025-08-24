@@ -2,52 +2,21 @@ using GameCore.Core.Entities;
 
 namespace GameCore.Core.Interfaces
 {
-    /// <summary>
-    /// 商城倉庫介面
-    /// </summary>
     public interface IStoreRepository : IRepository<StoreProduct>
     {
-        /// <summary>
-        /// 取得所有活躍的商品
-        /// </summary>
-        /// <param name="category">商品分類</param>
-        /// <param name="page">頁碼</param>
-        /// <param name="pageSize">每頁大小</param>
-        /// <returns>商品列表</returns>
-        Task<IEnumerable<StoreProduct>> GetActiveProductsAsync(string? category = null, int page = 1, int pageSize = 20);
-
-        /// <summary>
-        /// 搜尋商品
-        /// </summary>
-        /// <param name="keyword">關鍵字</param>
-        /// <param name="category">商品分類</param>
-        /// <param name="minPrice">最低價格</param>
-        /// <param name="maxPrice">最高價格</param>
-        /// <param name="page">頁碼</param>
-        /// <param name="pageSize">每頁大小</param>
-        /// <returns>搜尋結果</returns>
-        Task<IEnumerable<StoreProduct>> SearchProductsAsync(string keyword, string? category = null, decimal? minPrice = null, decimal? maxPrice = null, int page = 1, int pageSize = 20);
-
-        /// <summary>
-        /// 取得商品分類
-        /// </summary>
-        /// <returns>分類列表</returns>
-        Task<IEnumerable<string>> GetProductCategoriesAsync();
-
-        /// <summary>
-        /// 取得熱門商品
-        /// </summary>
-        /// <param name="limit">數量限制</param>
-        /// <returns>熱門商品列表</returns>
-        Task<IEnumerable<StoreProduct>> GetPopularProductsAsync(int limit = 10);
-
-        /// <summary>
-        /// 取得銷售排行榜
-        /// </summary>
-        /// <param name="period">期間 (daily, weekly, monthly, yearly)</param>
-        /// <param name="limit">數量限制</param>
-        /// <returns>排行榜</returns>
-        Task<IEnumerable<StoreProduct>> GetSalesRankingAsync(string period, int limit = 10);
+        Task<IEnumerable<StoreProduct>> GetProductsAsync(string? category = null, bool activeOnly = true);
+        Task<StoreProduct?> GetProductByIdAsync(int productId);
+        Task<bool> UpdateProductStockAsync(int productId, int quantityChange);
+        Task<StoreOrder?> GetOrderByIdAsync(int orderId);
+        Task<IEnumerable<StoreOrder>> GetUserOrdersAsync(int userId, string? status = null);
+        Task<bool> CreateOrderAsync(StoreOrder order);
+        Task<bool> CreateOrderItemAsync(StoreOrderItem orderItem);
+        Task<bool> UpdateOrderAsync(StoreOrder order);
+        Task<ShoppingCartItem?> GetCartItemAsync(int userId, int productId);
+        Task<IEnumerable<ShoppingCartItem>> GetCartItemsAsync(int userId);
+        Task<bool> AddToCartAsync(ShoppingCartItem cartItem);
+        Task<bool> UpdateCartItemAsync(ShoppingCartItem cartItem);
+        Task<bool> RemoveFromCartAsync(int userId, int productId);
     }
 
     /// <summary>

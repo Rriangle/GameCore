@@ -4,61 +4,48 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace GameCore.Core.Entities
 {
     /// <summary>
-    /// 論壇版面實體
+    /// 論壇表 (對應 Forums)
     /// </summary>
     [Table("Forums")]
     public class Forum
     {
         [Key]
-        public int ForumId { get; set; }
-
-        [Required]
-        public int GameId { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Id { get; set; }
 
         [Required]
         [StringLength(100)]
         public string Name { get; set; } = string.Empty;
 
-        [Required]
         [StringLength(500)]
-        public string Description { get; set; } = string.Empty;
+        public string? Description { get; set; }
 
         [Required]
-        public int PostCount { get; set; }
+        [StringLength(50)]
+        public string Category { get; set; } = string.Empty;
 
         [Required]
-        public int ReplyCount { get; set; }
+        public bool IsActive { get; set; } = true;
 
         [Required]
-        public int ViewCount { get; set; }
+        public DateTime CreateTime { get; set; } = DateTime.UtcNow;
 
         [Required]
-        public bool IsActive { get; set; }
+        public DateTime UpdateTime { get; set; } = DateTime.UtcNow;
 
-        [Required]
-        public int SortOrder { get; set; }
-
-        [Required]
-        public DateTime CreatedAt { get; set; }
-
-        [Required]
-        public DateTime UpdatedAt { get; set; }
-
-        // 導航屬性
-        [ForeignKey("GameId")]
-        public virtual Game Game { get; set; } = null!;
-
+        // Navigation properties
         public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
     }
 
     /// <summary>
-    /// 討論主題實體
+    /// 貼文表 (對應 Posts)
     /// </summary>
     [Table("Posts")]
     public class Post
     {
         [Key]
-        public int PostId { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Id { get; set; }
 
         [Required]
         public int ForumId { get; set; }
@@ -73,52 +60,50 @@ namespace GameCore.Core.Entities
         [Required]
         public string Content { get; set; } = string.Empty;
 
-        [Required]
-        public PostStatus Status { get; set; }
+        [StringLength(500)]
+        public string? Tags { get; set; }
 
         [Required]
-        public int ViewCount { get; set; }
+        public int ViewCount { get; set; } = 0;
 
         [Required]
-        public int LikeCount { get; set; }
+        public int LikeCount { get; set; } = 0;
 
         [Required]
-        public int ReplyCount { get; set; }
+        public int ReplyCount { get; set; } = 0;
 
         [Required]
-        public bool IsPinned { get; set; }
+        public bool IsSticky { get; set; } = false;
 
         [Required]
-        public bool IsLocked { get; set; }
+        public bool IsLocked { get; set; } = false;
 
         [Required]
-        public DateTime CreatedAt { get; set; }
+        public bool IsActive { get; set; } = true;
 
         [Required]
-        public DateTime UpdatedAt { get; set; }
+        public DateTime CreateTime { get; set; } = DateTime.UtcNow;
 
-        public DateTime? LastReplyAt { get; set; }
+        [Required]
+        public DateTime UpdateTime { get; set; } = DateTime.UtcNow;
 
-        // 導航屬性
-        [ForeignKey("ForumId")]
+        // Navigation properties
         public virtual Forum Forum { get; set; } = null!;
-
-        [ForeignKey("UserId")]
         public virtual User User { get; set; } = null!;
-
         public virtual ICollection<PostReply> Replies { get; set; } = new List<PostReply>();
         public virtual ICollection<PostLike> Likes { get; set; } = new List<PostLike>();
         public virtual ICollection<PostBookmark> Bookmarks { get; set; } = new List<PostBookmark>();
     }
 
     /// <summary>
-    /// 討論回覆實體
+    /// 貼文回覆表 (對應 PostReplies)
     /// </summary>
     [Table("PostReplies")]
     public class PostReply
     {
         [Key]
-        public int ReplyId { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Id { get; set; }
 
         [Required]
         public int PostId { get; set; }
@@ -132,39 +117,33 @@ namespace GameCore.Core.Entities
         public string Content { get; set; } = string.Empty;
 
         [Required]
-        public PostStatus Status { get; set; }
+        public int LikeCount { get; set; } = 0;
 
         [Required]
-        public int LikeCount { get; set; }
+        public bool IsActive { get; set; } = true;
 
         [Required]
-        public DateTime CreatedAt { get; set; }
+        public DateTime CreateTime { get; set; } = DateTime.UtcNow;
 
         [Required]
-        public DateTime UpdatedAt { get; set; }
+        public DateTime UpdateTime { get; set; } = DateTime.UtcNow;
 
-        // 導航屬性
-        [ForeignKey("PostId")]
+        // Navigation properties
         public virtual Post Post { get; set; } = null!;
-
-        [ForeignKey("UserId")]
         public virtual User User { get; set; } = null!;
-
-        [ForeignKey("ParentReplyId")]
         public virtual PostReply? ParentReply { get; set; }
-
         public virtual ICollection<PostReply> ChildReplies { get; set; } = new List<PostReply>();
-        public virtual ICollection<PostReplyLike> Likes { get; set; } = new List<PostReplyLike>();
     }
 
     /// <summary>
-    /// 貼文按讚實體
+    /// 貼文按讚表 (對應 PostLikes)
     /// </summary>
     [Table("PostLikes")]
     public class PostLike
     {
         [Key]
-        public int LikeId { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Id { get; set; }
 
         [Required]
         public int PostId { get; set; }
@@ -173,50 +152,22 @@ namespace GameCore.Core.Entities
         public int UserId { get; set; }
 
         [Required]
-        public DateTime CreatedAt { get; set; }
+        public DateTime CreateTime { get; set; } = DateTime.UtcNow;
 
-        // 導航屬性
-        [ForeignKey("PostId")]
+        // Navigation properties
         public virtual Post Post { get; set; } = null!;
-
-        [ForeignKey("UserId")]
         public virtual User User { get; set; } = null!;
     }
 
     /// <summary>
-    /// 回覆按讚實體
-    /// </summary>
-    [Table("PostReplyLikes")]
-    public class PostReplyLike
-    {
-        [Key]
-        public int LikeId { get; set; }
-
-        [Required]
-        public int ReplyId { get; set; }
-
-        [Required]
-        public int UserId { get; set; }
-
-        [Required]
-        public DateTime CreatedAt { get; set; }
-
-        // 導航屬性
-        [ForeignKey("ReplyId")]
-        public virtual PostReply Reply { get; set; } = null!;
-
-        [ForeignKey("UserId")]
-        public virtual User User { get; set; } = null!;
-    }
-
-    /// <summary>
-    /// 貼文收藏實體
+    /// 貼文收藏表 (對應 PostBookmarks)
     /// </summary>
     [Table("PostBookmarks")]
     public class PostBookmark
     {
         [Key]
-        public int BookmarkId { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Id { get; set; }
 
         [Required]
         public int PostId { get; set; }
@@ -225,24 +176,10 @@ namespace GameCore.Core.Entities
         public int UserId { get; set; }
 
         [Required]
-        public DateTime CreatedAt { get; set; }
+        public DateTime CreateTime { get; set; } = DateTime.UtcNow;
 
-        // 導航屬性
-        [ForeignKey("PostId")]
+        // Navigation properties
         public virtual Post Post { get; set; } = null!;
-
-        [ForeignKey("UserId")]
         public virtual User User { get; set; } = null!;
-    }
-
-    /// <summary>
-    /// 貼文狀態列舉
-    /// </summary>
-    public enum PostStatus
-    {
-        Normal = 1,        // 正常
-        Hidden = 2,        // 隱藏
-        Archived = 3,      // 封存
-        Deleted = 4        // 刪除
     }
 }

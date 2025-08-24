@@ -4,59 +4,42 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace GameCore.Core.Entities
 {
     /// <summary>
-    /// 小冒險遊戲記錄實體
+    /// 小遊戲記錄表 (對應 MiniGameRecords)
     /// </summary>
     [Table("MiniGameRecords")]
     public class MiniGameRecord
     {
         [Key]
-        public int GameRecordId { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Id { get; set; }
 
         [Required]
         public int UserId { get; set; }
 
         [Required]
-        public int PetId { get; set; }
+        [StringLength(50)]
+        public string GameType { get; set; } = string.Empty;
 
         [Required]
-        public int GameLevel { get; set; }
+        public int Level { get; set; } = 1;
 
         [Required]
-        public bool IsSuccess { get; set; }
+        public int Score { get; set; } = 0;
 
         [Required]
-        public int PointsEarned { get; set; }
+        public bool IsWin { get; set; } = false;
 
         [Required]
-        public int ExperienceEarned { get; set; }
+        public int Experience { get; set; } = 0;
 
         [Required]
-        public int HealthChange { get; set; }
+        public int Points { get; set; } = 0;
 
         [Required]
-        public int HungerChange { get; set; }
+        public DateTime CreateTime { get; set; } = DateTime.UtcNow;
 
-        [Required]
-        public int CleanlinessChange { get; set; }
-
-        [Required]
-        public int HappinessChange { get; set; }
-
-        [Required]
-        public int EnergyChange { get; set; }
-
-        [Required]
-        public DateTime GameDate { get; set; }
-
-        [Required]
-        public DateTime CreatedAt { get; set; }
-
-        // 導航屬性
-        [ForeignKey("UserId")]
+        // Navigation property
         public virtual User User { get; set; } = null!;
-
-        [ForeignKey("PetId")]
-        public virtual Pet Pet { get; set; } = null!;
     }
 
     /// <summary>

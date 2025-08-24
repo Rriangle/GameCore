@@ -15,7 +15,6 @@ namespace GameCore.Core.Services
 
         // 寵物系統常數設定
         private const int COLOR_CHANGE_COST = 2000; // 換色費用
-        private const int INTERACTION_COOLDOWN_SECONDS = 3; // 互動冷卻時間
         private const int MAX_PET_LEVEL = 250; // 最大等級
 
         // 每日衰減數值 (按照規格要求)
@@ -27,6 +26,9 @@ namespace GameCore.Core.Services
 
         // 互動增加數值
         private const int INTERACTION_INCREASE = 10;
+
+        // 健康度懲罰閾值
+        private const int HEALTH_PENALTY_THRESHOLD = 30;
 
         public PetService(IUnitOfWork unitOfWork, ILogger<PetService> logger)
         {
@@ -49,26 +51,25 @@ namespace GameCore.Core.Services
                     pet = new Pet
                     {
                         UserId = userId,
-                        PetName = "小可愛",
+                        Name = "小可愛",
+                        Type = "Default",
                         Level = 1,
                         Experience = 0,
-                        Hunger = 100,      // 應用層預設值覆蓋 DB 預設值 0
-                        Mood = 100,        // 應用層預設值覆蓋 DB 預設值 0
-                        Stamina = 100,     // 應用層預設值覆蓋 DB 預設值 0
-                        Cleanliness = 100, // 應用層預設值覆蓋 DB 預設值 0
-                        Health = 100,      // 應用層預設值覆蓋 DB 預設值 0
-                        SkinColor = "#ADD8E6",
-                        BackgroundColor = "粉藍",
-                        LevelUpTime = DateTime.UtcNow,
-                        ColorChangedTime = DateTime.UtcNow,
-                        BackgroundColorChangedTime = DateTime.UtcNow,
-                        PointsChangedTime = DateTime.UtcNow
+                        Hunger = 100,
+                        Mood = 100,
+                        Stamina = 100,
+                        Cleanliness = 100,
+                        Health = 100,
+                        Color = "Default",
+                        IsActive = true,
+                        CreateTime = DateTime.UtcNow,
+                        UpdateTime = DateTime.UtcNow
                     };
 
                     await _unitOfWork.PetRepository.AddAsync(pet);
                     await _unitOfWork.SaveChangesAsync();
 
-                    _logger.LogInformation($"為使用者 {userId} 建立新寵物，ID: {pet.PetId}");
+                    _logger.LogInformation($"為使用者 {userId} 建立新寵物，ID: {pet.Id}");
                 }
 
                 return pet;
@@ -87,19 +88,18 @@ namespace GameCore.Core.Services
         {
             try
             {
-                // 檢查冷卻時間
-                var cooldownSeconds = await GetInteractionCooldownAsync(userId, interactionType);
-                if (cooldownSeconds > 0)
+                var pet = await GetOrCreatePetAsync(userId);
+
+                // 檢查寵物是否可以進行互動 (健康度或任何屬性為0時禁止)
+                if (pet.Health == 0 || pet.Hunger == 0 || pet.Mood == 0 || pet.Stamina == 0 || pet.Cleanliness == 0)
                 {
                     return new PetInteractionResult
                     {
                         Success = false,
-                        Message = $"請等待 {cooldownSeconds} 秒後再進行互動",
-                        CooldownSeconds = cooldownSeconds
+                        Message = "寵物狀態不佳，無法進行互動"
                     };
                 }
 
-                var pet = await GetOrCreatePetAsync(userId);
                 var originalHealth = pet.Health;
 
                 // 執行互動邏輯
@@ -136,9 +136,17 @@ namespace GameCore.Core.Services
                 // 更新健康度 (根據低屬性懲罰)
                 await UpdateHealthStatusAsync(pet);
 
-                // 記錄互動時間 (用於冷卻計算)
-                await _unitOfWork.PetRepository.UpdateLastInteractionAsync(userId, interactionType, DateTime.UtcNow);
-                
+                // 記錄互動
+                var interaction = new PetInteraction
+                {
+                    PetId = pet.Id,
+                    UserId = userId,
+                    InteractionType = interactionType.ToString(),
+                    Description = $"執行{GetInteractionActionName(interactionType)}",
+                    CreateTime = DateTime.UtcNow
+                };
+
+                await _unitOfWork.PetRepository.AddInteractionAsync(interaction);
                 await _unitOfWork.PetRepository.UpdateAsync(pet);
                 await _unitOfWork.SaveChangesAsync();
 
@@ -154,8 +162,7 @@ namespace GameCore.Core.Services
                     Success = true,
                     Message = message,
                     Pet = pet,
-                    HealthRestored = healthRestored,
-                    CooldownSeconds = INTERACTION_COOLDOWN_SECONDS
+                    HealthRestored = healthRestored
                 };
             }
             catch (Exception ex)
@@ -172,51 +179,36 @@ namespace GameCore.Core.Services
         /// <summary>
         /// 寵物換色 (消耗 2000 點數)
         /// </summary>
-        public async Task<PetColorChangeResult> ChangePetColorAsync(int userId, string skinColor, string backgroundColor)
+        public async Task<PetColorChangeResult> ChangePetColorAsync(int userId, string color)
         {
             try
             {
                 var pet = await GetOrCreatePetAsync(userId);
-                var wallet = await _unitOfWork.UserRepository.GetWalletAsync(userId);
+                var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
 
-                if (wallet == null || wallet.UserPoint < COLOR_CHANGE_COST)
+                if (user == null || user.Points < COLOR_CHANGE_COST)
                 {
                     return new PetColorChangeResult
                     {
                         Success = false,
-                        Message = $"點數不足！需要 {COLOR_CHANGE_COST} 點數，目前只有 {wallet?.UserPoint ?? 0} 點數",
-                        RemainingPoints = wallet?.UserPoint ?? 0
-                    };
-                }
-
-                // 驗證顏色格式
-                if (!IsValidColorFormat(skinColor) || !IsValidColorFormat(backgroundColor))
-                {
-                    return new PetColorChangeResult
-                    {
-                        Success = false,
-                        Message = "顏色格式無效，請使用正確的十六進位色碼 (如: #FF0000)",
-                        RemainingPoints = wallet.UserPoint
+                        Message = $"點數不足！需要 {COLOR_CHANGE_COST} 點數，目前只有 {user?.Points ?? 0} 點數",
+                        RemainingPoints = user?.Points ?? 0
                     };
                 }
 
                 // 扣除點數
-                wallet.UserPoint -= COLOR_CHANGE_COST;
-                await _unitOfWork.UserRepository.UpdateWalletAsync(wallet);
+                user.Points -= COLOR_CHANGE_COST;
+                await _unitOfWork.UserRepository.UpdateAsync(user);
 
                 // 更新寵物外觀
-                pet.SkinColor = skinColor;
-                pet.BackgroundColor = backgroundColor;
-                pet.ColorChangedTime = DateTime.UtcNow;
-                pet.BackgroundColorChangedTime = DateTime.UtcNow;
-                pet.PointsChanged = COLOR_CHANGE_COST;
-                pet.PointsChangedTime = DateTime.UtcNow;
+                pet.Color = color;
+                pet.UpdateTime = DateTime.UtcNow;
 
                 await _unitOfWork.PetRepository.UpdateAsync(pet);
 
                 // 建立通知記錄
                 await _unitOfWork.NotificationRepository.CreatePetColorChangeNotificationAsync(
-                    userId, skinColor, backgroundColor, COLOR_CHANGE_COST);
+                    userId, color, COLOR_CHANGE_COST);
 
                 await _unitOfWork.SaveChangesAsync();
 
@@ -228,7 +220,7 @@ namespace GameCore.Core.Services
                     Message = "寵物換色成功！",
                     PointsUsed = COLOR_CHANGE_COST,
                     Pet = pet,
-                    RemainingPoints = wallet.UserPoint
+                    RemainingPoints = user.Points
                 };
             }
             catch (Exception ex)
@@ -285,17 +277,9 @@ namespace GameCore.Core.Services
                 {
                     pet.Experience -= requiredExp;
                     pet.Level++;
-                    pet.LevelUpTime = DateTime.UtcNow;
                     leveledUp = true;
 
-                    _logger.LogInformation($"寵物 {pet.PetId} 升級到 {pet.Level} 級");
-
-                    // 升級獎勵 (可在後台設定，這裡先給預設值)
-                    var levelUpReward = CalculateLevelUpReward(pet.Level);
-                    if (levelUpReward > 0)
-                    {
-                        await _unitOfWork.UserRepository.AddPointsAsync(pet.UserId, levelUpReward, "寵物升級獎勵");
-                    }
+                    _logger.LogInformation($"寵物 {pet.Id} 升級到 {pet.Level} 級");
                 }
                 else
                 {
@@ -303,168 +287,64 @@ namespace GameCore.Core.Services
                 }
             }
 
-            if (leveledUp)
-            {
-                await _unitOfWork.PetRepository.UpdateAsync(pet);
-            }
+            pet.UpdateTime = DateTime.UtcNow;
+            await _unitOfWork.PetRepository.UpdateAsync(pet);
+            await _unitOfWork.SaveChangesAsync();
 
             return leveledUp;
         }
 
         /// <summary>
-        /// 檢查寵物健康狀態並更新健康度
+        /// 檢查寵物是否可以進行小遊戲
         /// </summary>
-        public async Task<int> UpdateHealthStatusAsync(Pet pet)
-        {
-            var originalHealth = pet.Health;
-
-            // 按照規格：低於 30 的屬性會扣健康度
-            if (pet.Hunger < 30) pet.Health = Math.Max(0, pet.Health - 20);
-            if (pet.Cleanliness < 30) pet.Health = Math.Max(0, pet.Health - 20);
-            if (pet.Stamina < 30) pet.Health = Math.Max(0, pet.Health - 20);
-
-            // 確保健康度不超過 100
-            pet.Health = Math.Min(100, pet.Health);
-
-            if (pet.Health != originalHealth)
-            {
-                await _unitOfWork.PetRepository.UpdateAsync(pet);
-                _logger.LogInformation($"寵物 {pet.PetId} 健康度從 {originalHealth} 更新為 {pet.Health}");
-            }
-
-            return pet.Health;
-        }
-
-        /// <summary>
-        /// 檢查寵物是否可以進行冒險
-        /// </summary>
-        public async Task<bool> CanStartAdventureAsync(int userId)
-        {
-            var pet = await GetOrCreatePetAsync(userId);
-            
-            // 按照規格：Health==0 或任一屬性為 0 時禁止冒險
-            return pet.Health > 0 && 
-                   pet.Hunger > 0 && 
-                   pet.Mood > 0 && 
-                   pet.Stamina > 0 && 
-                   pet.Cleanliness > 0;
-        }
-
-        /// <summary>
-        /// 執行每日寵物屬性衰減 (每日 00:00 Asia/Taipei 時區執行)
-        /// </summary>
-        public async Task<int> ExecuteDailyDecayAsync()
+        public async Task<bool> CanPlayMiniGameAsync(int userId)
         {
             try
             {
-                var allPets = await _unitOfWork.PetRepository.GetAllAsync();
-                int affectedCount = 0;
-
-                foreach (var pet in allPets)
-                {
-                    // 執行每日衰減
-                    pet.Hunger = Math.Max(0, pet.Hunger - DAILY_HUNGER_DECAY);
-                    pet.Mood = Math.Max(0, pet.Mood - DAILY_MOOD_DECAY);
-                    pet.Stamina = Math.Max(0, pet.Stamina - DAILY_STAMINA_DECAY);
-                    pet.Cleanliness = Math.Max(0, pet.Cleanliness - DAILY_CLEANLINESS_DECAY);
-                    pet.Health = Math.Max(0, pet.Health - DAILY_HEALTH_DECAY);
-
-                    await _unitOfWork.PetRepository.UpdateAsync(pet);
-                    affectedCount++;
-                }
-
-                await _unitOfWork.SaveChangesAsync();
-
-                _logger.LogInformation($"每日寵物屬性衰減完成，影響 {affectedCount} 隻寵物");
-                return affectedCount;
+                var pet = await GetOrCreatePetAsync(userId);
+                
+                // 健康度為0或任何屬性為0時禁止遊戲
+                return pet.Health > 0 && pet.Hunger > 0 && pet.Mood > 0 && pet.Stamina > 0 && pet.Cleanliness > 0;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "執行每日寵物屬性衰減時發生錯誤");
-                throw;
+                _logger.LogError(ex, $"檢查寵物遊戲狀態時發生錯誤，使用者ID: {userId}");
+                return false;
             }
         }
 
         /// <summary>
-        /// 取得寵物互動冷卻時間
+        /// 更新健康度狀態 (根據低屬性懲罰)
         /// </summary>
-        public async Task<int> GetInteractionCooldownAsync(int userId, PetInteractionType interactionType)
+        private async Task UpdateHealthStatusAsync(Pet pet)
         {
-            var lastInteraction = await _unitOfWork.PetRepository.GetLastInteractionTimeAsync(userId, interactionType);
-            
-            if (lastInteraction == null) return 0;
+            var originalHealth = pet.Health;
 
-            var elapsedSeconds = (DateTime.UtcNow - lastInteraction.Value).TotalSeconds;
-            var remainingSeconds = INTERACTION_COOLDOWN_SECONDS - (int)elapsedSeconds;
+            // 健康度懲罰規則
+            if (pet.Hunger < HEALTH_PENALTY_THRESHOLD)
+            {
+                pet.Health = Math.Max(0, pet.Health - 20);
+            }
 
-            return Math.Max(0, remainingSeconds);
+            if (pet.Cleanliness < HEALTH_PENALTY_THRESHOLD)
+            {
+                pet.Health = Math.Max(0, pet.Health - 20);
+            }
+
+            if (pet.Stamina < HEALTH_PENALTY_THRESHOLD)
+            {
+                pet.Health = Math.Max(0, pet.Health - 20);
+            }
+
+            // 確保健康度在0-100範圍內
+            pet.Health = Math.Max(0, Math.Min(100, pet.Health));
+
+            if (pet.Health != originalHealth)
+            {
+                _logger.LogInformation($"寵物 {pet.Id} 健康度從 {originalHealth} 調整為 {pet.Health}");
+            }
         }
 
-        /// <summary>
-        /// 取得寵物狀態描述
-        /// </summary>
-        public PetStatusDescription GetPetStatusDescription(Pet pet)
-        {
-            // 計算最低屬性
-            var attributes = new Dictionary<string, int>
-            {
-                { "飢餓", pet.Hunger },
-                { "心情", pet.Mood },
-                { "體力", pet.Stamina },
-                { "清潔", pet.Cleanliness },
-                { "健康", pet.Health }
-            };
-
-            var lowestAttr = attributes.OrderBy(a => a.Value).First();
-            var averageStatus = (pet.Hunger + pet.Mood + pet.Stamina + pet.Cleanliness + pet.Health) / 5;
-
-            // 判斷整體狀態
-            string overallStatus = averageStatus switch
-            {
-                >= 80 => "優秀",
-                >= 60 => "良好", 
-                >= 40 => "普通",
-                >= 20 => "不佳",
-                _ => "危險"
-            };
-
-            // 建議行動
-            string suggestedAction = lowestAttr.Key switch
-            {
-                "飢餓" => "建議餵食",
-                "心情" => "建議玩耍",
-                "體力" => "建議休息",
-                "清潔" => "建議洗澡",
-                "健康" => "建議提升其他屬性",
-                _ => "繼續照顧"
-            };
-
-            // 表情狀態 (用於動畫)
-            string emotionState = lowestAttr.Value switch
-            {
-                <= 20 => "sad",
-                <= 40 => "tired",
-                <= 60 => "normal",
-                <= 80 => "happy",
-                _ => "excellent"
-            };
-
-            return new PetStatusDescription
-            {
-                OverallStatus = overallStatus,
-                LowestAttribute = lowestAttr.Key,
-                LowestValue = lowestAttr.Value,
-                SuggestedAction = suggestedAction,
-                CanAdventure = pet.Health > 0 && lowestAttr.Value > 0,
-                EmotionState = emotionState
-            };
-        }
-
-        #region 私有輔助方法
-
-        /// <summary>
-        /// 取得互動動作名稱
-        /// </summary>
         private string GetInteractionActionName(PetInteractionType interactionType)
         {
             return interactionType switch
@@ -477,9 +357,6 @@ namespace GameCore.Core.Services
             };
         }
 
-        /// <summary>
-        /// 取得屬性名稱
-        /// </summary>
         private string GetAttributeName(PetInteractionType interactionType)
         {
             return interactionType switch
@@ -488,36 +365,8 @@ namespace GameCore.Core.Services
                 PetInteractionType.Bath => "清潔值",
                 PetInteractionType.Play => "心情值",
                 PetInteractionType.Rest => "體力值",
-                _ => "屬性值"
+                _ => "屬性"
             };
         }
-
-        /// <summary>
-        /// 驗證顏色格式 (十六進位色碼)
-        /// </summary>
-        private bool IsValidColorFormat(string color)
-        {
-            if (string.IsNullOrEmpty(color)) return false;
-            
-            // 檢查是否為有效的十六進位色碼格式
-            return System.Text.RegularExpressions.Regex.IsMatch(color, @"^#[0-9A-Fa-f]{6}$");
-        }
-
-        /// <summary>
-        /// 計算升級獎勵點數 (可在後台設定)
-        /// </summary>
-        private int CalculateLevelUpReward(int newLevel)
-        {
-            // 簡單的升級獎勵公式，可以根據需求調整
-            return newLevel switch
-            {
-                <= 10 => 50,   // 前 10 級每級 50 點
-                <= 50 => 100,  // 11-50 級每級 100 點
-                <= 100 => 200, // 51-100 級每級 200 點
-                _ => 500       // 100 級以上每級 500 點
-            };
-        }
-
-        #endregion
     }
 }

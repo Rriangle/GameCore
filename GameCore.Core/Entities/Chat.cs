@@ -4,119 +4,113 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace GameCore.Core.Entities
 {
     /// <summary>
-    /// 聊天室實體
+    /// 聊天室表 (對應 ChatRooms)
     /// </summary>
     [Table("ChatRooms")]
     public class ChatRoom
     {
         [Key]
-        public int RoomId { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Id { get; set; }
 
         [Required]
-        public string RoomName { get; set; } = string.Empty;
+        [StringLength(100)]
+        public string Name { get; set; } = string.Empty;
+
+        [StringLength(500)]
+        public string? Description { get; set; }
 
         [Required]
-        public ChatRoomType RoomType { get; set; }
+        [StringLength(20)]
+        public string Type { get; set; } = "Group"; // Group, Private
 
         [Required]
-        public int CreatorId { get; set; }
+        public bool IsActive { get; set; } = true;
 
         [Required]
-        public bool IsActive { get; set; }
+        public DateTime CreateTime { get; set; } = DateTime.UtcNow;
 
         [Required]
-        public DateTime CreatedAt { get; set; }
+        public DateTime UpdateTime { get; set; } = DateTime.UtcNow;
 
-        [Required]
-        public DateTime UpdatedAt { get; set; }
-
-        // 導航屬性
-        [ForeignKey("CreatorId")]
-        public virtual User Creator { get; set; } = null!;
-
+        // Navigation properties
         public virtual ICollection<ChatRoomMember> Members { get; set; } = new List<ChatRoomMember>();
         public virtual ICollection<ChatMessage> Messages { get; set; } = new List<ChatMessage>();
     }
 
     /// <summary>
-    /// 聊天室成員實體
+    /// 聊天室成員表 (對應 ChatRoomMembers)
     /// </summary>
     [Table("ChatRoomMembers")]
     public class ChatRoomMember
     {
         [Key]
-        public int MemberId { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Id { get; set; }
 
         [Required]
-        public int RoomId { get; set; }
+        public int ChatRoomId { get; set; }
 
         [Required]
         public int UserId { get; set; }
 
         [Required]
-        public ChatMemberRole Role { get; set; }
+        public DateTime JoinTime { get; set; } = DateTime.UtcNow;
 
         [Required]
-        public DateTime JoinedAt { get; set; }
-
-        public DateTime? LastReadAt { get; set; }
+        public DateTime LastReadTime { get; set; } = DateTime.UtcNow;
 
         [Required]
-        public bool IsActive { get; set; }
+        public bool IsActive { get; set; } = true;
 
-        // 導航屬性
-        [ForeignKey("RoomId")]
-        public virtual ChatRoom Room { get; set; } = null!;
-
-        [ForeignKey("UserId")]
+        // Navigation properties
+        public virtual ChatRoom ChatRoom { get; set; } = null!;
         public virtual User User { get; set; } = null!;
     }
 
     /// <summary>
-    /// 聊天訊息實體
+    /// 聊天訊息表 (對應 ChatMessages)
     /// </summary>
     [Table("ChatMessages")]
     public class ChatMessage
     {
         [Key]
-        public int MessageId { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Id { get; set; }
 
         [Required]
-        public int RoomId { get; set; }
+        public int ChatRoomId { get; set; }
 
         [Required]
-        public int SenderId { get; set; }
+        public int UserId { get; set; }
 
         [Required]
         public string Content { get; set; } = string.Empty;
 
         [Required]
-        public ChatMessageType MessageType { get; set; }
+        [StringLength(20)]
+        public string Type { get; set; } = "Text"; // Text, Image, File
 
         [Required]
-        public DateTime SentAt { get; set; }
-
-        public DateTime? ReadAt { get; set; }
+        public bool IsActive { get; set; } = true;
 
         [Required]
-        public bool IsDeleted { get; set; }
+        public DateTime CreateTime { get; set; } = DateTime.UtcNow;
 
-        // 導航屬性
-        [ForeignKey("RoomId")]
-        public virtual ChatRoom Room { get; set; } = null!;
-
-        [ForeignKey("SenderId")]
-        public virtual User Sender { get; set; } = null!;
+        // Navigation properties
+        public virtual ChatRoom ChatRoom { get; set; } = null!;
+        public virtual User User { get; set; } = null!;
     }
 
     /// <summary>
-    /// 私人聊天實體
+    /// 私聊表 (對應 PrivateChats)
     /// </summary>
     [Table("PrivateChats")]
     public class PrivateChat
     {
         [Key]
-        public int ChatId { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Id { get; set; }
 
         [Required]
         public int User1Id { get; set; }
@@ -125,32 +119,32 @@ namespace GameCore.Core.Entities
         public int User2Id { get; set; }
 
         [Required]
-        public DateTime CreatedAt { get; set; }
+        public bool IsActive { get; set; } = true;
 
         [Required]
-        public DateTime UpdatedAt { get; set; }
+        public DateTime CreateTime { get; set; } = DateTime.UtcNow;
 
-        // 導航屬性
-        [ForeignKey("User1Id")]
+        [Required]
+        public DateTime UpdateTime { get; set; } = DateTime.UtcNow;
+
+        // Navigation properties
         public virtual User User1 { get; set; } = null!;
-
-        [ForeignKey("User2Id")]
         public virtual User User2 { get; set; } = null!;
-
         public virtual ICollection<PrivateMessage> Messages { get; set; } = new List<PrivateMessage>();
     }
 
     /// <summary>
-    /// 私人訊息實體
+    /// 私聊訊息表 (對應 PrivateMessages)
     /// </summary>
     [Table("PrivateMessages")]
     public class PrivateMessage
     {
         [Key]
-        public int MessageId { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Id { get; set; }
 
         [Required]
-        public int ChatId { get; set; }
+        public int PrivateChatId { get; set; }
 
         [Required]
         public int SenderId { get; set; }
@@ -162,55 +156,16 @@ namespace GameCore.Core.Entities
         public string Content { get; set; } = string.Empty;
 
         [Required]
-        public ChatMessageType MessageType { get; set; }
+        public bool IsRead { get; set; } = false;
+
+        public DateTime? ReadTime { get; set; }
 
         [Required]
-        public DateTime SentAt { get; set; }
+        public DateTime CreateTime { get; set; } = DateTime.UtcNow;
 
-        public DateTime? ReadAt { get; set; }
-
-        [Required]
-        public bool IsDeleted { get; set; }
-
-        // 導航屬性
-        [ForeignKey("ChatId")]
-        public virtual PrivateChat Chat { get; set; } = null!;
-
-        [ForeignKey("SenderId")]
+        // Navigation properties
+        public virtual PrivateChat PrivateChat { get; set; } = null!;
         public virtual User Sender { get; set; } = null!;
-
-        [ForeignKey("ReceiverId")]
         public virtual User Receiver { get; set; } = null!;
-    }
-
-    /// <summary>
-    /// 聊天室類型列舉
-    /// </summary>
-    public enum ChatRoomType
-    {
-        Private = 1,       // 私人聊天
-        Group = 2,         // 群組聊天
-        Support = 3        // 客服聊天
-    }
-
-    /// <summary>
-    /// 聊天室成員角色列舉
-    /// </summary>
-    public enum ChatMemberRole
-    {
-        Member = 1,        // 一般成員
-        Moderator = 2,     // 管理員
-        Admin = 3          // 超級管理員
-    }
-
-    /// <summary>
-    /// 聊天訊息類型列舉
-    /// </summary>
-    public enum ChatMessageType
-    {
-        Text = 1,          // 文字訊息
-        Image = 2,         // 圖片訊息
-        File = 3,          // 檔案訊息
-        System = 4         // 系統訊息
     }
 }

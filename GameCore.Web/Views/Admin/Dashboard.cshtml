@@ -1,0 +1,787 @@
+@model GameCore.Core.DTOs.AdminDashboardDto
+@{
+    ViewData["Title"] = "管理員儀表板";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="admin-dashboard">
+    <!-- 頁面標題 -->
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">
+            <i class="fas fa-tachometer-alt"></i>
+            管理員儀表板
+        </h1>
+        <div class="dashboard-time">
+            <i class="fas fa-clock"></i>
+            <span id="currentTime"></span>
+        </div>
+    </div>
+
+    <!-- 統計卡片區域 -->
+    <div class="stats-grid">
+        <!-- 使用者統計 -->
+        <div class="stat-card users-card">
+            <div class="stat-header">
+                <i class="fas fa-users"></i>
+                <h3>使用者管理</h3>
+            </div>
+            <div class="stat-content">
+                <div class="stat-main">
+                    <span class="stat-number">@Model.TotalUsers.ToString("N0")</span>
+                    <span class="stat-label">總用戶數</span>
+                </div>
+                <div class="stat-secondary">
+                    <div class="stat-item">
+                        <span class="stat-value text-success">+@Model.TodayNewUsers</span>
+                        <span class="stat-desc">今日新增</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">@Model.ActiveUsers.ToString("N0")</span>
+                        <span class="stat-desc">活躍用戶</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 訂單統計 -->
+        <div class="stat-card orders-card">
+            <div class="stat-header">
+                <i class="fas fa-shopping-cart"></i>
+                <h3>訂單管理</h3>
+            </div>
+            <div class="stat-content">
+                <div class="stat-main">
+                    <span class="stat-number">@Model.TotalOrders.ToString("N0")</span>
+                    <span class="stat-label">總訂單數</span>
+                </div>
+                <div class="stat-secondary">
+                    <div class="stat-item">
+                        <span class="stat-value text-primary">@Model.TodayOrders</span>
+                        <span class="stat-desc">今日訂單</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">@((Model.TodayOrders * 100.0 / Math.Max(Model.TotalOrders, 1)).ToString("F1"))%</span>
+                        <span class="stat-desc">今日占比</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 審核統計 -->
+        <div class="stat-card audits-card">
+            <div class="stat-header">
+                <i class="fas fa-clipboard-check"></i>
+                <h3>審核管理</h3>
+            </div>
+            <div class="stat-content">
+                <div class="stat-main">
+                    <span class="stat-number text-warning">@Model.PendingAudits</span>
+                    <span class="stat-label">待審核項目</span>
+                </div>
+                <div class="stat-secondary">
+                    <div class="stat-item">
+                        <span class="stat-value text-danger">@Model.SystemAlerts</span>
+                        <span class="stat-desc">系統警告</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">@(Model.PendingAudits > 0 ? "需處理" : "正常")</span>
+                        <span class="stat-desc">狀態</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 營收統計 -->
+        <div class="stat-card revenue-card">
+            <div class="stat-header">
+                <i class="fas fa-dollar-sign"></i>
+                <h3>營收統計</h3>
+            </div>
+            <div class="stat-content">
+                <div class="stat-main">
+                    <span class="stat-number">$@Model.TotalRevenue.ToString("N0")</span>
+                    <span class="stat-label">總營收</span>
+                </div>
+                <div class="stat-secondary">
+                    <div class="stat-item">
+                        <span class="stat-value text-success">$@Model.MonthlyRevenue.ToString("N0")</span>
+                        <span class="stat-desc">本月營收</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">@((Model.MonthlyRevenue * 100.0 / Math.Max(Model.TotalRevenue, 1)).ToString("F1"))%</span>
+                        <span class="stat-desc">本月占比</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 系統健康狀態 -->
+    <div class="dashboard-row">
+        <div class="dashboard-col-8">
+            <!-- 熱門遊戲排行 -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-trophy"></i> 熱門遊戲排行</h3>
+                    <a href="/Admin/Analytics" class="btn btn-outline">查看詳細</a>
+                </div>
+                <div class="card-content">
+                    @if (Model.TopGames?.Any() == true)
+                    {
+                        <div class="ranking-list">
+                            @foreach (var game in Model.TopGames.Take(5))
+                            {
+                                <div class="ranking-item">
+                                    <div class="rank-badge rank-@game.Rank">@game.Rank</div>
+                                    <div class="game-info">
+                                        <h4>@game.GameName</h4>
+                                        <span class="game-score">熱度: @game.Score.ToString("F1")</span>
+                                    </div>
+                                    <div class="trend-indicator">
+                                        <i class="fas fa-@(game.Trend == "up" ? "arrow-up text-success" : 
+                                                           game.Trend == "down" ? "arrow-down text-danger" : 
+                                                           "minus text-muted")"></i>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <i class="fas fa-chart-line"></i>
+                            <p>暫無排行榜資料</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- 使用者註冊趨勢 -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-chart-line"></i> 使用者註冊趨勢</h3>
+                    <div class="chart-controls">
+                        <button class="btn btn-sm" data-period="7">7天</button>
+                        <button class="btn btn-sm active" data-period="30">30天</button>
+                        <button class="btn btn-sm" data-period="90">90天</button>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="chart-container">
+                        <canvas id="userRegistrationChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-col-4">
+            <!-- 系統健康狀態 -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-heartbeat"></i> 系統健康狀態</h3>
+                    <span class="health-score health-@(Model.SystemHealth.OverallHealth >= 95 ? "excellent" : 
+                                                      Model.SystemHealth.OverallHealth >= 80 ? "good" : 
+                                                      Model.SystemHealth.OverallHealth >= 60 ? "warning" : "critical")">
+                        @Model.SystemHealth.OverallHealth%
+                    </span>
+                </div>
+                <div class="card-content">
+                    <div class="health-metrics">
+                        <div class="metric-item">
+                            <div class="metric-label">CPU 使用率</div>
+                            <div class="metric-bar">
+                                <div class="metric-progress" style="width: @Model.SystemHealth.CpuUsage%"></div>
+                            </div>
+                            <div class="metric-value">@Model.SystemHealth.CpuUsage.ToString("F1")%</div>
+                        </div>
+
+                        <div class="metric-item">
+                            <div class="metric-label">記憶體使用率</div>
+                            <div class="metric-bar">
+                                <div class="metric-progress" style="width: @Model.SystemHealth.MemoryUsage%"></div>
+                            </div>
+                            <div class="metric-value">@Model.SystemHealth.MemoryUsage.ToString("F1")%</div>
+                        </div>
+
+                        <div class="metric-item">
+                            <div class="metric-label">磁碟使用率</div>
+                            <div class="metric-bar">
+                                <div class="metric-progress" style="width: @Model.SystemHealth.DiskUsage%"></div>
+                            </div>
+                            <div class="metric-value">@Model.SystemHealth.DiskUsage.ToString("F1")%</div>
+                        </div>
+                    </div>
+
+                    <div class="service-status">
+                        <h4>外部服務狀態</h4>
+                        <div class="status-item">
+                            <i class="fas fa-database"></i>
+                            <span>資料庫</span>
+                            <span class="status-badge @(Model.SystemHealth.DatabaseConnected ? "status-online" : "status-offline")">
+                                @(Model.SystemHealth.DatabaseConnected ? "在線" : "離線")
+                            </span>
+                        </div>
+                        
+                        @if (Model.SystemHealth.ExternalServices?.Any() == true)
+                        {
+                            @foreach (var service in Model.SystemHealth.ExternalServices)
+                            {
+                                <div class="status-item">
+                                    <i class="fas fa-server"></i>
+                                    <span>@service.Key</span>
+                                    <span class="status-badge @(service.Value ? "status-online" : "status-offline")">
+                                        @(service.Value ? "在線" : "離線")
+                                    </span>
+                                </div>
+                            }
+                        }
+                    </div>
+
+                    <div class="last-check">
+                        <small class="text-muted">
+                            <i class="fas fa-clock"></i>
+                            最後檢查: @Model.SystemHealth.LastCheckTime.ToString("HH:mm:ss")
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 快速操作 -->
+            <div class="dashboard-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-bolt"></i> 快速操作</h3>
+                </div>
+                <div class="card-content">
+                    <div class="quick-actions">
+                        <a href="/Admin/Users" class="quick-action-btn">
+                            <i class="fas fa-users"></i>
+                            <span>使用者管理</span>
+                        </a>
+                        <a href="/Admin/Orders" class="quick-action-btn">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span>訂單管理</span>
+                        </a>
+                        <a href="/Admin/Content" class="quick-action-btn">
+                            <i class="fas fa-file-alt"></i>
+                            <span>內容審核</span>
+                        </a>
+                        <a href="/Admin/Settings" class="quick-action-btn">
+                            <i class="fas fa-cog"></i>
+                            <span>系統設定</span>
+                        </a>
+                        <a href="/Admin/Reports" class="quick-action-btn">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>報表分析</span>
+                        </a>
+                        <a href="/Admin/Logs" class="quick-action-btn">
+                            <i class="fas fa-list-alt"></i>
+                            <span>操作日誌</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // 實時時間更新
+        function updateCurrentTime() {
+            const now = new Date();
+            const timeString = now.toLocaleString('zh-TW', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('currentTime').textContent = timeString;
+        }
+
+        // 每秒更新時間
+        setInterval(updateCurrentTime, 1000);
+        updateCurrentTime();
+
+        // 使用者註冊趨勢圖表
+        const ctx = document.getElementById('userRegistrationChart').getContext('2d');
+        const userRegistrationChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.UserRegistrationTrend?.Select(t => t.Date.ToString("MM/dd")) ?? new List<string>())),
+                datasets: [{
+                    label: '新增用戶數',
+                    data: @Html.Raw(Json.Serialize(Model.UserRegistrationTrend?.Select(t => t.Value) ?? new List<decimal>())),
+                    borderColor: '#7557ff',
+                    backgroundColor: 'rgba(117, 87, 255, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        }
+                    }
+                }
+            }
+        });
+
+        // 圖表時間範圍切換
+        document.querySelectorAll('[data-period]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelector('.chart-controls .active').classList.remove('active');
+                this.classList.add('active');
+                
+                const period = this.dataset.period;
+                // 這裡可以加入AJAX請求來更新圖表數據
+                console.log('切換到', period, '天趨勢');
+            });
+        });
+
+        // 自動刷新系統健康狀態
+        setInterval(() => {
+            fetch('/Admin/Dashboard/HealthStatus')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // 更新健康狀態顯示
+                        console.log('系統健康狀態已更新');
+                    }
+                })
+                .catch(error => {
+                    console.error('無法獲取系統健康狀態:', error);
+                });
+        }, 30000); // 每30秒刷新一次
+    </script>
+}
+
+@section Styles {
+    <style>
+        .admin-dashboard {
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 1.5rem;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .dashboard-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin: 0;
+        }
+
+        .dashboard-time {
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            color: #718096;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .stat-header i {
+            font-size: 1.5rem;
+            margin-right: 0.75rem;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+        }
+
+        .users-card .stat-header i { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .orders-card .stat-header i { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
+        .audits-card .stat-header i { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
+        .revenue-card .stat-header i { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; }
+
+        .stat-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .stat-main {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 1rem;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #2d3748;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #718096;
+            margin-top: 0.25rem;
+        }
+
+        .stat-secondary {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .stat-desc {
+            font-size: 0.8rem;
+            color: #a0aec0;
+            margin-top: 0.25rem;
+        }
+
+        .dashboard-row {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-col-8 {
+            flex: 2;
+        }
+
+        .dashboard-col-4 {
+            flex: 1;
+        }
+
+        .dashboard-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .card-content {
+            padding: 1.5rem;
+        }
+
+        .ranking-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            background: rgba(247, 250, 252, 0.8);
+            border-radius: 10px;
+            transition: background 0.3s ease;
+        }
+
+        .ranking-item:hover {
+            background: rgba(237, 242, 247, 0.8);
+        }
+
+        .rank-badge {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-right: 1rem;
+        }
+
+        .rank-1 { background: linear-gradient(135deg, #ffd700, #ffed4e); color: #744210; }
+        .rank-2 { background: linear-gradient(135deg, #c0c0c0, #e2e8f0); color: #4a5568; }
+        .rank-3 { background: linear-gradient(135deg, #cd7f32, #d69e2e); color: #744210; }
+        .rank-badge:not(.rank-1):not(.rank-2):not(.rank-3) { background: #e2e8f0; color: #4a5568; }
+
+        .game-info {
+            flex: 1;
+        }
+
+        .game-info h4 {
+            margin: 0 0 0.25rem 0;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .game-score {
+            font-size: 0.9rem;
+            color: #718096;
+        }
+
+        .trend-indicator {
+            font-size: 1.2rem;
+        }
+
+        .health-score {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .health-excellent { background: #48bb78; color: white; }
+        .health-good { background: #38b2ac; color: white; }
+        .health-warning { background: #ed8936; color: white; }
+        .health-critical { background: #e53e3e; color: white; }
+
+        .health-metrics {
+            margin-bottom: 1.5rem;
+        }
+
+        .metric-item {
+            margin-bottom: 1rem;
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            color: #4a5568;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            transition: width 0.3s ease;
+        }
+
+        .metric-value {
+            font-size: 0.8rem;
+            color: #718096;
+            text-align: right;
+        }
+
+        .service-status h4 {
+            font-size: 1rem;
+            color: #2d3748;
+            margin-bottom: 1rem;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0;
+        }
+
+        .status-item i {
+            margin-right: 0.75rem;
+            color: #718096;
+        }
+
+        .status-item span:nth-child(2) {
+            flex: 1;
+            color: #4a5568;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-online {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status-offline {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .quick-action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+            background: rgba(247, 250, 252, 0.8);
+            border-radius: 10px;
+            text-decoration: none;
+            color: #4a5568;
+            transition: all 0.3s ease;
+        }
+
+        .quick-action-btn:hover {
+            background: rgba(237, 242, 247, 1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            color: #2d3748;
+            text-decoration: none;
+        }
+
+        .quick-action-btn i {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #7557ff;
+        }
+
+        .quick-action-btn span {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 200px;
+        }
+
+        .chart-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chart-controls .btn {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.8rem;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: #4a5568;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .chart-controls .btn.active,
+        .chart-controls .btn:hover {
+            background: #7557ff;
+            color: white;
+            border-color: #7557ff;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #a0aec0;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .last-check {
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .text-success { color: #48bb78 !important; }
+        .text-primary { color: #4299e1 !important; }
+        .text-warning { color: #ed8936 !important; }
+        .text-danger { color: #e53e3e !important; }
+        .text-muted { color: #a0aec0 !important; }
+
+        @media (max-width: 768px) {
+            .dashboard-row {
+                flex-direction: column;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+}

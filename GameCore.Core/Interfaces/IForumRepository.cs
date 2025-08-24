@@ -73,22 +73,22 @@ namespace GameCore.Core.Interfaces
     /// <summary>
     /// 貼文回覆倉庫介面
     /// </summary>
-    public interface IPostReplyRepository : IRepository<PostReply>
+    public interface IThreadPostRepository : IRepository<ThreadPost>
     {
         /// <summary>
-        /// 取得貼文的回覆列表
+        /// 取得討論串的回覆列表
         /// </summary>
-        /// <param name="postId">貼文ID</param>
+        /// <param name="threadId">討論串ID</param>
         /// <param name="page">頁碼</param>
         /// <param name="pageSize">每頁大小</param>
         /// <returns>回覆列表</returns>
-        Task<IEnumerable<PostReply>> GetRepliesByPostAsync(int postId, int page, int pageSize);
+        Task<IEnumerable<ThreadPost>> GetRepliesByThreadAsync(int threadId, int page, int pageSize);
 
         /// <summary>
         /// 取得回覆的子回覆
         /// </summary>
         /// <param name="replyId">回覆ID</param>
         /// <returns>子回覆列表</returns>
-        Task<IEnumerable<PostReply>> GetChildRepliesAsync(int replyId);
+        Task<IEnumerable<ThreadPost>> GetChildRepliesAsync(int replyId);
     }
 }

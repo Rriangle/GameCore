@@ -5,7 +5,7 @@ namespace GameCore.Core.Interfaces
     /// <summary>
     /// 玩家市場倉庫介面
     /// </summary>
-    public interface IPlayerMarketRepository : IRepository<PlayerMarketItem>
+    public interface IPlayerMarketRepository : IRepository<PlayerMarketProductInfo>
     {
         /// <summary>
         /// 取得所有活躍的市場商品
@@ -16,7 +16,7 @@ namespace GameCore.Core.Interfaces
         /// <param name="page">頁碼</param>
         /// <param name="pageSize">每頁大小</param>
         /// <returns>市場商品列表</returns>
-        Task<IEnumerable<PlayerMarketItem>> GetActiveItemsAsync(string? category = null, decimal? minPrice = null, decimal? maxPrice = null, int page = 1, int pageSize = 20);
+        Task<IEnumerable<PlayerMarketProductInfo>> GetActiveItemsAsync(string? category = null, decimal? minPrice = null, decimal? maxPrice = null, int page = 1, int pageSize = 20);
 
         /// <summary>
         /// 搜尋市場商品
@@ -28,7 +28,7 @@ namespace GameCore.Core.Interfaces
         /// <param name="page">頁碼</param>
         /// <param name="pageSize">每頁大小</param>
         /// <returns>搜尋結果</returns>
-        Task<IEnumerable<PlayerMarketItem>> SearchItemsAsync(string keyword, string? category = null, decimal? minPrice = null, decimal? maxPrice = null, int page = 1, int pageSize = 20);
+        Task<IEnumerable<PlayerMarketProductInfo>> SearchItemsAsync(string keyword, string? category = null, decimal? minPrice = null, decimal? maxPrice = null, int page = 1, int pageSize = 20);
 
         /// <summary>
         /// 取得使用者的市場商品
@@ -37,7 +37,7 @@ namespace GameCore.Core.Interfaces
         /// <param name="page">頁碼</param>
         /// <param name="pageSize">每頁大小</param>
         /// <returns>商品列表</returns>
-        Task<IEnumerable<PlayerMarketItem>> GetItemsByUserAsync(int userId, int page, int pageSize);
+        Task<IEnumerable<PlayerMarketProductInfo>> GetItemsByUserAsync(int userId, int page, int pageSize);
 
         /// <summary>
         /// 取得商品分類

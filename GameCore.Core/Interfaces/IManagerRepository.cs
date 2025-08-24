@@ -5,14 +5,14 @@ namespace GameCore.Core.Interfaces
     /// <summary>
     /// 管理員倉庫介面
     /// </summary>
-    public interface IManagerRepository : IRepository<Manager>
+    public interface IManagerRepository : IRepository<ManagerData>
     {
         /// <summary>
         /// 根據帳號取得管理員
         /// </summary>
         /// <param name="account">帳號</param>
         /// <returns>管理員</returns>
-        Task<Manager?> GetByAccountAsync(string account);
+        Task<ManagerData?> GetByAccountAsync(string account);
 
         /// <summary>
         /// 驗證管理員登入
@@ -20,7 +20,7 @@ namespace GameCore.Core.Interfaces
         /// <param name="account">帳號</param>
         /// <param name="password">密碼</param>
         /// <returns>管理員</returns>
-        Task<Manager?> ValidateLoginAsync(string account, string password);
+        Task<ManagerData?> ValidateLoginAsync(string account, string password);
 
         /// <summary>
         /// 取得管理員權限

@@ -1,5 +1,7 @@
 using GameCore.Core.Entities;
 using GameCore.Core.Interfaces;
+using GameCore.Core.DTOs;
+using GameCore.Core.Enums;
 using GameCore.Core.Services;
 using Microsoft.Extensions.Logging;
 

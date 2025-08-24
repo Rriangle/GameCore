@@ -4,245 +4,304 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace GameCore.Core.Entities
 {
     /// <summary>
-    /// 論壇版面實體
+    /// 論壇版實體 - 每遊戲一個版
     /// </summary>
-    [Table("Forums")]
+    [Table("forums")]
     public class Forum
     {
+        /// <summary>
+        /// 論壇版編號 (主鍵)
+        /// </summary>
         [Key]
+        [Column("forum_id")]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int ForumId { get; set; }
 
+        /// <summary>
+        /// 遊戲編號 (外鍵到 games, 一對一)
+        /// </summary>
         [Required]
+        [Column("game_id")]
+        [ForeignKey("Game")]
         public int GameId { get; set; }
 
-        [Required]
+        /// <summary>
+        /// 版名
+        /// </summary>
+        [Column("name")]
         [StringLength(100)]
-        public string Name { get; set; } = string.Empty;
+        public string? Name { get; set; }
 
-        [Required]
+        /// <summary>
+        /// 版說明
+        /// </summary>
+        [Column("description")]
         [StringLength(500)]
-        public string Description { get; set; } = string.Empty;
+        public string? Description { get; set; }
 
+        /// <summary>
+        /// 建立時間
+        /// </summary>
         [Required]
-        public int PostCount { get; set; }
-
-        [Required]
-        public int ReplyCount { get; set; }
-
-        [Required]
-        public int ViewCount { get; set; }
-
-        [Required]
-        public bool IsActive { get; set; }
-
-        [Required]
-        public int SortOrder { get; set; }
-
-        [Required]
+        [Column("created_at")]
         public DateTime CreatedAt { get; set; }
-
-        [Required]
-        public DateTime UpdatedAt { get; set; }
 
         // 導航屬性
         [ForeignKey("GameId")]
         public virtual Game Game { get; set; } = null!;
 
-        public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
+        public virtual ICollection<Thread> Threads { get; set; } = new List<Thread>();
     }
 
     /// <summary>
-    /// 討論主題實體
+    /// 版內主題實體 (討論串)
     /// </summary>
-    [Table("Posts")]
-    public class Post
+    [Table("threads")]
+    public class Thread
     {
+        /// <summary>
+        /// 主題編號 (主鍵)
+        /// </summary>
         [Key]
-        public int PostId { get; set; }
+        [Column("thread_id")]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public long ThreadId { get; set; }
 
+        /// <summary>
+        /// 所屬版編號 (外鍵)
+        /// </summary>
         [Required]
+        [Column("forum_id")]
+        [ForeignKey("Forum")]
         public int ForumId { get; set; }
 
+        /// <summary>
+        /// 作者編號 (外鍵)
+        /// </summary>
         [Required]
-        public int UserId { get; set; }
+        [Column("author_user_id")]
+        [ForeignKey("Author")]
+        public int AuthorUserId { get; set; }
 
-        [Required]
+        /// <summary>
+        /// 標題
+        /// </summary>
+        [Column("title")]
         [StringLength(200)]
-        public string Title { get; set; } = string.Empty;
+        public string? Title { get; set; }
 
-        [Required]
-        public string Content { get; set; } = string.Empty;
+        /// <summary>
+        /// 狀態 (normal/hidden/archived)
+        /// </summary>
+        [Column("status")]
+        [StringLength(50)]
+        public string Status { get; set; } = "normal";
 
+        /// <summary>
+        /// 建立時間
+        /// </summary>
         [Required]
-        public PostStatus Status { get; set; }
-
-        [Required]
-        public int ViewCount { get; set; }
-
-        [Required]
-        public int LikeCount { get; set; }
-
-        [Required]
-        public int ReplyCount { get; set; }
-
-        [Required]
-        public bool IsPinned { get; set; }
-
-        [Required]
-        public bool IsLocked { get; set; }
-
-        [Required]
+        [Column("created_at")]
         public DateTime CreatedAt { get; set; }
 
+        /// <summary>
+        /// 更新時間
+        /// </summary>
         [Required]
+        [Column("updated_at")]
         public DateTime UpdatedAt { get; set; }
-
-        public DateTime? LastReplyAt { get; set; }
 
         // 導航屬性
         [ForeignKey("ForumId")]
         public virtual Forum Forum { get; set; } = null!;
 
-        [ForeignKey("UserId")]
-        public virtual User User { get; set; } = null!;
+        [ForeignKey("AuthorUserId")]
+        public virtual User Author { get; set; } = null!;
 
-        public virtual ICollection<PostReply> Replies { get; set; } = new List<PostReply>();
-        public virtual ICollection<PostLike> Likes { get; set; } = new List<PostLike>();
-        public virtual ICollection<PostBookmark> Bookmarks { get; set; } = new List<PostBookmark>();
+        public virtual ICollection<ThreadPost> Posts { get; set; } = new List<ThreadPost>();
     }
 
     /// <summary>
-    /// 討論回覆實體
+    /// 主題回覆實體 (支援二層結構)
     /// </summary>
-    [Table("PostReplies")]
-    public class PostReply
+    [Table("thread_posts")]
+    public class ThreadPost
     {
+        /// <summary>
+        /// 回覆編號 (主鍵)
+        /// </summary>
         [Key]
-        public int ReplyId { get; set; }
+        [Column("id")]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public long Id { get; set; }
 
+        /// <summary>
+        /// 主題編號 (外鍵)
+        /// </summary>
         [Required]
-        public int PostId { get; set; }
+        [Column("thread_id")]
+        [ForeignKey("Thread")]
+        public long ThreadId { get; set; }
 
+        /// <summary>
+        /// 回覆者編號 (外鍵)
+        /// </summary>
         [Required]
-        public int UserId { get; set; }
+        [Column("author_user_id")]
+        [ForeignKey("Author")]
+        public int AuthorUserId { get; set; }
 
-        public int? ParentReplyId { get; set; }
-
+        /// <summary>
+        /// 內容 (Markdown)
+        /// </summary>
         [Required]
-        public string Content { get; set; } = string.Empty;
+        [Column("content_md")]
+        public string ContentMd { get; set; } = string.Empty;
 
-        [Required]
-        public PostStatus Status { get; set; }
+        /// <summary>
+        /// 父回覆編號 (支援二層)
+        /// </summary>
+        [Column("parent_post_id")]
+        [ForeignKey("ParentPost")]
+        public long? ParentPostId { get; set; }
 
-        [Required]
-        public int LikeCount { get; set; }
+        /// <summary>
+        /// 狀態 (normal/hidden/deleted)
+        /// </summary>
+        [Column("status")]
+        [StringLength(50)]
+        public string Status { get; set; } = "normal";
 
+        /// <summary>
+        /// 建立時間
+        /// </summary>
         [Required]
+        [Column("created_at")]
         public DateTime CreatedAt { get; set; }
 
+        /// <summary>
+        /// 更新時間
+        /// </summary>
         [Required]
+        [Column("updated_at")]
         public DateTime UpdatedAt { get; set; }
 
         // 導航屬性
-        [ForeignKey("PostId")]
-        public virtual Post Post { get; set; } = null!;
+        [ForeignKey("ThreadId")]
+        public virtual Thread Thread { get; set; } = null!;
 
-        [ForeignKey("UserId")]
-        public virtual User User { get; set; } = null!;
+        [ForeignKey("AuthorUserId")]
+        public virtual User Author { get; set; } = null!;
 
-        [ForeignKey("ParentReplyId")]
-        public virtual PostReply? ParentReply { get; set; }
+        [ForeignKey("ParentPostId")]
+        public virtual ThreadPost? ParentPost { get; set; }
 
-        public virtual ICollection<PostReply> ChildReplies { get; set; } = new List<PostReply>();
-        public virtual ICollection<PostReplyLike> Likes { get; set; } = new List<PostReplyLike>();
+        public virtual ICollection<ThreadPost> ChildPosts { get; set; } = new List<ThreadPost>();
     }
 
     /// <summary>
-    /// 貼文按讚實體
+    /// 通用讚表 (多型)
     /// </summary>
-    [Table("PostLikes")]
-    public class PostLike
+    [Table("reactions")]
+    public class Reaction
     {
+        /// <summary>
+        /// 流水號 (主鍵)
+        /// </summary>
         [Key]
-        public int LikeId { get; set; }
+        [Column("id")]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public long Id { get; set; }
 
+        /// <summary>
+        /// 誰按的 (外鍵)
+        /// </summary>
         [Required]
-        public int PostId { get; set; }
-
-        [Required]
+        [Column("user_id")]
+        [ForeignKey("User")]
         public int UserId { get; set; }
 
+        /// <summary>
+        /// 目標類型 (post/thread/thread_post)
+        /// </summary>
         [Required]
+        [Column("target_type")]
+        [StringLength(50)]
+        public string TargetType { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 目標編號 (多型，不設FK)
+        /// </summary>
+        [Required]
+        [Column("target_id")]
+        public long TargetId { get; set; }
+
+        /// <summary>
+        /// 反應類型 (like/emoji...)
+        /// </summary>
+        [Required]
+        [Column("kind")]
+        [StringLength(50)]
+        public string Kind { get; set; } = "like";
+
+        /// <summary>
+        /// 建立時間
+        /// </summary>
+        [Required]
+        [Column("created_at")]
         public DateTime CreatedAt { get; set; }
 
         // 導航屬性
-        [ForeignKey("PostId")]
-        public virtual Post Post { get; set; } = null!;
-
         [ForeignKey("UserId")]
         public virtual User User { get; set; } = null!;
     }
 
     /// <summary>
-    /// 回覆按讚實體
+    /// 通用收藏表 (多型)
     /// </summary>
-    [Table("PostReplyLikes")]
-    public class PostReplyLike
+    [Table("bookmarks")]
+    public class Bookmark
     {
+        /// <summary>
+        /// 流水號 (主鍵)
+        /// </summary>
         [Key]
-        public int LikeId { get; set; }
+        [Column("id")]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public long Id { get; set; }
 
+        /// <summary>
+        /// 收藏者編號 (外鍵)
+        /// </summary>
         [Required]
-        public int ReplyId { get; set; }
-
-        [Required]
+        [Column("user_id")]
+        [ForeignKey("User")]
         public int UserId { get; set; }
 
+        /// <summary>
+        /// 目標類型 (post/thread/game/forum)
+        /// </summary>
         [Required]
+        [Column("target_type")]
+        [StringLength(50)]
+        public string TargetType { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 目標編號 (多型，不設FK)
+        /// </summary>
+        [Required]
+        [Column("target_id")]
+        public long TargetId { get; set; }
+
+        /// <summary>
+        /// 建立時間
+        /// </summary>
+        [Required]
+        [Column("created_at")]
         public DateTime CreatedAt { get; set; }
 
         // 導航屬性
-        [ForeignKey("ReplyId")]
-        public virtual PostReply Reply { get; set; } = null!;
-
         [ForeignKey("UserId")]
         public virtual User User { get; set; } = null!;
-    }
-
-    /// <summary>
-    /// 貼文收藏實體
-    /// </summary>
-    [Table("PostBookmarks")]
-    public class PostBookmark
-    {
-        [Key]
-        public int BookmarkId { get; set; }
-
-        [Required]
-        public int PostId { get; set; }
-
-        [Required]
-        public int UserId { get; set; }
-
-        [Required]
-        public DateTime CreatedAt { get; set; }
-
-        // 導航屬性
-        [ForeignKey("PostId")]
-        public virtual Post Post { get; set; } = null!;
-
-        [ForeignKey("UserId")]
-        public virtual User User { get; set; } = null!;
-    }
-
-    /// <summary>
-    /// 貼文狀態列舉
-    /// </summary>
-    public enum PostStatus
-    {
-        Normal = 1,        // 正常
-        Hidden = 2,        // 隱藏
-        Archived = 3,      // 封存
-        Deleted = 4        // 刪除
     }
 }

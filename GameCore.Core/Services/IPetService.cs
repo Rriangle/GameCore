@@ -1,209 +1,194 @@
-using GameCore.Core.Entities;
+using GameCore.Core.DTOs;
 
 namespace GameCore.Core.Services
 {
     /// <summary>
-    /// 寵物服務介面
-    /// 定義所有寵物相關的業務邏輯操作
+    /// 虛擬寵物服務介面
+    /// 定義完整的史萊姆寵物系統功能，包含5維屬性管理、互動行為、等級系統、換色功能等
+    /// 嚴格按照規格實現一人一寵、每日衰減、健康檢查等業務邏輯
     /// </summary>
     public interface IPetService
     {
-        /// <summary>
-        /// 取得使用者的寵物資料，如果不存在則建立新寵物
-        /// </summary>
-        /// <param name="userId">使用者編號</param>
-        /// <returns>寵物資料</returns>
-        Task<Pet> GetOrCreatePetAsync(int userId);
+        #region 寵物基本管理
 
         /// <summary>
-        /// 執行寵物互動 (餵食、洗澡、玩耍、休息)
+        /// 取得使用者的寵物資訊
+        /// 包含完整的5維屬性、等級經驗、顏色設定等
         /// </summary>
-        /// <param name="userId">使用者編號</param>
-        /// <param name="interactionType">互動類型</param>
+        /// <param name="userId">使用者ID</param>
+        /// <returns>寵物完整資訊</returns>
+        Task<PetDto?> GetUserPetAsync(int userId);
+
+        /// <summary>
+        /// 為使用者建立新寵物 (一人一寵規則)
+        /// 初始化所有5維屬性為100，等級1，經驗0
+        /// </summary>
+        /// <param name="userId">使用者ID</param>
+        /// <param name="petName">寵物名稱 (預設: 小可愛)</param>
+        /// <returns>建立的寵物資訊</returns>
+        Task<PetDto> CreatePetAsync(int userId, string petName = "小可愛");
+
+        /// <summary>
+        /// 更新寵物基本資料 (名稱、外觀等，不含扣點換色)
+        /// </summary>
+        /// <param name="userId">使用者ID</param>
+        /// <param name="updateRequest">更新請求</param>
+        /// <returns>更新結果</returns>
+        Task<ServiceResult<PetDto>> UpdatePetProfileAsync(int userId, UpdatePetProfileDto updateRequest);
+
+        #endregion
+
+        #region 寵物互動行為
+
+        /// <summary>
+        /// 餵食寵物 - 飢餓值 +10
+        /// 包含屬性鉗位、健康檢查、升級處理
+        /// </summary>
+        /// <param name="userId">使用者ID</param>
         /// <returns>互動結果</returns>
-        Task<PetInteractionResult> InteractWithPetAsync(int userId, PetInteractionType interactionType);
+        Task<PetInteractionResultDto> FeedPetAsync(int userId);
 
         /// <summary>
-        /// 寵物換色 (消耗 2000 點數)
+        /// 幫寵物洗澡 - 清潔值 +10
+        /// 包含屬性鉗位、健康檢查、升級處理
         /// </summary>
-        /// <param name="userId">使用者編號</param>
-        /// <param name="skinColor">新膚色</param>
-        /// <param name="backgroundColor">新背景色</param>
-        /// <returns>換色結果</returns>
-        Task<PetColorChangeResult> ChangePetColorAsync(int userId, string skinColor, string backgroundColor);
+        /// <param name="userId">使用者ID</param>
+        /// <returns>互動結果</returns>
+        Task<PetInteractionResultDto> BathePetAsync(int userId);
 
         /// <summary>
-        /// 計算寵物升級所需經驗值
+        /// 與寵物玩耍 - 心情值 +10
+        /// 包含屬性鉗位、健康檢查、升級處理
+        /// </summary>
+        /// <param name="userId">使用者ID</param>
+        /// <returns>互動結果</returns>
+        Task<PetInteractionResultDto> PlayWithPetAsync(int userId);
+
+        /// <summary>
+        /// 讓寵物休息 - 體力值 +10
+        /// 包含屬性鉗位、健康檢查、升級處理
+        /// </summary>
+        /// <param name="userId">使用者ID</param>
+        /// <returns>互動結果</returns>
+        Task<PetInteractionResultDto> RestPetAsync(int userId);
+
+        #endregion
+
+        #region 寵物顏色系統
+
+        /// <summary>
+        /// 取得可用的寵物顏色選項
+        /// </summary>
+        /// <returns>顏色選項列表</returns>
+        Task<List<PetColorOptionDto>> GetAvailableColorsAsync();
+
+        /// <summary>
+        /// 寵物換色 (消耗2000點數)
+        /// 包含點數檢查、扣款、通知發送
+        /// </summary>
+        /// <param name="userId">使用者ID</param>
+        /// <param name="recolorRequest">換色請求</param>
+        /// <returns>換色結果</returns>
+        Task<ServiceResult<PetDto>> RecolorPetAsync(int userId, PetRecolorDto recolorRequest);
+
+        /// <summary>
+        /// 取得寵物換色歷史 (從通知記錄)
+        /// </summary>
+        /// <param name="userId">使用者ID</param>
+        /// <returns>換色歷史</returns>
+        Task<List<PetColorHistoryDto>> GetColorHistoryAsync(int userId);
+
+        #endregion
+
+        #region 寵物等級與經驗
+
+        /// <summary>
+        /// 為寵物增加經驗值
+        /// 自動處理升級邏輯和獎勵發放
+        /// </summary>
+        /// <param name="userId">使用者ID</param>
+        /// <param name="experience">增加的經驗值</param>
+        /// <param name="source">經驗來源</param>
+        /// <returns>經驗增加結果</returns>
+        Task<PetExperienceResultDto> AddExperienceAsync(int userId, int experience, string source);
+
+        /// <summary>
+        /// 計算升級所需經驗值
         /// </summary>
         /// <param name="currentLevel">當前等級</param>
         /// <returns>升級所需經驗值</returns>
         int CalculateRequiredExperience(int currentLevel);
 
         /// <summary>
-        /// 增加寵物經驗值並處理升級邏輯
+        /// 取得寵物等級統計
         /// </summary>
-        /// <param name="pet">寵物實體</param>
-        /// <param name="experience">要增加的經驗值</param>
-        /// <returns>是否有升級</returns>
-        Task<bool> AddExperienceAsync(Pet pet, int experience);
+        /// <param name="userId">使用者ID</param>
+        /// <returns>等級統計資訊</returns>
+        Task<PetLevelStatsDto> GetLevelStatsAsync(int userId);
+
+        #endregion
+
+        #region 每日維護
 
         /// <summary>
-        /// 檢查寵物健康狀態並更新健康度
+        /// 執行每日屬性衰減 (Asia/Taipei 00:00)
+        /// Hunger -20, Mood -30, Stamina -10, Cleanliness -20, Health -20
         /// </summary>
-        /// <param name="pet">寵物實體</param>
-        /// <returns>更新後的健康度</returns>
-        Task<int> UpdateHealthStatusAsync(Pet pet);
+        /// <param name="userId">使用者ID (null表示所有使用者)</param>
+        /// <returns>衰減處理結果</returns>
+        Task<PetDailyDecayResultDto> ProcessDailyDecayAsync(int? userId = null);
 
         /// <summary>
         /// 檢查寵物是否可以進行冒險 (健康度和屬性檢查)
         /// </summary>
-        /// <param name="userId">使用者編號</param>
-        /// <returns>是否可以冒險</returns>
-        Task<bool> CanStartAdventureAsync(int userId);
+        /// <param name="userId">使用者ID</param>
+        /// <returns>冒險可用性檢查結果</returns>
+        Task<PetAdventureReadinessDto> CheckAdventureReadinessAsync(int userId);
+
+        #endregion
+
+        #region 寵物統計與分析
 
         /// <summary>
-        /// 執行每日寵物屬性衰減 (每日 00:00 執行)
+        /// 取得寵物完整統計資訊
         /// </summary>
-        /// <returns>受影響的寵物數量</returns>
-        Task<int> ExecuteDailyDecayAsync();
+        /// <param name="userId">使用者ID</param>
+        /// <returns>寵物統計</returns>
+        Task<PetStatsDto> GetPetStatisticsAsync(int userId);
 
         /// <summary>
-        /// 取得寵物互動冷卻時間 (防止頻繁互動)
+        /// 取得所有寵物的排行榜資訊
         /// </summary>
-        /// <param name="userId">使用者編號</param>
-        /// <param name="interactionType">互動類型</param>
-        /// <returns>剩餘冷卻秒數</returns>
-        Task<int> GetInteractionCooldownAsync(int userId, PetInteractionType interactionType);
+        /// <param name="rankingType">排行類型 (level, experience, health等)</param>
+        /// <param name="limit">限制筆數</param>
+        /// <returns>排行榜資料</returns>
+        Task<List<PetRankingDto>> GetPetRankingsAsync(PetRankingType rankingType, int limit = 50);
+
+        #endregion
+
+        #region 管理員功能
 
         /// <summary>
-        /// 取得寵物狀態描述 (用於前端顯示)
+        /// 管理員重置寵物屬性
         /// </summary>
-        /// <param name="pet">寵物實體</param>
-        /// <returns>狀態描述</returns>
-        PetStatusDescription GetPetStatusDescription(Pet pet);
-    }
-
-    /// <summary>
-    /// 寵物互動類型列舉
-    /// </summary>
-    public enum PetInteractionType
-    {
-        /// <summary>
-        /// 餵食 - 增加飢餓值
-        /// </summary>
-        Feed = 1,
+        /// <param name="petId">寵物ID</param>
+        /// <param name="resetRequest">重置請求</param>
+        /// <returns>重置結果</returns>
+        Task<ServiceResult<PetDto>> AdminResetPetAsync(int petId, PetAdminResetDto resetRequest);
 
         /// <summary>
-        /// 洗澡 - 增加清潔值
+        /// 管理員取得寵物系統全域設定
         /// </summary>
-        Bath = 2,
+        /// <returns>系統設定</returns>
+        Task<PetSystemConfigDto> GetSystemConfigAsync();
 
         /// <summary>
-        /// 玩耍 - 增加心情值
+        /// 管理員更新寵物系統設定
         /// </summary>
-        Play = 3,
+        /// <param name="config">新設定</param>
+        /// <returns>更新結果</returns>
+        Task<ServiceResult> UpdateSystemConfigAsync(PetSystemConfigDto config);
 
-        /// <summary>
-        /// 休息 - 增加體力值
-        /// </summary>
-        Rest = 4
-    }
-
-    /// <summary>
-    /// 寵物互動結果
-    /// </summary>
-    public class PetInteractionResult
-    {
-        /// <summary>
-        /// 是否成功
-        /// </summary>
-        public bool Success { get; set; }
-
-        /// <summary>
-        /// 結果訊息
-        /// </summary>
-        public string Message { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 更新後的寵物資料
-        /// </summary>
-        public Pet? Pet { get; set; }
-
-        /// <summary>
-        /// 是否觸發健康度回復 (四維全滿)
-        /// </summary>
-        public bool HealthRestored { get; set; }
-
-        /// <summary>
-        /// 冷卻時間 (秒)
-        /// </summary>
-        public int CooldownSeconds { get; set; }
-    }
-
-    /// <summary>
-    /// 寵物換色結果
-    /// </summary>
-    public class PetColorChangeResult
-    {
-        /// <summary>
-        /// 是否成功
-        /// </summary>
-        public bool Success { get; set; }
-
-        /// <summary>
-        /// 結果訊息
-        /// </summary>
-        public string Message { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 消耗的點數
-        /// </summary>
-        public int PointsUsed { get; set; }
-
-        /// <summary>
-        /// 更新後的寵物資料
-        /// </summary>
-        public Pet? Pet { get; set; }
-
-        /// <summary>
-        /// 剩餘點數
-        /// </summary>
-        public int RemainingPoints { get; set; }
-    }
-
-    /// <summary>
-    /// 寵物狀態描述
-    /// </summary>
-    public class PetStatusDescription
-    {
-        /// <summary>
-        /// 整體狀態 (優秀/良好/普通/不佳/危險)
-        /// </summary>
-        public string OverallStatus { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 最低的屬性名稱
-        /// </summary>
-        public string LowestAttribute { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 最低的屬性值
-        /// </summary>
-        public int LowestValue { get; set; }
-
-        /// <summary>
-        /// 建議的下一步行動
-        /// </summary>
-        public string SuggestedAction { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 是否可以冒險
-        /// </summary>
-        public bool CanAdventure { get; set; }
-
-        /// <summary>
-        /// 表情狀態 (用於動畫顯示)
-        /// </summary>
-        public string EmotionState { get; set; } = string.Empty;
+        #endregion
     }
 }

@@ -7,9 +7,8 @@
   "ci_configured": false,
   "schema_modified": false,
   "remaining_issues": [
-    "需要更新所有服務類別添加 DTO using 語句",
-    "需要建立缺少的實體類別（Manager, PlayerMarketItem, StoreProduct 等）",
-    "需要完成介面實作",
+    "需要完成介面實作（ChatService, ForumService 等）",
+    "需要建立 Repository 實作",
     "需要建立測試",
     "需要設定 CI/CD",
     "需要 Docker 配置"
@@ -22,12 +21,14 @@
     "修正重複的 Column 屬性",
     "建立 Chat DTOs（ChatRoomDto, ChatMessageDto 等）",
     "建立通用 DTOs（Forum, Manager, Store, Market, User, SignIn, Notification）",
-    "更新部分服務類別添加 DTO using 語句"
+    "更新所有服務類別添加 DTO using 語句",
+    "建立通用列舉（PostStatus, OrderStatus, MarketItemStatus 等）",
+    "建立缺少的實體類別（Manager, PlayerMarketItem, StoreProduct, StoreOrder, ShoppingCart, MarketTransaction, MarketReview）",
+    "修正實體引用問題（ManagerData -> Manager）"
   ],
   "next_steps": [
-    "更新所有服務類別添加 DTO using 語句",
-    "建立缺少的實體類別",
-    "完成介面實作",
+    "完成介面實作（ChatService, ForumService 等）",
+    "建立 Repository 實作",
     "建立測試並達到 80% 覆蓋率",
     "設定 GitHub Actions CI/CD",
     "配置 Docker 環境"

@@ -4,6 +4,81 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace GameCore.Core.Entities
 {
     /// <summary>
+    /// 市場交易別名 - 指向 PlayerMarketOrderInfo
+    /// </summary>
+    public class MarketTransaction : PlayerMarketOrderInfo
+    {
+        // This is an alias for PlayerMarketOrderInfo to match interface expectations
+    }
+
+    /// <summary>
+    /// 市場評論實體
+    /// </summary>
+    [Table("MarketReviews")]
+    public class MarketReview
+    {
+        /// <summary>
+        /// 評論編號 (主鍵)
+        /// </summary>
+        [Key]
+        [Column("review_id")]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int ReviewId { get; set; }
+
+        /// <summary>
+        /// 交易編號 (外鍵)
+        /// </summary>
+        [Required]
+        [Column("transaction_id")]
+        [ForeignKey("Transaction")]
+        public int TransactionId { get; set; }
+
+        /// <summary>
+        /// 評論者編號 (外鍵)
+        /// </summary>
+        [Required]
+        [Column("reviewer_id")]
+        [ForeignKey("Reviewer")]
+        public int ReviewerId { get; set; }
+
+        /// <summary>
+        /// 評分 (1-5)
+        /// </summary>
+        [Required]
+        [Column("rating")]
+        [Range(1, 5)]
+        public int Rating { get; set; }
+
+        /// <summary>
+        /// 評論內容
+        /// </summary>
+        [Required]
+        [Column("content")]
+        [StringLength(500)]
+        public string Content { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 建立時間
+        /// </summary>
+        [Required]
+        [Column("created_at")]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        /// <summary>
+        /// 是否已驗證
+        /// </summary>
+        [Required]
+        [Column("is_verified")]
+        public bool IsVerified { get; set; } = false;
+
+        // 導航屬性
+        [ForeignKey("TransactionId")]
+        public virtual PlayerMarketOrderInfo Transaction { get; set; } = null!;
+
+        [ForeignKey("ReviewerId")]
+        public virtual User Reviewer { get; set; } = null!;
+    }
+    /// <summary>
     /// 自由市場商品資訊表
     /// </summary>
     [Table("PlayerMarketProductInfo")]
@@ -69,8 +144,7 @@ namespace GameCore.Core.Entities
         /// <summary>
         /// 售價
         /// </summary>
-        [Column("price")]
-        [Column(TypeName = "decimal(18,2)")]
+        [Column("price", TypeName = "decimal(18,2)")]
         public decimal Price { get; set; }
 
         /// <summary>
@@ -376,8 +450,7 @@ namespace GameCore.Core.Entities
         /// <summary>
         /// 交易額
         /// </summary>
-        [Column("p_trading_amount")]
-        [Column(TypeName = "decimal(18,2)")]
+        [Column("p_trading_amount", TypeName = "decimal(18,2)")]
         public decimal PTradingAmount { get; set; }
 
         /// <summary>

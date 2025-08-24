@@ -60,8 +60,7 @@ namespace GameCore.Core.Entities
         /// <summary>
         /// 售價
         /// </summary>
-        [Column("price")]
-        [Column(TypeName = "decimal(18,2)")]
+        [Column("price", TypeName = "decimal(18,2)")]
         public decimal Price { get; set; }
 
         /// <summary>
@@ -325,8 +324,7 @@ namespace GameCore.Core.Entities
         /// <summary>
         /// 訂單總額
         /// </summary>
-        [Column("order_total")]
-        [Column(TypeName = "decimal(18,2)")]
+        [Column("order_total", TypeName = "decimal(18,2)")]
         public decimal OrderTotal { get; set; }
 
         /// <summary>
@@ -389,8 +387,7 @@ namespace GameCore.Core.Entities
         /// <summary>
         /// 單價
         /// </summary>
-        [Column("unit_price")]
-        [Column(TypeName = "decimal(18,2)")]
+        [Column("unit_price", TypeName = "decimal(18,2)")]
         public decimal UnitPrice { get; set; }
 
         /// <summary>
@@ -402,8 +399,7 @@ namespace GameCore.Core.Entities
         /// <summary>
         /// 小計
         /// </summary>
-        [Column("subtotal")]
-        [Column(TypeName = "decimal(18,2)")]
+        [Column("subtotal", TypeName = "decimal(18,2)")]
         public decimal Subtotal { get; set; }
 
         // 導航屬性
@@ -461,8 +457,7 @@ namespace GameCore.Core.Entities
         /// <summary>
         /// 交易額
         /// </summary>
-        [Column("trading_amount")]
-        [Column(TypeName = "decimal(18,2)")]
+        [Column("trading_amount", TypeName = "decimal(18,2)")]
         public decimal TradingAmount { get; set; }
 
         /// <summary>

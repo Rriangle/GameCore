@@ -183,76 +183,7 @@ namespace GameCore.Core.Entities
         public virtual User User { get; set; } = null!;
     }
 
-    /// <summary>
-    /// 聊天訊息表
-    /// </summary>
-    [Table("Chat_Message")]
-    public class ChatMessage
-    {
-        /// <summary>
-        /// 訊息編號 (主鍵)
-        /// </summary>
-        [Key]
-        [Column("message_id")]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int MessageId { get; set; }
 
-        /// <summary>
-        /// 管理員編號 (客服, 外鍵到 ManagerData)
-        /// </summary>
-        [Column("manager_id")]
-        [ForeignKey("ManagerData")]
-        public int? ManagerId { get; set; }
-
-        /// <summary>
-        /// 發送者編號 (外鍵到 Users)
-        /// </summary>
-        [Required]
-        [Column("sender_id")]
-        [ForeignKey("SenderUser")]
-        public int SenderId { get; set; }
-
-        /// <summary>
-        /// 接收者編號 (外鍵到 Users)
-        /// </summary>
-        [Column("receiver_id")]
-        [ForeignKey("ReceiverUser")]
-        public int? ReceiverId { get; set; }
-
-        /// <summary>
-        /// 訊息內容
-        /// </summary>
-        [Required]
-        [Column("chat_content")]
-        [StringLength(1000)]
-        public string ChatContent { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 發送時間
-        /// </summary>
-        [Required]
-        [Column("sent_at")]
-        public DateTime SentAt { get; set; } = DateTime.UtcNow;
-
-        /// <summary>
-        /// 是否已讀
-        /// </summary>
-        [Required]
-        [Column("is_read")]
-        public bool IsRead { get; set; } = false;
-
-        /// <summary>
-        /// 是否寄送
-        /// </summary>
-        [Required]
-        [Column("is_sent")]
-        public bool IsSent { get; set; } = true;
-
-        // 導航屬性
-        public virtual ManagerData? ManagerData { get; set; }
-        public virtual User SenderUser { get; set; } = null!;
-        public virtual User? ReceiverUser { get; set; }
-    }
 
     /// <summary>
     /// 群組表

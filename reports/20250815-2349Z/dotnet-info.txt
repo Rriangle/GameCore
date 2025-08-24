@@ -1,0 +1,43 @@
+.NET SDK:
+ Version:           8.0.413
+ Commit:            a31823e79b
+ Workload version:  8.0.400-manifests.6322a93a
+ MSBuild version:   17.11.38+901dc04e4
+
+Runtime Environment:
+ OS Name:     ubuntu
+ OS Version:  25.04
+ OS Platform: Linux
+ RID:         linux-x64
+ Base Path:   /home/ubuntu/.dotnet/sdk/8.0.413/
+
+.NET workloads installed:
+Configured to use loose manifests when installing new manifests.
+There are no installed workloads to display.
+
+Host:
+  Version:      8.0.19
+  Architecture: x64
+  Commit:       fce8ed90dc
+
+.NET SDKs installed:
+  8.0.413 [/home/ubuntu/.dotnet/sdk]
+
+.NET runtimes installed:
+  Microsoft.AspNetCore.App 8.0.19 [/home/ubuntu/.dotnet/shared/Microsoft.AspNetCore.App]
+  Microsoft.NETCore.App 8.0.19 [/home/ubuntu/.dotnet/shared/Microsoft.NETCore.App]
+
+Other architectures found:
+  None
+
+Environment variables:
+  Not set
+
+global.json file:
+  Not found
+
+Learn more:
+  https://aka.ms/dotnet/info
+
+Download .NET:
+  https://aka.ms/dotnet/download

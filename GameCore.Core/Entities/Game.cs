@@ -223,8 +223,7 @@ namespace GameCore.Core.Entities
         /// <summary>
         /// 數值 (清洗後)
         /// </summary>
-        [Column("value")]
-        [Column(TypeName = "decimal(18,4)")]
+        [Column("value", TypeName = "decimal(18,4)")]
         public decimal Value { get; set; }
 
         /// <summary>
@@ -288,8 +287,7 @@ namespace GameCore.Core.Entities
         /// <summary>
         /// 熱度指數 (加權計算)
         /// </summary>
-        [Column("index_value")]
-        [Column(TypeName = "decimal(18,4)")]
+        [Column("index_value", TypeName = "decimal(18,4)")]
         public decimal IndexValue { get; set; }
 
         /// <summary>
@@ -345,8 +343,7 @@ namespace GameCore.Core.Entities
         /// <summary>
         /// 當時指數值
         /// </summary>
-        [Column("index_value")]
-        [Column(TypeName = "decimal(18,4)")]
+        [Column("index_value", TypeName = "decimal(18,4)")]
         public decimal IndexValue { get; set; }
 
         /// <summary>

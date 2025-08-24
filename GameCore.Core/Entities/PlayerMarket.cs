@@ -69,8 +69,7 @@ namespace GameCore.Core.Entities
         /// <summary>
         /// 售價
         /// </summary>
-        [Column("price")]
-        [Column(TypeName = "decimal(18,2)")]
+        [Column("price", TypeName = "decimal(18,2)")]
         public decimal Price { get; set; }
 
         /// <summary>
@@ -376,8 +375,7 @@ namespace GameCore.Core.Entities
         /// <summary>
         /// 交易額
         /// </summary>
-        [Column("p_trading_amount")]
-        [Column(TypeName = "decimal(18,2)")]
+        [Column("p_trading_amount", TypeName = "decimal(18,2)")]
         public decimal PTradingAmount { get; set; }
 
         /// <summary>

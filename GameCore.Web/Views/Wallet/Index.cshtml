@@ -1,0 +1,741 @@
+@{
+    ViewData["Title"] = "我的錢包";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] | GameCore</title>
+    <style>
+        /* 繼承主要設計系統變數 */
+        :root {
+            --bg: #eef3f8;
+            --bg2: #ffffff;
+            --ink: #1f2937;
+            --muted: #64748b;
+            --line: #e5e7eb;
+            --surface: rgba(255,255,255,.75);
+            --glass: rgba(255,255,255,.45);
+            --accent: #7557ff;
+            --accent-2: #34d2ff;
+            --accent-3: #22c55e;
+            --radius: 18px;
+            --radius-sm: 12px;
+            --shadow: 0 18px 40px rgba(17,24,39,.12);
+            --blur: 14px;
+        }
+
+        body.dark {
+            --bg: #0c111b;
+            --bg2: #0a0f18;
+            --ink: #e5edff;
+            --muted: #9fb1c9;
+            --line: #1e2b43;
+            --surface: rgba(22,30,48,.65);
+            --glass: rgba(18,24,39,.50);
+            --shadow: 0 18px 42px rgba(0,0,0,.35);
+        }
+
+        .wallet-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: radial-gradient(900px 500px at -10% -10%, rgba(117,87,255,.10), transparent 60%),
+                        radial-gradient(800px 460px at 110% 10%, rgba(52,210,255,.10), transparent 50%),
+                        linear-gradient(180deg, var(--bg), var(--bg2));
+            min-height: 100vh;
+            color: var(--ink);
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+        }
+
+        .wallet-header {
+            background: var(--glass);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(var(--blur));
+            box-shadow: var(--shadow);
+        }
+
+        .balance-display {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .balance-amount {
+            font-size: 2.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .balance-label {
+            color: var(--muted);
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .wallet-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-3);
+        }
+
+        .stat-label {
+            color: var(--muted);
+            font-size: 0.75rem;
+            margin-top: 4px;
+        }
+
+        .section-card {
+            background: var(--glass);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(var(--blur));
+            box-shadow: var(--shadow);
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border: 1px solid var(--line);
+            background: var(--surface);
+            border-radius: var(--radius-sm);
+            color: var(--ink);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .btn.primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: white;
+            border: none;
+        }
+
+        .btn.success {
+            background: linear-gradient(135deg, var(--accent-3), #16a34a);
+            color: white;
+            border: none;
+        }
+
+        .ledger-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--surface);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+
+        .ledger-table th,
+        .ledger-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .ledger-table th {
+            background: var(--bg2);
+            font-weight: 600;
+            color: var(--muted);
+            font-size: 0.875rem;
+        }
+
+        .transaction-type {
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .type-signin { background: #dbeafe; color: #1e40af; }
+        .type-minigame { background: #dcfce7; color: #166534; }
+        .type-pet_color { background: #fef3c7; color: #92400e; }
+        .type-adjustment { background: #fce7f3; color: #be185d; }
+
+        .amount-positive {
+            color: var(--accent-3);
+            font-weight: 600;
+        }
+
+        .amount-negative {
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .filter-input {
+            padding: 8px 12px;
+            border: 1px solid var(--line);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            color: var(--ink);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .pagination button {
+            padding: 8px 12px;
+            border: 1px solid var(--line);
+            background: var(--surface);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .pagination button:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        .pagination button.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .sales-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .sales-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .wallet-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--muted);
+        }
+
+        .error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 16px;
+        }
+
+        .success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="wallet-container">
+        <!-- 錢包概覽 -->
+        <div class="wallet-header">
+            <div class="balance-display">
+                <div>
+                    <div class="balance-label">目前點數餘額</div>
+                    <div class="balance-amount" id="currentBalance">載入中...</div>
+                </div>
+                <div style="margin-left: auto;">
+                    <button class="btn primary" onclick="refreshWallet()">
+                        🔄 重新整理
+                    </button>
+                </div>
+            </div>
+
+            <div class="wallet-stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="todayEarned">0</div>
+                    <div class="stat-label">今日獲得</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="todaySpent">0</div>
+                    <div class="stat-label">今日消費</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="monthEarned">0</div>
+                    <div class="stat-label">本月獲得</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="monthSpent">0</div>
+                    <div class="stat-label">本月消費</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 收支明細 -->
+        <div class="section-card">
+            <div class="section-title">
+                📊 收支明細
+            </div>
+
+            <div class="filter-controls">
+                <select class="filter-input" id="transactionTypeFilter">
+                    <option value="">所有類型</option>
+                    <option value="signin">每日簽到</option>
+                    <option value="minigame">小遊戲</option>
+                    <option value="pet_color">寵物換色</option>
+                    <option value="adjustment">管理調整</option>
+                </select>
+                
+                <input type="date" class="filter-input" id="fromDate" placeholder="開始日期">
+                <input type="date" class="filter-input" id="toDate" placeholder="結束日期">
+                
+                <button class="btn" onclick="filterTransactions()">篩選</button>
+                <button class="btn" onclick="resetFilters()">重設</button>
+            </div>
+
+            <div id="transactionList">
+                <div class="loading">載入中...</div>
+            </div>
+
+            <div class="pagination" id="pagination"></div>
+        </div>
+
+        <!-- 銷售功能 -->
+        <div class="sales-section">
+            <!-- 銷售檔案 -->
+            <div class="section-card">
+                <div class="section-title">
+                    🏪 銷售功能
+                </div>
+                
+                <div id="salesProfile">
+                    <div class="loading">載入中...</div>
+                </div>
+                
+                <div style="margin-top: 16px;">
+                    <button class="btn success" onclick="applySalesProfile()" id="applyBtn">
+                        申請銷售功能
+                    </button>
+                </div>
+            </div>
+
+            <!-- 銷售錢包 -->
+            <div class="section-card">
+                <div class="section-title">
+                    💰 銷售錢包
+                </div>
+                
+                <div id="salesWallet">
+                    <div class="loading">載入中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 申請銷售功能對話框 -->
+    <div id="salesModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: var(--surface); border-radius: var(--radius); padding: 24px; max-width: 500px; width: 90%;">
+            <h3 style="margin-top: 0;">申請銷售功能</h3>
+            
+            <form id="salesForm">
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 4px; font-weight: 600;">銀行代號</label>
+                    <select id="bankCode" class="filter-input" style="width: 100%;" required>
+                        <option value="">請選擇銀行</option>
+                        <option value="1">台灣銀行 (001)</option>
+                        <option value="3">土地銀行 (003)</option>
+                        <option value="4">合作金庫 (004)</option>
+                        <option value="5">第一銀行 (005)</option>
+                        <option value="6">華南銀行 (006)</option>
+                        <option value="7">彰化銀行 (007)</option>
+                        <option value="11">台北富邦 (011)</option>
+                        <option value="12">台新銀行 (012)</option>
+                    </select>
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 4px; font-weight: 600;">銀行帳號</label>
+                    <input type="text" id="bankAccount" class="filter-input" style="width: 100%;" 
+                           placeholder="請輸入銀行帳號" required>
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 4px; font-weight: 600;">申請理由</label>
+                    <textarea id="applicationReason" class="filter-input" style="width: 100%; height: 80px; resize: vertical;" 
+                              placeholder="請說明申請銷售功能的理由"></textarea>
+                </div>
+                
+                <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" class="btn" onclick="closeSalesModal()">取消</button>
+                    <button type="submit" class="btn primary">提交申請</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 全域變數
+        let currentPage = 1;
+        let currentFilters = {};
+
+        // 頁面載入時初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadWalletData();
+            loadStatistics();
+            loadTransactionHistory();
+            loadSalesProfile();
+            loadSalesWallet();
+        });
+
+        // 載入錢包資料
+        async function loadWalletData() {
+            try {
+                const response = await fetch('/api/wallet');
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('currentBalance').textContent = 
+                        result.data.currentPoints.toLocaleString() + ' 點';
+                } else {
+                    document.getElementById('currentBalance').textContent = '載入失敗';
+                }
+            } catch (error) {
+                console.error('載入錢包資料失敗:', error);
+                document.getElementById('currentBalance').textContent = '載入失敗';
+            }
+        }
+
+        // 載入統計資料
+        async function loadStatistics() {
+            try {
+                const response = await fetch('/api/wallet/statistics');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const stats = result.data;
+                    document.getElementById('todayEarned').textContent = stats.todayEarned.toLocaleString();
+                    document.getElementById('todaySpent').textContent = stats.todaySpent.toLocaleString();
+                    document.getElementById('monthEarned').textContent = stats.monthEarned.toLocaleString();
+                    document.getElementById('monthSpent').textContent = stats.monthSpent.toLocaleString();
+                }
+            } catch (error) {
+                console.error('載入統計資料失敗:', error);
+            }
+        }
+
+        // 載入交易記錄
+        async function loadTransactionHistory(page = 1, filters = {}) {
+            try {
+                const params = new URLSearchParams({
+                    page: page,
+                    pageSize: 10,
+                    ...filters
+                });
+
+                const response = await fetch(`/api/wallet/ledger?${params}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    renderTransactionList(result.data);
+                    renderPagination(result.pagination);
+                } else {
+                    document.getElementById('transactionList').innerHTML = 
+                        '<div class="error">載入交易記錄失敗</div>';
+                }
+            } catch (error) {
+                console.error('載入交易記錄失敗:', error);
+                document.getElementById('transactionList').innerHTML = 
+                    '<div class="error">載入交易記錄失敗</div>';
+            }
+        }
+
+        // 渲染交易清單
+        function renderTransactionList(transactions) {
+            if (transactions.length === 0) {
+                document.getElementById('transactionList').innerHTML = 
+                    '<div style="text-align: center; padding: 40px; color: var(--muted);">暫無交易記錄</div>';
+                return;
+            }
+
+            const tableHtml = `
+                <table class="ledger-table">
+                    <thead>
+                        <tr>
+                            <th>時間</th>
+                            <th>類型</th>
+                            <th>描述</th>
+                            <th>點數變化</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${transactions.map(tx => `
+                            <tr>
+                                <td>${new Date(tx.timestamp).toLocaleString('zh-TW')}</td>
+                                <td><span class="transaction-type type-${tx.type}">${getTypeDisplayName(tx.type)}</span></td>
+                                <td>${tx.description}</td>
+                                <td class="${tx.pointsDelta > 0 ? 'amount-positive' : 'amount-negative'}">
+                                    ${tx.pointsDelta > 0 ? '+' : ''}${tx.pointsDelta.toLocaleString()}
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            document.getElementById('transactionList').innerHTML = tableHtml;
+        }
+
+        // 渲染分頁
+        function renderPagination(pagination) {
+            const paginationHtml = `
+                <button onclick="loadTransactionHistory(1, currentFilters)" ${pagination.currentPage === 1 ? 'disabled' : ''}>
+                    第一頁
+                </button>
+                <button onclick="loadTransactionHistory(${pagination.currentPage - 1}, currentFilters)" 
+                        ${!pagination.hasPreviousPage ? 'disabled' : ''}>
+                    上一頁
+                </button>
+                <span style="padding: 8px 12px;">
+                    第 ${pagination.currentPage} 頁，共 ${pagination.totalPages} 頁
+                </span>
+                <button onclick="loadTransactionHistory(${pagination.currentPage + 1}, currentFilters)" 
+                        ${!pagination.hasNextPage ? 'disabled' : ''}>
+                    下一頁
+                </button>
+                <button onclick="loadTransactionHistory(${pagination.totalPages}, currentFilters)" 
+                        ${pagination.currentPage === pagination.totalPages ? 'disabled' : ''}>
+                    最後頁
+                </button>
+            `;
+            
+            document.getElementById('pagination').innerHTML = paginationHtml;
+        }
+
+        // 取得類型顯示名稱
+        function getTypeDisplayName(type) {
+            const typeNames = {
+                'signin': '每日簽到',
+                'minigame': '小遊戲',
+                'pet_color': '寵物換色',
+                'adjustment': '管理調整'
+            };
+            return typeNames[type] || type;
+        }
+
+        // 篩選交易
+        function filterTransactions() {
+            const filters = {};
+            
+            const typeFilter = document.getElementById('transactionTypeFilter').value;
+            if (typeFilter) filters.type = typeFilter;
+            
+            const fromDate = document.getElementById('fromDate').value;
+            if (fromDate) filters.from = fromDate;
+            
+            const toDate = document.getElementById('toDate').value;
+            if (toDate) filters.to = toDate;
+            
+            currentFilters = filters;
+            currentPage = 1;
+            loadTransactionHistory(1, filters);
+        }
+
+        // 重設篩選條件
+        function resetFilters() {
+            document.getElementById('transactionTypeFilter').value = '';
+            document.getElementById('fromDate').value = '';
+            document.getElementById('toDate').value = '';
+            
+            currentFilters = {};
+            currentPage = 1;
+            loadTransactionHistory(1, {});
+        }
+
+        // 載入銷售檔案
+        async function loadSalesProfile() {
+            try {
+                const response = await fetch('/api/wallet/sales/profile');
+                
+                if (response.status === 404) {
+                    document.getElementById('salesProfile').innerHTML = 
+                        '<div style="color: var(--muted);">尚未申請銷售功能</div>';
+                    return;
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const profile = result.data;
+                    document.getElementById('salesProfile').innerHTML = `
+                        <div style="display: grid; gap: 8px;">
+                            <div><strong>銀行:</strong> ${profile.bankName}</div>
+                            <div><strong>帳號:</strong> ${profile.maskedBankAccountNumber}</div>
+                            <div><strong>狀態:</strong> 
+                                <span style="color: ${profile.salesAuthorityEnabled ? 'var(--accent-3)' : 'var(--muted)'}">
+                                    ${profile.salesAuthorityEnabled ? '已啟用' : '待審核'}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('applyBtn').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('載入銷售檔案失敗:', error);
+                document.getElementById('salesProfile').innerHTML = 
+                    '<div class="error">載入銷售檔案失敗</div>';
+            }
+        }
+
+        // 載入銷售錢包
+        async function loadSalesWallet() {
+            try {
+                const response = await fetch('/api/wallet/sales/wallet');
+                
+                if (response.status === 404) {
+                    document.getElementById('salesWallet').innerHTML = 
+                        '<div style="color: var(--muted);">尚未開通銷售功能</div>';
+                    return;
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const wallet = result.data;
+                    document.getElementById('salesWallet').innerHTML = `
+                        <div style="display: grid; gap: 12px;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 1.5rem; font-weight: 700; color: var(--accent-3);">
+                                    $${wallet.userSalesWallet.toLocaleString()}
+                                </div>
+                                <div style="color: var(--muted); font-size: 0.875rem;">銷售錢包餘額</div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.875rem;">
+                                <div>累計銷售: $${wallet.totalSalesAmount.toLocaleString()}</div>
+                                <div>本月收入: $${wallet.monthlyRevenue.toLocaleString()}</div>
+                                <div>可提領: $${wallet.withdrawableAmount.toLocaleString()}</div>
+                                <div>手續費: $${wallet.totalPlatformFees.toLocaleString()}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('載入銷售錢包失敗:', error);
+                document.getElementById('salesWallet').innerHTML = 
+                    '<div class="error">載入銷售錢包失敗</div>';
+            }
+        }
+
+        // 申請銷售功能
+        function applySalesProfile() {
+            document.getElementById('salesModal').style.display = 'flex';
+        }
+
+        // 關閉申請對話框
+        function closeSalesModal() {
+            document.getElementById('salesModal').style.display = 'none';
+            document.getElementById('salesForm').reset();
+        }
+
+        // 提交銷售申請
+        document.getElementById('salesForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                bankCode: parseInt(document.getElementById('bankCode').value),
+                bankAccountNumber: document.getElementById('bankAccount').value,
+                applicationReason: document.getElementById('applicationReason').value
+            };
+            
+            try {
+                const response = await fetch('/api/wallet/sales/apply', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('銷售功能申請已提交，請等待審核');
+                    closeSalesModal();
+                    loadSalesProfile();
+                } else {
+                    alert('申請失敗: ' + result.message);
+                }
+            } catch (error) {
+                console.error('提交申請失敗:', error);
+                alert('提交申請失敗，請稍後再試');
+            }
+        });
+
+        // 重新整理錢包
+        function refreshWallet() {
+            loadWalletData();
+            loadStatistics();
+            loadTransactionHistory(currentPage, currentFilters);
+            loadSalesProfile();
+            loadSalesWallet();
+        }
+
+        // 主題切換支援
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark');
+        }
+    </script>
+</body>
+</html>

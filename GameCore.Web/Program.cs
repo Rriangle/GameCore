@@ -111,6 +111,7 @@ builder.Services.AddScoped<IStoreService, StoreService>();
 builder.Services.AddScoped<IPlayerMarketService, PlayerMarketService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IWalletService, WalletService>();
 
 // 設定 Logging
 builder.Logging.ClearProviders();

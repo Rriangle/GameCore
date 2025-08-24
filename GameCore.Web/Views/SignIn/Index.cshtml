@@ -1,0 +1,930 @@
+@{
+    ViewData["Title"] = "每日簽到";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] | GameCore</title>
+    <style>
+        /* 繼承主要設計系統變數 */
+        :root {
+            --bg: #eef3f8;
+            --bg2: #ffffff;
+            --ink: #1f2937;
+            --muted: #64748b;
+            --line: #e5e7eb;
+            --surface: rgba(255,255,255,.75);
+            --glass: rgba(255,255,255,.45);
+            --accent: #7557ff;
+            --accent-2: #34d2ff;
+            --accent-3: #22c55e;
+            --radius: 18px;
+            --radius-sm: 12px;
+            --shadow: 0 18px 40px rgba(17,24,39,.12);
+            --blur: 14px;
+            --streak-gold: #FFD700;
+            --streak-silver: #C0C0C0;
+            --weekend-color: #ff6b9d;
+        }
+
+        body.dark {
+            --bg: #0c111b;
+            --bg2: #0a0f18;
+            --ink: #e5edff;
+            --muted: #9fb1c9;
+            --line: #1e2b43;
+            --surface: rgba(22,30,48,.65);
+            --glass: rgba(18,24,39,.50);
+            --shadow: 0 18px 42px rgba(0,0,0,.35);
+        }
+
+        .signin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: radial-gradient(900px 500px at -10% -10%, rgba(117,87,255,.10), transparent 60%),
+                        radial-gradient(800px 460px at 110% 10%, rgba(52,210,255,.10), transparent 50%),
+                        linear-gradient(180deg, var(--bg), var(--bg2));
+            min-height: 100vh;
+            color: var(--ink);
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+        }
+
+        .signin-header {
+            background: var(--glass);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(var(--blur));
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .signin-title {
+            font-size: 2rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .signin-subtitle {
+            color: var(--muted);
+            font-size: 1rem;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 24px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .section-card {
+            background: var(--glass);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(var(--blur));
+            box-shadow: var(--shadow);
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 簽到按鈕樣式 */
+        .signin-button {
+            width: 100%;
+            padding: 16px 24px;
+            font-size: 1.125rem;
+            font-weight: 700;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .signin-button.available {
+            background: linear-gradient(135deg, var(--accent-3), #16a34a);
+            color: white;
+            box-shadow: 0 8px 25px rgba(34, 197, 94, 0.3);
+        }
+
+        .signin-button.available:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(34, 197, 94, 0.4);
+        }
+
+        .signin-button.completed {
+            background: var(--muted);
+            color: white;
+            cursor: not-allowed;
+        }
+
+        .signin-button.loading {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* 獎勵預覽 */
+        .reward-preview {
+            display: flex;
+            justify-content: space-around;
+            margin: 16px 0;
+            padding: 16px;
+            background: var(--surface);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--line);
+        }
+
+        .reward-item {
+            text-align: center;
+        }
+
+        .reward-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-3);
+        }
+
+        .reward-label {
+            font-size: 0.875rem;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        /* 連續簽到進度條 */
+        .streak-progress {
+            margin: 16px 0;
+        }
+
+        .streak-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .streak-count {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--streak-gold);
+        }
+
+        .streak-target {
+            font-size: 0.875rem;
+            color: var(--muted);
+        }
+
+        .progress-bar {
+            height: 12px;
+            background: var(--line);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--streak-gold), var(--accent-2));
+            border-radius: 6px;
+            transition: width 0.5s ease;
+        }
+
+        /* 簽到日曆 */
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .calendar-nav {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-button {
+            padding: 8px 12px;
+            border: 1px solid var(--line);
+            background: var(--surface);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .nav-button:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        .calendar-month {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            background: var(--line);
+            border-radius: var(--radius-sm);
+            padding: 2px;
+        }
+
+        .calendar-header-day {
+            background: var(--surface);
+            padding: 8px 4px;
+            text-align: center;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--muted);
+        }
+
+        .calendar-day {
+            background: var(--surface);
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+        }
+
+        .calendar-day:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        .calendar-day.other-month {
+            color: var(--muted);
+            background: var(--bg2);
+        }
+
+        .calendar-day.today {
+            background: var(--accent-2);
+            color: white;
+            box-shadow: 0 0 0 2px var(--accent-2);
+        }
+
+        .calendar-day.signed {
+            background: var(--accent-3);
+            color: white;
+        }
+
+        .calendar-day.weekend {
+            background: var(--weekend-color);
+            color: white;
+        }
+
+        .calendar-day.signed.weekend {
+            background: linear-gradient(135deg, var(--accent-3), var(--weekend-color));
+        }
+
+        /* 特殊標記 */
+        .special-marker {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--streak-gold);
+        }
+
+        .bonus-marker {
+            background: var(--streak-gold);
+        }
+
+        .exp-marker {
+            background: var(--accent-2);
+        }
+
+        /* 統計卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .stat-label {
+            color: var(--muted);
+            font-size: 0.875rem;
+            margin-top: 4px;
+        }
+
+        /* 月度成就 */
+        .achievement-card {
+            background: linear-gradient(135deg, var(--streak-gold), #FFA500);
+            color: white;
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            text-align: center;
+            margin-top: 16px;
+        }
+
+        .achievement-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .achievement-title {
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .achievement-desc {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+
+        /* 載入動畫 */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--muted);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--line);
+            border-top: 2px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 成功動畫 */
+        .success-animation {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--glass);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 40px;
+            text-align: center;
+            backdrop-filter: blur(var(--blur));
+            box-shadow: var(--shadow);
+            z-index: 1000;
+            opacity: 0;
+            animation: successPop 2s ease-out;
+        }
+
+        @keyframes successPop {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+        }
+
+        .success-icon {
+            font-size: 3rem;
+            color: var(--accent-3);
+            margin-bottom: 16px;
+        }
+
+        .success-message {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .success-details {
+            color: var(--muted);
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="signin-container">
+        <!-- 頁面標題 -->
+        <div class="signin-header">
+            <h1 class="signin-title">每日簽到</h1>
+            <p class="signin-subtitle">連續簽到獲得豐富獎勵，養成好習慣！</p>
+        </div>
+
+        <div class="main-layout">
+            <!-- 左側：簽到日曆 -->
+            <div>
+                <div class="section-card">
+                    <div class="section-title">
+                        📅 簽到日曆
+                    </div>
+                    
+                    <div class="calendar-header">
+                        <div class="calendar-nav">
+                            <button class="nav-button" onclick="changeMonth(-1)">‹ 上月</button>
+                            <button class="nav-button" onclick="changeMonth(1)">下月 ›</button>
+                        </div>
+                        <div class="calendar-month" id="calendarMonth">載入中...</div>
+                        <button class="nav-button" onclick="refreshData()">🔄 重新整理</button>
+                    </div>
+
+                    <div class="calendar-grid" id="calendarGrid">
+                        <div class="loading">載入日曆中...</div>
+                    </div>
+                </div>
+
+                <!-- 月度統計 -->
+                <div class="section-card">
+                    <div class="section-title">
+                        📊 本月統計
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="monthSignedDays">0</div>
+                            <div class="stat-label">已簽到天數</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="monthAttendanceRate">0%</div>
+                            <div class="stat-label">出席率</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="monthPoints">0</div>
+                            <div class="stat-label">獲得點數</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="monthExp">0</div>
+                            <div class="stat-label">獲得經驗</div>
+                        </div>
+                    </div>
+
+                    <div id="perfectAttendanceAchievement" style="display: none;">
+                        <div class="achievement-card">
+                            <div class="achievement-icon">🏆</div>
+                            <div class="achievement-title">全勤月成就</div>
+                            <div class="achievement-desc">恭喜達成本月全勤，獲得額外獎勵！</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側：簽到區域和狀態 -->
+            <div>
+                <!-- 簽到狀態 -->
+                <div class="section-card">
+                    <div class="section-title">
+                        ⭐ 今日簽到
+                    </div>
+                    
+                    <div id="signinStatus">
+                        <div class="loading">載入簽到狀態中...</div>
+                    </div>
+                    
+                    <button id="signinButton" class="signin-button available" onclick="performSignIn()" disabled>
+                        <span class="spinner"></span> 載入中...
+                    </button>
+
+                    <div id="rewardPreview" class="reward-preview" style="display: none;">
+                        <div class="reward-item">
+                            <div class="reward-value" id="previewPoints">0</div>
+                            <div class="reward-label">點數</div>
+                        </div>
+                        <div class="reward-item">
+                            <div class="reward-value" id="previewExp">0</div>
+                            <div class="reward-label">經驗</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 連續簽到進度 -->
+                <div class="section-card">
+                    <div class="section-title">
+                        🔥 連續簽到
+                    </div>
+                    
+                    <div class="streak-progress">
+                        <div class="streak-info">
+                            <div class="streak-count" id="currentStreak">0 天</div>
+                            <div class="streak-target">目標: 7天獲得獎勵</div>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="streakProgress" style="width: 0%;"></div>
+                        </div>
+                    </div>
+
+                    <div style="font-size: 0.875rem; color: var(--muted); margin-top: 8px;">
+                        <div>• 連續7天簽到：額外 +40點數 +300經驗</div>
+                        <div>• 當月全勤：額外 +200點數 +2000經驗</div>
+                        <div>• 週末簽到：+30點數 +200經驗</div>
+                        <div>• 平日簽到：+20點數</div>
+                    </div>
+                </div>
+
+                <!-- 簽到歷史 -->
+                <div class="section-card">
+                    <div class="section-title">
+                        📋 最近簽到
+                    </div>
+                    
+                    <div id="recentHistory">
+                        <div class="loading">載入歷史記錄中...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全域變數
+        let currentYear = new Date().getFullYear();
+        let currentMonth = new Date().getMonth() + 1;
+        let signinStatus = null;
+
+        // 頁面載入時初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSignInStatus();
+            loadCalendar();
+            loadMonthlyStats();
+            loadRecentHistory();
+        });
+
+        // 載入簽到狀態
+        async function loadSignInStatus() {
+            try {
+                const response = await fetch('/api/signin/status');
+                const result = await response.json();
+                
+                if (result.success) {
+                    signinStatus = result.data;
+                    updateSignInUI();
+                    updateStreakProgress();
+                } else {
+                    showError('載入簽到狀態失敗');
+                }
+            } catch (error) {
+                console.error('載入簽到狀態失敗:', error);
+                showError('載入簽到狀態失敗');
+            }
+        }
+
+        // 更新簽到界面
+        function updateSignInUI() {
+            const statusDiv = document.getElementById('signinStatus');
+            const button = document.getElementById('signinButton');
+            const rewardPreview = document.getElementById('rewardPreview');
+
+            if (signinStatus.todaySigned) {
+                // 已簽到
+                statusDiv.innerHTML = `
+                    <div style="text-align: center; color: var(--accent-3); margin-bottom: 16px;">
+                        <div style="font-size: 2rem;">✅</div>
+                        <div style="font-weight: 700; margin-top: 8px;">今日已簽到</div>
+                        <div style="color: var(--muted); font-size: 0.875rem;">
+                            ${formatDateTime(signinStatus.taipeiDateTime)}
+                        </div>
+                    </div>
+                `;
+                
+                button.textContent = '今日已簽到';
+                button.className = 'signin-button completed';
+                button.disabled = true;
+                rewardPreview.style.display = 'none';
+            } else {
+                // 可以簽到
+                statusDiv.innerHTML = `
+                    <div style="text-align: center; color: var(--accent); margin-bottom: 16px;">
+                        <div style="font-size: 2rem;">⭐</div>
+                        <div style="font-weight: 700; margin-top: 8px;">準備簽到</div>
+                        <div style="color: var(--muted); font-size: 0.875rem;">
+                            ${formatDateTime(signinStatus.taipeiDateTime)}
+                            ${signinStatus.isWeekend ? ' (週末加成)' : ''}
+                        </div>
+                    </div>
+                `;
+                
+                button.textContent = '立即簽到';
+                button.className = 'signin-button available';
+                button.disabled = false;
+
+                // 顯示獎勵預覽
+                if (signinStatus.todayPotentialRewards) {
+                    document.getElementById('previewPoints').textContent = signinStatus.todayPotentialRewards.points;
+                    document.getElementById('previewExp').textContent = signinStatus.todayPotentialRewards.experience;
+                    rewardPreview.style.display = 'flex';
+                }
+            }
+        }
+
+        // 更新連續簽到進度
+        function updateStreakProgress() {
+            document.getElementById('currentStreak').textContent = `${signinStatus.currentStreak} 天`;
+            
+            const progress = Math.min((signinStatus.currentStreak % 7) / 7 * 100, 100);
+            document.getElementById('streakProgress').style.width = progress + '%';
+        }
+
+        // 執行簽到
+        async function performSignIn() {
+            const button = document.getElementById('signinButton');
+            
+            try {
+                button.disabled = true;
+                button.innerHTML = '<span class="spinner"></span> 簽到中...';
+                button.className = 'signin-button loading';
+
+                const response = await fetch('/api/signin', {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showSuccessAnimation(result.data);
+                    
+                    // 重新載入狀態
+                    setTimeout(() => {
+                        refreshData();
+                    }, 2000);
+                } else {
+                    showError(result.message);
+                    button.disabled = false;
+                    button.textContent = '立即簽到';
+                    button.className = 'signin-button available';
+                }
+            } catch (error) {
+                console.error('簽到失敗:', error);
+                showError('簽到失敗，請稍後再試');
+                button.disabled = false;
+                button.textContent = '立即簽到';
+                button.className = 'signin-button available';
+            }
+        }
+
+        // 載入日曆
+        async function loadCalendar() {
+            try {
+                const response = await fetch(`/api/signin/calendar?year=${currentYear}&month=${currentMonth}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    renderCalendar(result.data);
+                } else {
+                    showError('載入日曆失敗');
+                }
+            } catch (error) {
+                console.error('載入日曆失敗:', error);
+                showError('載入日曆失敗');
+            }
+        }
+
+        // 渲染日曆
+        function renderCalendar(calendarData) {
+            document.getElementById('calendarMonth').textContent = 
+                `${currentYear}年${currentMonth}月`;
+
+            const grid = document.getElementById('calendarGrid');
+            
+            // 星期標題
+            const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+            let calendarHtml = '';
+            
+            weekDays.forEach(day => {
+                calendarHtml += `<div class="calendar-header-day">${day}</div>`;
+            });
+
+            // 日期
+            calendarData.days.forEach(day => {
+                let classes = ['calendar-day'];
+                let markers = '';
+
+                if (!day.isCurrentMonth) classes.push('other-month');
+                if (day.isToday) classes.push('today');
+                if (day.isSignedIn) classes.push('signed');
+                if (day.isWeekend) classes.push('weekend');
+
+                // 特殊標記
+                day.specialMarkers.forEach(marker => {
+                    if (marker === 'bonus') {
+                        markers += '<div class="special-marker bonus-marker"></div>';
+                    } else if (marker === 'exp-bonus') {
+                        markers += '<div class="special-marker exp-marker"></div>';
+                    }
+                });
+
+                calendarHtml += `
+                    <div class="${classes.join(' ')}" onclick="showDayDetail(${JSON.stringify(day).replace(/"/g, '&quot;')})">
+                        ${day.day}
+                        ${markers}
+                    </div>
+                `;
+            });
+
+            grid.innerHTML = calendarHtml;
+        }
+
+        // 載入月度統計
+        async function loadMonthlyStats() {
+            try {
+                const response = await fetch(`/api/signin/monthly?year=${currentYear}&month=${currentMonth}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateMonthlyStats(result.data);
+                } else {
+                    showError('載入月度統計失敗');
+                }
+            } catch (error) {
+                console.error('載入月度統計失敗:', error);
+                showError('載入月度統計失敗');
+            }
+        }
+
+        // 更新月度統計
+        function updateMonthlyStats(stats) {
+            document.getElementById('monthSignedDays').textContent = stats.totalSignedDays;
+            document.getElementById('monthAttendanceRate').textContent = Math.round(stats.attendanceRate) + '%';
+            document.getElementById('monthPoints').textContent = stats.totalPointsEarned.toLocaleString();
+            document.getElementById('monthExp').textContent = stats.totalExperienceGained.toLocaleString();
+
+            // 全勤成就
+            const achievement = document.getElementById('perfectAttendanceAchievement');
+            if (stats.isPerfectAttendance) {
+                achievement.style.display = 'block';
+            } else {
+                achievement.style.display = 'none';
+            }
+        }
+
+        // 載入最近歷史
+        async function loadRecentHistory() {
+            try {
+                const response = await fetch('/api/signin/history?page=1&pageSize=5');
+                const result = await response.json();
+                
+                if (result.success) {
+                    renderRecentHistory(result.data);
+                } else {
+                    showError('載入簽到歷史失敗');
+                }
+            } catch (error) {
+                console.error('載入簽到歷史失敗:', error);
+                showError('載入簽到歷史失敗');
+            }
+        }
+
+        // 渲染最近歷史
+        function renderRecentHistory(records) {
+            const container = document.getElementById('recentHistory');
+            
+            if (records.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: var(--muted);">暫無簽到記錄</div>';
+                return;
+            }
+
+            const historyHtml = records.map(record => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line);">
+                    <div>
+                        <div style="font-weight: 600;">${formatDate(record.signTime)}</div>
+                        <div style="font-size: 0.875rem; color: var(--muted);">
+                            ${record.isWeekend ? '週末' : '平日'} • ${record.dayOfWeek}
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="color: var(--accent-3); font-weight: 600;">+${record.pointsChanged}</div>
+                        <div style="font-size: 0.875rem; color: var(--muted);">
+                            ${record.expGained > 0 ? `+${record.expGained}經驗` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = historyHtml;
+        }
+
+        // 切換月份
+        function changeMonth(direction) {
+            currentMonth += direction;
+            
+            if (currentMonth > 12) {
+                currentMonth = 1;
+                currentYear++;
+            } else if (currentMonth < 1) {
+                currentMonth = 12;
+                currentYear--;
+            }
+            
+            loadCalendar();
+            loadMonthlyStats();
+        }
+
+        // 重新整理所有資料
+        function refreshData() {
+            loadSignInStatus();
+            loadCalendar();
+            loadMonthlyStats();
+            loadRecentHistory();
+        }
+
+        // 顯示日期詳情
+        function showDayDetail(day) {
+            if (day.signInRecord) {
+                alert(`${formatDate(day.date)} 簽到詳情:\n獲得點數: ${day.signInRecord.pointsChanged}\n獲得經驗: ${day.signInRecord.expGained}`);
+            } else if (day.isCurrentMonth) {
+                alert(`${formatDate(day.date)}\n${day.isToday ? '今日' : ''}${day.isWeekend ? '週末' : '平日'}\n尚未簽到`);
+            }
+        }
+
+        // 顯示成功動畫
+        function showSuccessAnimation(result) {
+            const animation = document.createElement('div');
+            animation.className = 'success-animation';
+            animation.innerHTML = `
+                <div class="success-icon">🎉</div>
+                <div class="success-message">簽到成功！</div>
+                <div class="success-details">
+                    獲得 ${result.pointsEarned} 點數，${result.experienceGained} 經驗<br>
+                    連續簽到 ${result.streakAfter} 天
+                    ${result.hasSevenDayBonus ? '<br>🏆 達成7天連續獎勵！' : ''}
+                    ${result.hasMonthlyBonus ? '<br>👑 達成當月全勤獎勵！' : ''}
+                </div>
+            `;
+            
+            document.body.appendChild(animation);
+            
+            setTimeout(() => {
+                document.body.removeChild(animation);
+            }, 2000);
+        }
+
+        // 顯示錯誤訊息
+        function showError(message) {
+            alert('錯誤: ' + message);
+        }
+
+        // 格式化日期時間
+        function formatDateTime(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleString('zh-TW', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                timeZone: 'Asia/Taipei'
+            });
+        }
+
+        // 格式化日期
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('zh-TW', {
+                month: '2-digit',
+                day: '2-digit',
+                timeZone: 'Asia/Taipei'
+            });
+        }
+
+        // 主題切換支援
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark');
+        }
+    </script>
+</body>
+</html>

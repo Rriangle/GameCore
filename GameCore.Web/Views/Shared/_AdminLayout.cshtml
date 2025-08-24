@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - GameCore 管理後台</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    
+    <!-- CSS Dependencies -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Admin Theme Styles -->
+    <style>
+        :root {
+            --admin-primary: #7557ff;
+            --admin-secondary: #34d2ff;
+            --admin-success: #22c55e;
+            --admin-warning: #f59e0b;
+            --admin-danger: #ef4444;
+            --admin-dark: #1f2937;
+            --admin-light: #f8fafc;
+            --admin-border: #e5e7eb;
+            --admin-sidebar-width: 280px;
+            --admin-header-height: 70px;
+            --admin-radius: 12px;
+            --admin-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --admin-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--admin-light);
+            color: var(--admin-dark);
+            line-height: 1.6;
+        }
+
+        /* 管理員頁面佈局 */
+        .admin-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* 側邊欄 */
+        .admin-sidebar {
+            width: var(--admin-sidebar-width);
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .sidebar-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .sidebar-logo:hover {
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+        }
+
+        .sidebar-nav {
+            padding: 1rem 0;
+        }
+
+        .nav-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .nav-section-title {
+            padding: 0.5rem 1.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-item {
+            margin: 0.25rem 0;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+        }
+
+        .nav-link.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--admin-secondary);
+        }
+
+        .nav-link i {
+            width: 20px;
+            margin-right: 0.75rem;
+            text-align: center;
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            background: var(--admin-danger);
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+            min-width: 18px;
+            text-align: center;
+        }
+
+        /* 主要內容區域 */
+        .admin-main {
+            flex: 1;
+            margin-left: var(--admin-sidebar-width);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 頂部導航 */
+        .admin-header {
+            height: var(--admin-header-height);
+            background: white;
+            border-bottom: 1px solid var(--admin-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            box-shadow: var(--admin-shadow);
+            position: sticky;
+            top: 0;
+            z-index: 999;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .sidebar-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: var(--admin-dark);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: var(--admin-radius);
+            transition: background 0.3s ease;
+        }
+
+        .sidebar-toggle:hover {
+            background: var(--admin-light);
+        }
+
+        .breadcrumb {
+            background: none;
+            margin: 0;
+            padding: 0;
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb-item a {
+            color: var(--admin-primary);
+            text-decoration: none;
+        }
+
+        .breadcrumb-item.active {
+            color: #6b7280;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header-notifications {
+            position: relative;
+            background: none;
+            border: none;
+            font-size: 1.1rem;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: var(--admin-radius);
+            transition: all 0.3s ease;
+        }
+
+        .header-notifications:hover {
+            background: var(--admin-light);
+            color: var(--admin-primary);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--admin-danger);
+            color: white;
+            font-size: 0.6rem;
+            padding: 0.1rem 0.3rem;
+            border-radius: 8px;
+            min-width: 16px;
+            text-align: center;
+        }
+
+        .user-menu {
+            position: relative;
+        }
+
+        .user-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: none;
+            border: none;
+            padding: 0.5rem;
+            border-radius: var(--admin-radius);
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .user-toggle:hover {
+            background: var(--admin-light);
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--admin-primary), var(--admin-secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .user-info {
+            text-align: left;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: var(--admin-dark);
+            font-size: 0.9rem;
+        }
+
+        .user-role {
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+
+        /* 內容區域 */
+        .admin-content {
+            flex: 1;
+            padding: 0;
+            background: var(--admin-light);
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 768px) {
+            .admin-sidebar {
+                transform: translateX(-100%);
+            }
+
+            .admin-sidebar.show {
+                transform: translateX(0);
+            }
+
+            .admin-main {
+                margin-left: 0;
+            }
+
+            .sidebar-toggle {
+                display: block;
+            }
+
+            .user-info {
+                display: none;
+            }
+        }
+
+        /* 通用元件樣式 */
+        .btn {
+            border-radius: var(--admin-radius);
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--admin-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #6146ff;
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--admin-primary);
+            border: 1px solid var(--admin-primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--admin-primary);
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: var(--admin-radius);
+            box-shadow: var(--admin-shadow);
+            border: none;
+        }
+
+        .table {
+            border-radius: var(--admin-radius);
+            overflow: hidden;
+            box-shadow: var(--admin-shadow);
+        }
+
+        .table thead th {
+            background: #f8fafc;
+            border: none;
+            font-weight: 600;
+            color: var(--admin-dark);
+            padding: 1rem;
+        }
+
+        .table td {
+            padding: 1rem;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        /* 狀態指示器 */
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-danger {
+            background: #fecaca;
+            color: #991b1b;
+        }
+
+        .status-info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        /* 載入動畫 */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--admin-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 工具提示 */
+        .tooltip {
+            position: relative;
+            cursor: help;
+        }
+
+        .tooltip::before {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--admin-dark);
+            color: white;
+            padding: 0.5rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+        }
+
+        .tooltip:hover::before {
+            opacity: 1;
+            visibility: visible;
+        }
+    </style>
+    
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <div class="admin-wrapper">
+        <!-- 側邊欄 -->
+        <nav class="admin-sidebar" id="adminSidebar">
+            <div class="sidebar-header">
+                <a href="/Admin/Dashboard" class="sidebar-logo">
+                    <i class="fas fa-gamepad"></i>
+                    GameCore
+                </a>
+            </div>
+
+            <div class="sidebar-nav">
+                <!-- 主要功能 -->
+                <div class="nav-section">
+                    <div class="nav-section-title">主要功能</div>
+                    <div class="nav-item">
+                        <a href="/Admin/Dashboard" class="nav-link">
+                            <i class="fas fa-tachometer-alt"></i>
+                            儀表板
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/Admin/Users" class="nav-link">
+                            <i class="fas fa-users"></i>
+                            使用者管理
+                            <span class="nav-badge" id="pendingUsersBadge" style="display: none;">0</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/Admin/Managers" class="nav-link">
+                            <i class="fas fa-user-shield"></i>
+                            管理員管理
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/Admin/Roles" class="nav-link">
+                            <i class="fas fa-key"></i>
+                            角色權限
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 內容管理 -->
+                <div class="nav-section">
+                    <div class="nav-section-title">內容管理</div>
+                    <div class="nav-item">
+                        <a href="/Admin/Content" class="nav-link">
+                            <i class="fas fa-file-alt"></i>
+                            內容審核
+                            <span class="nav-badge" id="pendingContentBadge" style="display: none;">0</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/Admin/Forums" class="nav-link">
+                            <i class="fas fa-comments"></i>
+                            論壇管理
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/Admin/Posts" class="nav-link">
+                            <i class="fas fa-newspaper"></i>
+                            洞察貼文
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 商務管理 -->
+                <div class="nav-section">
+                    <div class="nav-section-title">商務管理</div>
+                    <div class="nav-item">
+                        <a href="/Admin/Orders" class="nav-link">
+                            <i class="fas fa-shopping-cart"></i>
+                            訂單管理
+                            <span class="nav-badge" id="pendingOrdersBadge" style="display: none;">0</span>
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/Admin/Products" class="nav-link">
+                            <i class="fas fa-box"></i>
+                            商品管理
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/Admin/Market" class="nav-link">
+                            <i class="fas fa-store"></i>
+                            玩家市場
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 分析報表 -->
+                <div class="nav-section">
+                    <div class="nav-section-title">分析報表</div>
+                    <div class="nav-item">
+                        <a href="/Admin/Analytics" class="nav-link">
+                            <i class="fas fa-chart-line"></i>
+                            數據分析
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/Admin/Reports" class="nav-link">
+                            <i class="fas fa-chart-bar"></i>
+                            營收報表
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/Admin/Logs" class="nav-link">
+                            <i class="fas fa-list-alt"></i>
+                            操作日誌
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 系統設定 -->
+                <div class="nav-section">
+                    <div class="nav-section-title">系統設定</div>
+                    <div class="nav-item">
+                        <a href="/Admin/Settings" class="nav-link">
+                            <i class="fas fa-cog"></i>
+                            系統設定
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/Admin/Mutes" class="nav-link">
+                            <i class="fas fa-ban"></i>
+                            禁言管理
+                        </a>
+                    </div>
+                    <div class="nav-item">
+                        <a href="/Admin/Styles" class="nav-link">
+                            <i class="fas fa-palette"></i>
+                            樣式管理
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 主要內容區域 -->
+        <div class="admin-main">
+            <!-- 頂部導航 -->
+            <header class="admin-header">
+                <div class="header-left">
+                    <button class="sidebar-toggle" id="sidebarToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="/Admin/Dashboard">管理後台</a></li>
+                            @if (ViewData["Breadcrumb"] != null)
+                            {
+                                @Html.Raw(ViewData["Breadcrumb"])
+                            }
+                            else
+                            {
+                                <li class="breadcrumb-item active">@ViewData["Title"]</li>
+                            }
+                        </ol>
+                    </nav>
+                </div>
+
+                <div class="header-right">
+                    <!-- 通知 -->
+                    <button class="header-notifications" id="notificationToggle">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                    </button>
+
+                    <!-- 使用者選單 -->
+                    <div class="user-menu">
+                        <button class="user-toggle" id="userToggle">
+                            <div class="user-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="user-info">
+                                <div class="user-name">管理員</div>
+                                <div class="user-role">系統管理者</div>
+                            </div>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 內容區域 -->
+            <main class="admin-content">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <!-- 使用者選單下拉 -->
+    <div class="dropdown-menu" id="userDropdown" style="display: none; position: absolute; top: 100%; right: 0; background: white; border-radius: var(--admin-radius); box-shadow: var(--admin-shadow-lg); min-width: 200px; z-index: 1000;">
+        <a href="/Admin/Profile" class="dropdown-item">
+            <i class="fas fa-user"></i>
+            個人資料
+        </a>
+        <a href="/Admin/Settings" class="dropdown-item">
+            <i class="fas fa-cog"></i>
+            系統設定
+        </a>
+        <div class="dropdown-divider"></div>
+        <a href="/Admin/Logout" class="dropdown-item text-danger">
+            <i class="fas fa-sign-out-alt"></i>
+            登出
+        </a>
+    </div>
+
+    <!-- JavaScript Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    
+    <!-- Admin Scripts -->
+    <script>
+        // 側邊欄切換
+        document.getElementById('sidebarToggle')?.addEventListener('click', function() {
+            document.getElementById('adminSidebar').classList.toggle('show');
+        });
+
+        // 使用者選單切換
+        document.getElementById('userToggle')?.addEventListener('click', function() {
+            const dropdown = document.getElementById('userDropdown');
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        });
+
+        // 點擊外部關閉選單
+        document.addEventListener('click', function(event) {
+            const userMenu = document.querySelector('.user-menu');
+            const dropdown = document.getElementById('userDropdown');
+            
+            if (!userMenu.contains(event.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        // 設定當前頁面的導航項目為活躍狀態
+        function setActiveNavItem() {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === currentPath || 
+                    (currentPath.startsWith(link.getAttribute('href')) && link.getAttribute('href') !== '/Admin/Dashboard')) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        // 載入統計數據和徽章
+        function loadBadges() {
+            // 模擬API調用來更新徽章數字
+            setTimeout(() => {
+                const badges = {
+                    pendingUsers: 5,
+                    pendingContent: 12,
+                    pendingOrders: 8,
+                    notifications: 3
+                };
+
+                // 更新徽章
+                if (badges.pendingUsers > 0) {
+                    const badge = document.getElementById('pendingUsersBadge');
+                    if (badge) {
+                        badge.textContent = badges.pendingUsers;
+                        badge.style.display = 'inline-block';
+                    }
+                }
+
+                if (badges.pendingContent > 0) {
+                    const badge = document.getElementById('pendingContentBadge');
+                    if (badge) {
+                        badge.textContent = badges.pendingContent;
+                        badge.style.display = 'inline-block';
+                    }
+                }
+
+                if (badges.pendingOrders > 0) {
+                    const badge = document.getElementById('pendingOrdersBadge');
+                    if (badge) {
+                        badge.textContent = badges.pendingOrders;
+                        badge.style.display = 'inline-block';
+                    }
+                }
+
+                if (badges.notifications > 0) {
+                    const badge = document.getElementById('notificationBadge');
+                    if (badge) {
+                        badge.textContent = badges.notifications;
+                        badge.style.display = 'inline-block';
+                    }
+                }
+            }, 1000);
+        }
+
+        // 頁面載入完成後執行
+        document.addEventListener('DOMContentLoaded', function() {
+            setActiveNavItem();
+            loadBadges();
+        });
+
+        // 通用AJAX錯誤處理
+        function handleAjaxError(xhr, status, error) {
+            console.error('AJAX Error:', error);
+            
+            // 顯示錯誤通知
+            showNotification('發生錯誤，請稍後再試', 'error');
+            
+            // 如果是401錯誤，重定向到登入頁面
+            if (xhr.status === 401) {
+                window.location.href = '/Admin/Login';
+            }
+        }
+
+        // 顯示通知函數
+        function showNotification(message, type = 'info', duration = 3000) {
+            // 創建通知元素
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'error' ? '#ef4444' : type === 'success' ? '#22c55e' : '#3b82f6'};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: var(--admin-radius);
+                box-shadow: var(--admin-shadow-lg);
+                z-index: 9999;
+                max-width: 400px;
+                opacity: 0;
+                transform: translateX(100%);
+                transition: all 0.3s ease;
+            `;
+            notification.textContent = message;
+
+            document.body.appendChild(notification);
+
+            // 顯示動畫
+            setTimeout(() => {
+                notification.style.opacity = '1';
+                notification.style.transform = 'translateX(0)';
+            }, 100);
+
+            // 自動隱藏
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, duration);
+        }
+
+        // 確認對話框
+        function confirmAction(message, callback) {
+            if (confirm(message)) {
+                callback();
+            }
+        }
+
+        // 格式化數字
+        function formatNumber(num) {
+            return new Intl.NumberFormat('zh-TW').format(num);
+        }
+
+        // 格式化日期
+        function formatDate(date) {
+            return new Intl.DateTimeFormat('zh-TW', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            }).format(new Date(date));
+        }
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

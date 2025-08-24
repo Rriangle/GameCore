@@ -47,6 +47,20 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("RequireLogin", policy => policy.RequireAuthenticatedUser());
     options.AddPolicy("RequireAdmin", policy => policy.RequireRole("Admin"));
     options.AddPolicy("RequireSalesAuthority", policy => policy.RequireClaim("SalesAuthority", "true"));
+    
+    // 管理員權限政策
+    options.AddPolicy("AdministratorPrivilegesManagement", policy => 
+        policy.RequireClaim("AdministratorPrivilegesManagement", "true"));
+    options.AddPolicy("UserStatusManagement", policy => 
+        policy.RequireClaim("UserStatusManagement", "true"));
+    options.AddPolicy("ShoppingPermissionManagement", policy => 
+        policy.RequireClaim("ShoppingPermissionManagement", "true"));
+    options.AddPolicy("MessagePermissionManagement", policy => 
+        policy.RequireClaim("MessagePermissionManagement", "true"));
+    options.AddPolicy("SalesPermissionManagement", policy => 
+        policy.RequireClaim("SalesPermissionManagement", "true"));
+    options.AddPolicy("CustomerService", policy => 
+        policy.RequireClaim("CustomerService", "true"));
 });
 
 // 設定 MVC 和 API
@@ -111,6 +125,9 @@ builder.Services.AddScoped<IStoreService, StoreService>();
 builder.Services.AddScoped<IPlayerMarketService, PlayerMarketService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IWalletService, WalletService>();
+builder.Services.AddScoped<IDailySignInService, DailySignInService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 
 // 設定 Logging
 builder.Logging.ClearProviders();

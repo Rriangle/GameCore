@@ -526,10 +526,10 @@ namespace GameCore.Core.Entities
         public string? NewValue { get; set; }
 
         /// <summary>
-        /// 操作人編號 (外鍵到 ManagerData)
+        /// 操作人編號 (外鍵到 Manager)
         /// </summary>
         [Column("Manager_Id")]
-        [ForeignKey("ManagerData")]
+        [ForeignKey("Manager")]
         public int? ManagerId { get; set; }
 
         /// <summary>
@@ -540,6 +540,6 @@ namespace GameCore.Core.Entities
 
         // 導航屬性
         public virtual ProductInfo ProductInfo { get; set; } = null!;
-        public virtual ManagerData? ManagerData { get; set; }
+        public virtual Manager? Manager { get; set; }
     }
 }

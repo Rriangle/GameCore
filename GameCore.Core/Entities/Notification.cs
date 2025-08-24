@@ -130,7 +130,7 @@ namespace GameCore.Core.Entities
         public virtual NotificationSource NotificationSource { get; set; } = null!;
         public virtual NotificationAction NotificationAction { get; set; } = null!;
         public virtual User SenderUser { get; set; } = null!;
-        public virtual ManagerData? SenderManager { get; set; }
+        public virtual Manager? SenderManager { get; set; }
         public virtual Group? Group { get; set; }
         public virtual ICollection<NotificationRecipient> Recipients { get; set; } = new List<NotificationRecipient>();
     }

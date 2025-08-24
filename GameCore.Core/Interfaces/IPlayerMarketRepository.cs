@@ -1,4 +1,5 @@
 using GameCore.Core.Entities;
+using GameCore.Core.Enums;
 
 namespace GameCore.Core.Interfaces
 {

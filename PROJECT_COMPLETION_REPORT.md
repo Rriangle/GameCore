@@ -1,5 +1,50 @@
 # GameCore 專案完成度檢查報告
 
+## Crosswalk Gap Table and Stage Plan (Auto Stage 0)
+
+### Gap Table
+| Module | Spec requirements | Current state | Missing | Files to touch |
+|---|---|---|---|---|
+| Auth/Users | Register/Login (JWT/cookie), profile aggregate Users+Introduce+Rights+Wallet | `UserController` with register/login/profile endpoints and `UserService` present | JWT issuance details, uniqueness validation coverage, `/api/users/me` alias, OAuth wiring | `GameCore.Web/Controllers/UserController.cs`, `GameCore.Core/Services/UserService.cs`, `GameCore.Web/Program.cs` |
+| Wallet/Sales | `GET /api/wallet` and `/api/wallet/balance`; sales wallet | Entities/repositories exist; services reference wallet | Wallet API controller endpoints; ledger aggregation API | `GameCore.Web` (new Wallet controller), `UserService` |
+| Official Store | Products list/detail, order create/pay callback, rankings, audit | `StoreController` and `StoreService` implemented (cart, checkout) | Pay callback endpoint, OSR ranking read API | `GameCore.Web/Controllers/StoreController.cs`, `StoreService.cs` |
+| Player Market | List products, create orders, tradepage workflow, messages, rankings | Controllers/services exist | Dual-confirm logic for `POTP` completion and wallet adjustments | `PlayerMarketController.cs`, `PlayerMarketService.cs` |
+| Popularity/Leaderboards/Insights | games/metrics daily calc to popularity index; snapshots; posts with snapshot | DbSets/entities exist; `Game`/`PostController` exist | Batch calc job and snapshot read endpoints | `GameCore.Web` controllers, background job scaffold |
+| Forums/Threads/Posts/Reactions/Bookmarks | Full CRUD and interactions | `ForumController`, `ForumService` present | Reaction/bookmark endpoints completeness checks | `ForumController.cs` |
+| Social/Notifications/DM/Groups/Blocks | Notifications list/read; chat; groups messaging/block | `NotificationController`, `ChatController`, `ManagerController` present | Outbox/inbox filters; mark-read endpoint semantics | `NotificationController.cs` |
+| Daily Sign-In | once/day, streak logic, UTC+8 rules | `SignInController`/`SignInService` present | Calendar status endpoint parity with spec; edge-case tests | `SignInController.cs`, tests |
+| Virtual Pet (Slime) | actions feed/bathe/play/rest; recolor 2000 pts; health rules; daily decay | `PetController`/`PetService` mostly implemented | Daily decay job; health gate on minigame start | `PetService.cs`, job scaffold |
+| Mini-Game (Adventure) | start/finish, daily 3 times, result deltas, points/exp; forbid when stats/health 0 | `MiniGameController`/`MiniGameService` present | Daily cap enforcement tests; finish flow integration to Pet | `MiniGameService.cs`, tests |
+| Admin Backoffice | Manager login tracking, roles/permissions, moderation | `ManagerController`/`ManagerService` present | Admin dashboards and logs polish | `ManagerController.cs`, docs |
+
+### Ordered Stage Plan
+1. Stage 1 — Wallet MGD
+   - Add `WalletController` with `GET /api/wallet/balance` and `GET /api/wallet`.
+   - Seed realistic wallet balances for demo; add unit/integration tests.
+   - README update with curl examples.
+2. Stage 2 — Pet recolor + points coupling
+   - Ensure 2000-point deduction path and notification emission; add tests.
+3. Stage 3 — Sign-In streaks
+   - Implement `/api/signin/status` and `/api/signin` per UTC+8 rules; tests.
+4. Stage 4 — Mini-game daily cap + finish flow
+   - Enforce cap and pet stat deltas; tests and docs.
+5. Stage 5 — Official Store pay callback
+   - Add `/api/store/orders/{id}/pay/callback` and OSR read; tests.
+6. Stage 6 — Player Market tradepage completion
+   - Dual-confirm logic with platform fee and wallet updates; tests.
+7. Stage 7 — Notifications inbox + read
+   - Implement inbox pagination and mark-read; tests.
+8. Stage 8 — Forums reactions/bookmarks
+   - Complete endpoints and constraints; tests.
+9. Stage 9 — Leaderboard snapshots read API
+   - Expose `/api/leaderboards` and posts with snapshot; tests.
+10. Stage 10 — Background jobs (UTC+8)
+   - Daily pet decay + reset minigame counts; scheduling stub with docs.
+
+Quality Gate per stage: green build, tests green, seeds realistic, one e2e example, README updated. No schema changes.
+
+# GameCore 專案完成度檢查報告
+
 ## 📊 專案概況
 
 **專案名稱**: GameCore  

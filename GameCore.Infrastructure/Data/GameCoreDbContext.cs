@@ -173,6 +173,50 @@ namespace GameCore.Infrastructure.Data
         public DbSet<MiniGame> MiniGames { get; set; }
         #endregion
 
+        #region 點數和錢包相關資料表
+        /// <summary>
+        /// 點數明細表 - 記錄用戶點數的所有變更明細
+        /// </summary>
+        public DbSet<PointLedger> PointLedgers { get; set; }
+
+        /// <summary>
+        /// 優惠券表 - 管理用戶的優惠券資訊
+        /// </summary>
+        public DbSet<Coupon> Coupons { get; set; }
+        #endregion
+
+        #region 銷售相關資料表
+        /// <summary>
+        /// 銷售權限表 - 管理用戶的銷售權限申請和審核
+        /// </summary>
+        public DbSet<SalesPermission> SalesPermissions { get; set; }
+
+        /// <summary>
+        /// 銷售錢包表 - 管理用戶的銷售收益和餘額
+        /// </summary>
+        public DbSet<SalesWallet> SalesWallets { get; set; }
+
+        /// <summary>
+        /// 提現申請表 - 管理用戶的提現申請和處理
+        /// </summary>
+        public DbSet<WithdrawalRequest> WithdrawalRequests { get; set; }
+
+        /// <summary>
+        /// 銷售訂單表 - 管理用戶的銷售訂單資訊
+        /// </summary>
+        public DbSet<SalesOrder> SalesOrders { get; set; }
+
+        /// <summary>
+        /// 銷售商品表 - 管理用戶的銷售商品資訊
+        /// </summary>
+        public DbSet<SalesProduct> SalesProducts { get; set; }
+
+        /// <summary>
+        /// 銷售目標表 - 管理用戶的銷售目標設定和達成情況
+        /// </summary>
+        public DbSet<SalesTarget> SalesTargets { get; set; }
+        #endregion
+
         #region 商城相關資料表
         /// <summary>
         /// 供應商表

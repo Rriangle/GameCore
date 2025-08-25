@@ -4,103 +4,145 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace GameCore.Core.Entities
 {
     /// <summary>
-    /// 統一貼文表 - 洞察與未來UGC都走這
+    /// 統一貼文表 (洞察與未來UGC都走這)
     /// </summary>
     [Table("posts")]
     public class Post
     {
         /// <summary>
-        /// 文章編號 (主鍵)
+        /// 文章ID (主鍵，自動遞增)
         /// </summary>
         [Key]
-        [Column("post_id")]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int PostId { get; set; }
+        public int post_id { get; set; }
 
         /// <summary>
         /// 類型 (insight/user)
         /// </summary>
-        [Column("type")]
+        [Required]
         [StringLength(50)]
-        public string? Type { get; set; }
+        public string type { get; set; } = "insight";
 
         /// <summary>
-        /// 關聯遊戲編號 (可為NULL, 外鍵到 games)
+        /// 關聯遊戲 (可為NULL)
         /// </summary>
-        [Column("game_id")]
         [ForeignKey("Game")]
-        public int? GameId { get; set; }
+        public int? game_id { get; set; }
 
         /// <summary>
         /// 標題
         /// </summary>
-        [Column("title")]
-        [StringLength(200)]
-        public string? Title { get; set; }
+        [Required]
+        [StringLength(500)]
+        public string title { get; set; } = string.Empty;
 
         /// <summary>
         /// 三行摘要 (卡片用)
         /// </summary>
-        [Column("tldr")]
-        [StringLength(500)]
-        public string? Tldr { get; set; }
+        [StringLength(300)]
+        public string? tldr { get; set; }
 
         /// <summary>
         /// 內文 (Markdown)
         /// </summary>
-        [Column("body_md")]
-        public string? BodyMd { get; set; }
+        [StringLength(10000)]
+        public string? body_md { get; set; }
 
         /// <summary>
-        /// 可見性 (public/hidden)
+        /// 可見性 (true=公開, false=隱藏)
         /// </summary>
-        [Column("visibility")]
-        public bool Visibility { get; set; } = true;
+        public bool visibility { get; set; } = true;
 
         /// <summary>
         /// 狀態 (draft/published/hidden)
         /// </summary>
-        [Column("status")]
-        [StringLength(20)]
-        public string? Status { get; set; }
+        [Required]
+        [StringLength(50)]
+        public string status { get; set; } = "draft";
 
         /// <summary>
         /// 是否置頂
         /// </summary>
-        [Column("pinned")]
-        public bool Pinned { get; set; } = false;
+        public bool pinned { get; set; } = false;
 
         /// <summary>
-        /// 作者編號 (外鍵到 Users)
+        /// 作者ID (外鍵到Users)
         /// </summary>
-        [Column("created_by")]
-        [ForeignKey("CreatedByUser")]
-        public int? CreatedBy { get; set; }
+        [Required]
+        [ForeignKey("CreatedBy")]
+        public int created_by { get; set; }
 
         /// <summary>
         /// 發佈時間
         /// </summary>
-        [Column("published_at")]
-        public DateTime? PublishedAt { get; set; }
+        public DateTime? published_at { get; set; }
 
         /// <summary>
         /// 建立時間
         /// </summary>
-        [Column("created_at")]
-        public DateTime? CreatedAt { get; set; }
+        public DateTime created_at { get; set; } = DateTime.UtcNow;
 
         /// <summary>
         /// 更新時間
         /// </summary>
-        [Column("updated_at")]
-        public DateTime? UpdatedAt { get; set; }
+        public DateTime updated_at { get; set; } = DateTime.UtcNow;
+
+        /// <summary>
+        /// 瀏覽次數
+        /// </summary>
+        public int view_count { get; set; } = 0;
+
+        /// <summary>
+        /// 讚數
+        /// </summary>
+        public int like_count { get; set; } = 0;
+
+        /// <summary>
+        /// 收藏數
+        /// </summary>
+        public int bookmark_count { get; set; } = 0;
+
+        /// <summary>
+        /// 標籤
+        /// </summary>
+        [StringLength(500)]
+        public string? tags { get; set; }
+
+        /// <summary>
+        /// 封面圖片URL
+        /// </summary>
+        [StringLength(500)]
+        public string? cover_image_url { get; set; }
 
         // 導航屬性
+        /// <summary>
+        /// 關聯遊戲
+        /// </summary>
         public virtual Game? Game { get; set; }
-        public virtual User? CreatedByUser { get; set; }
+
+        /// <summary>
+        /// 作者
+        /// </summary>
+        public virtual User CreatedBy { get; set; } = null!;
+
+        /// <summary>
+        /// 數據快照
+        /// </summary>
         public virtual PostMetricSnapshot? PostMetricSnapshot { get; set; }
+
+        /// <summary>
+        /// 引用來源
+        /// </summary>
         public virtual ICollection<PostSource> PostSources { get; set; } = new List<PostSource>();
+
+        /// <summary>
+        /// 反應記錄
+        /// </summary>
         public virtual ICollection<Reaction> Reactions { get; set; } = new List<Reaction>();
+
+        /// <summary>
+        /// 收藏記錄
+        /// </summary>
         public virtual ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
     }
 

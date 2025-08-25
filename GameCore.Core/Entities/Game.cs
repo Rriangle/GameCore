@@ -4,48 +4,139 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace GameCore.Core.Entities
 {
     /// <summary>
-    /// 遊戲主檔表 - 列出平台所有遊戲
+    /// 遊戲主檔表
     /// </summary>
     [Table("games")]
     public class Game
     {
         /// <summary>
-        /// 遊戲編號 (主鍵)
+        /// 遊戲ID (主鍵，自動遞增)
         /// </summary>
         [Key]
-        [Column("game_id")]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int GameId { get; set; }
+        public int game_id { get; set; }
 
         /// <summary>
         /// 遊戲名稱
         /// </summary>
-        [Column("name")]
+        [Required]
         [StringLength(200)]
-        public string? Name { get; set; }
+        public string name { get; set; } = string.Empty;
 
         /// <summary>
-        /// 遊戲類型 (FPS/MOBA等)
+        /// 類型 (FPS/MOBA/RPG等)
         /// </summary>
-        [Column("genre")]
+        [Required]
         [StringLength(100)]
-        public string? Genre { get; set; }
+        public string genre { get; set; } = string.Empty;
 
         /// <summary>
         /// 建立時間
         /// </summary>
-        [Column("created_at")]
-        public DateTime? CreatedAt { get; set; }
+        public DateTime created_at { get; set; } = DateTime.UtcNow;
+
+        /// <summary>
+        /// 遊戲描述
+        /// </summary>
+        [StringLength(2000)]
+        public string? Description { get; set; }
+
+        /// <summary>
+        /// 遊戲封面圖片URL
+        /// </summary>
+        [StringLength(500)]
+        public string? CoverImageUrl { get; set; }
+
+        /// <summary>
+        /// 遊戲標籤
+        /// </summary>
+        [StringLength(500)]
+        public string? Tags { get; set; }
+
+        /// <summary>
+        /// 是否啟用
+        /// </summary>
+        public bool IsActive { get; set; } = true;
+
+        /// <summary>
+        /// 排序順序
+        /// </summary>
+        public int SortOrder { get; set; } = 0;
+
+        /// <summary>
+        /// 遊戲平台
+        /// </summary>
+        [StringLength(100)]
+        public string? Platform { get; set; }
+
+        /// <summary>
+        /// 開發商
+        /// </summary>
+        [StringLength(200)]
+        public string? Developer { get; set; }
+
+        /// <summary>
+        /// 發行商
+        /// </summary>
+        [StringLength(200)]
+        public string? Publisher { get; set; }
+
+        /// <summary>
+        /// 發行日期
+        /// </summary>
+        public DateTime? ReleaseDate { get; set; }
+
+        /// <summary>
+        /// 遊戲評分
+        /// </summary>
+        [Column(TypeName = "decimal(3,2)")]
+        public decimal Rating { get; set; } = 0;
+
+        /// <summary>
+        /// 評分數量
+        /// </summary>
+        public int RatingCount { get; set; } = 0;
 
         // 導航屬性
-        public virtual ICollection<GameSourceMap> GameSourceMaps { get; set; } = new List<GameSourceMap>();
-        public virtual ICollection<GameMetricDaily> GameMetricDailies { get; set; } = new List<GameMetricDaily>();
-        public virtual ICollection<PopularityIndexDaily> PopularityIndexDailies { get; set; } = new List<PopularityIndexDaily>();
-        public virtual ICollection<LeaderboardSnapshot> LeaderboardSnapshots { get; set; } = new List<LeaderboardSnapshot>();
-        public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
-        public virtual ICollection<PostMetricSnapshot> PostMetricSnapshots { get; set; } = new List<PostMetricSnapshot>();
+        /// <summary>
+        /// 論壇
+        /// </summary>
         public virtual Forum? Forum { get; set; }
+
+        /// <summary>
+        /// 遊戲來源對應
+        /// </summary>
+        public virtual ICollection<GameSourceMap> GameSourceMaps { get; set; } = new List<GameSourceMap>();
+
+        /// <summary>
+        /// 每日指標
+        /// </summary>
+        public virtual ICollection<GameMetricDaily> GameMetricDailies { get; set; } = new List<GameMetricDaily>();
+
+        /// <summary>
+        /// 熱度指數
+        /// </summary>
+        public virtual ICollection<PopularityIndexDaily> PopularityIndexDailies { get; set; } = new List<PopularityIndexDaily>();
+
+        /// <summary>
+        /// 排行榜快照
+        /// </summary>
+        public virtual ICollection<LeaderboardSnapshot> LeaderboardSnapshots { get; set; } = new List<LeaderboardSnapshot>();
+
+        /// <summary>
+        /// 洞察貼文
+        /// </summary>
+        public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
+
+        /// <summary>
+        /// 遊戲商品詳情
+        /// </summary>
         public virtual ICollection<GameProductDetails> GameProductDetails { get; set; } = new List<GameProductDetails>();
+
+        /// <summary>
+        /// 收藏記錄
+        /// </summary>
+        public virtual ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
     }
 
     /// <summary>

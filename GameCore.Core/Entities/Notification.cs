@@ -60,79 +60,120 @@ namespace GameCore.Core.Entities
     public class Notification
     {
         /// <summary>
-        /// 通知編號 (主鍵)
+        /// 通知ID (主鍵，自動遞增)
         /// </summary>
         [Key]
-        [Column("notification_id")]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int NotificationId { get; set; }
+        public int notification_id { get; set; }
 
         /// <summary>
-        /// 來源類型編號 (外鍵到 Notification_Sources)
+        /// 來源類型ID (外鍵到Notification_Sources)
         /// </summary>
         [Required]
-        [Column("source_id")]
         [ForeignKey("NotificationSource")]
-        public int SourceId { get; set; }
+        public int source_id { get; set; }
 
         /// <summary>
-        /// 行為類型編號 (外鍵到 Notification_Actions)
+        /// 行為類型ID (外鍵到Notification_Actions)
         /// </summary>
         [Required]
-        [Column("action_id")]
         [ForeignKey("NotificationAction")]
-        public int ActionId { get; set; }
+        public int action_id { get; set; }
 
         /// <summary>
-        /// 發送者編號 (外鍵到 Users)
+        /// 發送者ID (外鍵到Users)
         /// </summary>
         [Required]
-        [Column("sender_id")]
-        [ForeignKey("SenderUser")]
-        public int SenderId { get; set; }
+        [ForeignKey("Sender")]
+        public int sender_id { get; set; }
 
         /// <summary>
-        /// 發送者編號 (管理員, 外鍵到 ManagerData)
+        /// 發送者ID(管理員) (外鍵到ManagerRole)
         /// </summary>
-        [Column("sender_manager_id")]
         [ForeignKey("SenderManager")]
-        public int? SenderManagerId { get; set; }
+        public int? sender_manager_id { get; set; }
 
         /// <summary>
         /// 通知標題
         /// </summary>
-        [Column("notification_title")]
         [StringLength(200)]
-        public string? NotificationTitle { get; set; }
+        public string? notification_title { get; set; }
 
         /// <summary>
         /// 通知內容
         /// </summary>
-        [Column("notification_message")]
         [StringLength(1000)]
-        public string? NotificationMessage { get; set; }
+        public string? notification_message { get; set; }
 
         /// <summary>
         /// 建立時間
         /// </summary>
         [Required]
-        [Column("created_at")]
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime created_at { get; set; } = DateTime.UtcNow;
 
         /// <summary>
-        /// 群組編號 (若為群組相關, 外鍵到 Groups)
+        /// 群組ID (若為群組相關)
         /// </summary>
-        [Column("group_id")]
         [ForeignKey("Group")]
-        public int? GroupId { get; set; }
+        public int? group_id { get; set; }
+
+        /// <summary>
+        /// 通知類型 (system/user/group)
+        /// </summary>
+        [StringLength(50)]
+        public string notification_type { get; set; } = "user";
+
+        /// <summary>
+        /// 優先級 (low/normal/high/urgent)
+        /// </summary>
+        [StringLength(20)]
+        public string priority { get; set; } = "normal";
+
+        /// <summary>
+        /// 是否已發送
+        /// </summary>
+        public bool is_sent { get; set; } = false;
+
+        /// <summary>
+        /// 發送時間
+        /// </summary>
+        public DateTime? sent_at { get; set; }
+
+        /// <summary>
+        /// 過期時間
+        /// </summary>
+        public DateTime? expires_at { get; set; }
 
         // 導航屬性
+        /// <summary>
+        /// 通知來源
+        /// </summary>
         public virtual NotificationSource NotificationSource { get; set; } = null!;
+
+        /// <summary>
+        /// 通知行為
+        /// </summary>
         public virtual NotificationAction NotificationAction { get; set; } = null!;
-        public virtual User SenderUser { get; set; } = null!;
+
+        /// <summary>
+        /// 發送者
+        /// </summary>
+        public virtual User Sender { get; set; } = null!;
+
+        /// <summary>
+        /// 發送者管理員
+        /// </summary>
         public virtual ManagerData? SenderManager { get; set; }
+
+        /// <summary>
+        /// 群組
+        /// </summary>
         public virtual Group? Group { get; set; }
-        public virtual ICollection<NotificationRecipient> Recipients { get; set; } = new List<NotificationRecipient>();
+
+        /// <summary>
+        /// 通知接收者
+        /// </summary>
+        public virtual ICollection<NotificationRecipient> NotificationRecipients { get; set; } = new List<NotificationRecipient>();
     }
 
     /// <summary>

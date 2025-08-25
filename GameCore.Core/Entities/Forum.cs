@@ -4,51 +4,98 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace GameCore.Core.Entities
 {
     /// <summary>
-    /// 論壇版面實體
+    /// 論壇版主檔表
     /// </summary>
-    [Table("Forums")]
+    [Table("forums")]
     public class Forum
     {
+        /// <summary>
+        /// 論壇版ID (主鍵，自動遞增)
+        /// </summary>
         [Key]
-        public int ForumId { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int forum_id { get; set; }
 
-        [Required]
-        public int GameId { get; set; }
+        /// <summary>
+        /// 遊戲ID (外鍵到games，一對一)
+        /// </summary>
+        [ForeignKey("Game")]
+        public int? game_id { get; set; }
 
+        /// <summary>
+        /// 版名
+        /// </summary>
         [Required]
         [StringLength(100)]
-        public string Name { get; set; } = string.Empty;
+        public string name { get; set; } = string.Empty;
 
-        [Required]
+        /// <summary>
+        /// 版說明
+        /// </summary>
         [StringLength(500)]
-        public string Description { get; set; } = string.Empty;
+        public string? description { get; set; }
 
-        [Required]
-        public int PostCount { get; set; }
+        /// <summary>
+        /// 建立時間
+        /// </summary>
+        public DateTime created_at { get; set; } = DateTime.UtcNow;
 
-        [Required]
-        public int ReplyCount { get; set; }
+        /// <summary>
+        /// 版主ID
+        /// </summary>
+        public int? ModeratorId { get; set; }
 
-        [Required]
-        public int ViewCount { get; set; }
+        /// <summary>
+        /// 是否啟用
+        /// </summary>
+        public bool IsActive { get; set; } = true;
 
-        [Required]
-        public bool IsActive { get; set; }
+        /// <summary>
+        /// 排序順序
+        /// </summary>
+        public int SortOrder { get; set; } = 0;
 
-        [Required]
-        public int SortOrder { get; set; }
+        /// <summary>
+        /// 今日新貼數量
+        /// </summary>
+        public int TodayPosts { get; set; } = 0;
 
-        [Required]
-        public DateTime CreatedAt { get; set; }
+        /// <summary>
+        /// 活躍用戶數量
+        /// </summary>
+        public int ActiveUsers { get; set; } = 0;
 
-        [Required]
-        public DateTime UpdatedAt { get; set; }
+        /// <summary>
+        /// 總主題數量
+        /// </summary>
+        public int TotalThreads { get; set; } = 0;
+
+        /// <summary>
+        /// 總回覆數量
+        /// </summary>
+        public int TotalPosts { get; set; } = 0;
 
         // 導航屬性
-        [ForeignKey("GameId")]
-        public virtual Game Game { get; set; } = null!;
+        /// <summary>
+        /// 遊戲
+        /// </summary>
+        public virtual Game? Game { get; set; }
 
-        public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
+        /// <summary>
+        /// 版主
+        /// </summary>
+        [ForeignKey("ModeratorId")]
+        public virtual User? Moderator { get; set; }
+
+        /// <summary>
+        /// 主題列表
+        /// </summary>
+        public virtual ICollection<Thread> Threads { get; set; } = new List<Thread>();
+
+        /// <summary>
+        /// 收藏記錄
+        /// </summary>
+        public virtual ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
     }
 
     /// <summary>

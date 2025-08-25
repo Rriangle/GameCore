@@ -10,61 +10,163 @@ namespace GameCore.Core.Entities
     public class User
     {
         /// <summary>
-        /// 使用者編號 (主鍵)
+        /// 使用者編號 (主鍵，自動遞增)
         /// </summary>
         [Key]
-        [Column("User_ID")]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int UserId { get; set; }
+        public int User_ID { get; set; }
 
         /// <summary>
-        /// 使用者姓名 (唯一)
+        /// 使用者姓名 (必填，唯一)
         /// </summary>
         [Required]
-        [Column("User_name")]
         [StringLength(100)]
-        public string UserName { get; set; } = string.Empty;
+        public string User_name { get; set; } = string.Empty;
 
         /// <summary>
-        /// 登入帳號 (唯一)
+        /// 登入帳號 (必填，唯一)
         /// </summary>
         [Required]
-        [Column("User_Account")]
         [StringLength(100)]
-        public string UserAccount { get; set; } = string.Empty;
+        public string User_Account { get; set; } = string.Empty;
 
         /// <summary>
-        /// 使用者密碼 (雜湊儲存)
+        /// 使用者密碼 (必填，雜湊儲存)
         /// </summary>
         [Required]
-        [Column("User_Password")]
         [StringLength(255)]
-        public string UserPassword { get; set; } = string.Empty;
+        public string User_Password { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 建立時間
+        /// </summary>
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        /// <summary>
+        /// 最後更新時間
+        /// </summary>
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        /// <summary>
+        /// 是否啟用
+        /// </summary>
+        public bool IsActive { get; set; } = true;
 
         // 導航屬性
+        /// <summary>
+        /// 使用者介紹
+        /// </summary>
         public virtual UserIntroduce? UserIntroduce { get; set; }
+
+        /// <summary>
+        /// 使用者權限
+        /// </summary>
         public virtual UserRights? UserRights { get; set; }
+
+        /// <summary>
+        /// 使用者錢包
+        /// </summary>
         public virtual UserWallet? UserWallet { get; set; }
+
+        /// <summary>
+        /// 銷售資料
+        /// </summary>
         public virtual MemberSalesProfile? MemberSalesProfile { get; set; }
+
+        /// <summary>
+        /// 銷售錢包
+        /// </summary>
         public virtual UserSalesInformation? UserSalesInformation { get; set; }
+
+        /// <summary>
+        /// 寵物
+        /// </summary>
         public virtual Pet? Pet { get; set; }
-        public virtual ICollection<UserSignInStats> SignInStats { get; set; } = new List<UserSignInStats>();
+
+        /// <summary>
+        /// 簽到記錄
+        /// </summary>
+        public virtual ICollection<UserSignInStats> UserSignInStats { get; set; } = new List<UserSignInStats>();
+
+        /// <summary>
+        /// 小遊戲記錄
+        /// </summary>
         public virtual ICollection<MiniGame> MiniGames { get; set; } = new List<MiniGame>();
-        public virtual ICollection<Thread> Threads { get; set; } = new List<Thread>();
-        public virtual ICollection<ThreadPost> ThreadPosts { get; set; } = new List<ThreadPost>();
-        public virtual ICollection<Reaction> Reactions { get; set; } = new List<Reaction>();
-        public virtual ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
+
+        /// <summary>
+        /// 發表的文章
+        /// </summary>
         public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
-        public virtual ICollection<OrderInfo> Orders { get; set; } = new List<OrderInfo>();
-        public virtual ICollection<PlayerMarketProductInfo> PlayerMarketProducts { get; set; } = new List<PlayerMarketProductInfo>();
-        public virtual ICollection<PlayerMarketOrderInfo> PlayerMarketOrders { get; set; } = new List<PlayerMarketOrderInfo>();
-        public virtual ICollection<Notification> SentNotifications { get; set; } = new List<Notification>();
-        public virtual ICollection<NotificationRecipient> ReceivedNotifications { get; set; } = new List<NotificationRecipient>();
-        public virtual ICollection<ChatMessage> SentMessages { get; set; } = new List<ChatMessage>();
-        public virtual ICollection<ChatMessage> ReceivedMessages { get; set; } = new List<ChatMessage>();
-        public virtual ICollection<Group> CreatedGroups { get; set; } = new List<Group>();
-        public virtual ICollection<GroupMember> GroupMemberships { get; set; } = new List<GroupMember>();
+
+        /// <summary>
+        /// 發表的論壇主題
+        /// </summary>
+        public virtual ICollection<Thread> Threads { get; set; } = new List<Thread>();
+
+        /// <summary>
+        /// 論壇回覆
+        /// </summary>
+        public virtual ICollection<ThreadPost> ThreadPosts { get; set; } = new List<ThreadPost>();
+
+        /// <summary>
+        /// 反應記錄
+        /// </summary>
+        public virtual ICollection<Reaction> Reactions { get; set; } = new List<Reaction>();
+
+        /// <summary>
+        /// 收藏記錄
+        /// </summary>
+        public virtual ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
+
+        /// <summary>
+        /// 通知
+        /// </summary>
+        public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+
+        /// <summary>
+        /// 通知接收者
+        /// </summary>
+        public virtual ICollection<NotificationRecipient> NotificationRecipients { get; set; } = new List<NotificationRecipient>();
+
+        /// <summary>
+        /// 聊天訊息
+        /// </summary>
+        public virtual ICollection<ChatMessage> ChatMessages { get; set; } = new List<ChatMessage>();
+
+        /// <summary>
+        /// 群組成員
+        /// </summary>
+        public virtual ICollection<GroupMember> GroupMembers { get; set; } = new List<GroupMember>();
+
+        /// <summary>
+        /// 群組聊天
+        /// </summary>
         public virtual ICollection<GroupChat> GroupChats { get; set; } = new List<GroupChat>();
+
+        /// <summary>
+        /// 群組封鎖
+        /// </summary>
+        public virtual ICollection<GroupBlock> GroupBlocks { get; set; } = new List<GroupBlock>();
+
+        /// <summary>
+        /// 官方商城訂單
+        /// </summary>
+        public virtual ICollection<OrderInfo> OrderInfos { get; set; } = new List<OrderInfo>();
+
+        /// <summary>
+        /// 自由市場商品
+        /// </summary>
+        public virtual ICollection<PlayerMarketProductInfo> PlayerMarketProducts { get; set; } = new List<PlayerMarketProductInfo>();
+
+        /// <summary>
+        /// 自由市場訂單 (買家)
+        /// </summary>
+        public virtual ICollection<PlayerMarketOrderInfo> BuyerOrders { get; set; } = new List<PlayerMarketOrderInfo>();
+
+        /// <summary>
+        /// 自由市場訂單 (賣家)
+        /// </summary>
+        public virtual ICollection<PlayerMarketOrderInfo> SellerOrders { get; set; } = new List<PlayerMarketOrderInfo>();
     }
 
     /// <summary>

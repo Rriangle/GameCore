@@ -85,9 +85,23 @@ GameCore 是一個功能完整的遊戲社群平台，整合了寵物養成、�
    dotnet run --project GameCore.Web
    ```
 
+6. **執行測試**
+   ```bash
+   dotnet test --collect:"XPlat Code Coverage"
+   ```
+
 6. **開啟瀏覽器**
    - 訪問 `https://localhost:5001`
    - 使用測試帳號登入
+
+### API 範例（Stage 1 — Wallet）
+
+在已登入的狀態下，呼叫錢包 API：
+
+```bash
+curl -s -X GET https://localhost:5001/api/wallet/balance -b cookies.txt
+curl -s -X GET https://localhost:5001/api/wallet -b cookies.txt
+```
 
 ### 測試帳號
 

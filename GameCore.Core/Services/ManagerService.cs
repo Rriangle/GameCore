@@ -1,6 +1,7 @@
 using GameCore.Core.Entities;
 using GameCore.Core.Interfaces;
 using GameCore.Core.Services;
+using GameCore.Core.DTOs;
 using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 using System.Text;

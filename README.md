@@ -1,12 +1,11 @@
-# 🎮 GameCore 遊戲社群平台
+# GameCore - 企業級遊戲社群生態系統
 
-[![.NET](https://github.com/gamecore/gamecore/workflows/.NET/badge.svg)](https://github.com/gamecore/gamecore/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![.NET Version](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/download/dotnet/8.0)
+[![Build Status](https://github.com/your-org/GameCore/workflows/CI/badge.svg)](https://github.com/your-org/GameCore/actions)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=GameCore&metric=alert_status)](https://sonarcloud.io/dashboard?id=GameCore)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=GameCore&metric=security_rating)](https://sonarcloud.io/dashboard?id=GameCore)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=GameCore&metric=coverage)](https://sonarcloud.io/dashboard?id=GameCore)
 
-## 📖 專案簡介
-
-GameCore 是一個功能完整的遊戲社群平台，整合了寵物養成、每日簽到、小冒險遊戲、論壇討論、商城交易等多元功能。採用現代化的玻璃擬態設計風格，提供優質的使用者體驗。
+GameCore 是一個功能完整的企業級遊戲社群平台，整合了寵物養成、虛擬經濟、社交互動、內容管理等多種功能，採用現代化的微服務架構和最佳實務設計。
 
 ### ✨ 主要特色
 

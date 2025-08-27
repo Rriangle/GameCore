@@ -60,8 +60,7 @@ namespace GameCore.Core.Entities
         /// <summary>
         /// 售價
         /// </summary>
-        [Column("price")]
-        [Column(TypeName = "decimal(18,2)")]
+        [Column("price", TypeName = "decimal(18,2)")]
         public decimal Price { get; set; }
 
         /// <summary>
@@ -325,8 +324,7 @@ namespace GameCore.Core.Entities
         /// <summary>
         /// 訂單總額
         /// </summary>
-        [Column("order_total")]
-        [Column(TypeName = "decimal(18,2)")]
+        [Column("order_total", TypeName = "decimal(18,2)")]
         public decimal OrderTotal { get; set; }
 
         /// <summary>
@@ -352,64 +350,7 @@ namespace GameCore.Core.Entities
         public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }
 
-    /// <summary>
-    /// 訂單詳細表
-    /// </summary>
-    [Table("OrderItems")]
-    public class OrderItem
-    {
-        /// <summary>
-        /// 訂單詳細編號 (主鍵)
-        /// </summary>
-        [Key]
-        [Column("item_id")]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int ItemId { get; set; }
 
-        /// <summary>
-        /// 訂單編號 (外鍵到 OrderInfo)
-        /// </summary>
-        [Column("order_id")]
-        [ForeignKey("OrderInfo")]
-        public int OrderId { get; set; }
-
-        /// <summary>
-        /// 商品編號 (外鍵到 ProductInfo)
-        /// </summary>
-        [Column("product_id")]
-        [ForeignKey("ProductInfo")]
-        public int ProductId { get; set; }
-
-        /// <summary>
-        /// 實際物品編號 1.2.3…
-        /// </summary>
-        [Column("line_no")]
-        public int LineNo { get; set; }
-
-        /// <summary>
-        /// 單價
-        /// </summary>
-        [Column("unit_price")]
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal UnitPrice { get; set; }
-
-        /// <summary>
-        /// 下單數量
-        /// </summary>
-        [Column("quantity")]
-        public int Quantity { get; set; }
-
-        /// <summary>
-        /// 小計
-        /// </summary>
-        [Column("subtotal")]
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal Subtotal { get; set; }
-
-        // 導航屬性
-        public virtual OrderInfo OrderInfo { get; set; } = null!;
-        public virtual ProductInfo ProductInfo { get; set; } = null!;
-    }
 
     /// <summary>
     /// 官方商城排行榜表
@@ -461,8 +402,7 @@ namespace GameCore.Core.Entities
         /// <summary>
         /// 交易額
         /// </summary>
-        [Column("trading_amount")]
-        [Column(TypeName = "decimal(18,2)")]
+        [Column("trading_amount", TypeName = "decimal(18,2)")]
         public decimal TradingAmount { get; set; }
 
         /// <summary>
@@ -546,5 +486,309 @@ namespace GameCore.Core.Entities
         // 導航屬性
         public virtual ProductInfo ProductInfo { get; set; } = null!;
         public virtual ManagerData? ManagerData { get; set; }
+    }
+
+    /// <summary>
+    /// 商城產品實體
+    /// </summary>
+    [Table("store_products")]
+    public class StoreProduct
+    {
+        /// <summary>
+        /// 產品編號 (主鍵)
+        /// </summary>
+        [Key]
+        [Column("product_id")]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int ProductId { get; set; }
+
+        /// <summary>
+        /// 產品名稱
+        /// </summary>
+        [Required]
+        [Column("product_name")]
+        [StringLength(200)]
+        public string ProductName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 產品描述
+        /// </summary>
+        [Column("description")]
+        public string? Description { get; set; }
+
+        /// <summary>
+        /// 產品價格
+        /// </summary>
+        [Required]
+        [Column("price")]
+        [Range(0, double.MaxValue)]
+        public decimal Price { get; set; }
+
+        /// <summary>
+        /// 產品類別
+        /// </summary>
+        [Required]
+        [Column("category")]
+        [StringLength(50)]
+        public string Category { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 庫存數量
+        /// </summary>
+        [Column("stock_quantity")]
+        public int StockQuantity { get; set; } = 0;
+
+        /// <summary>
+        /// 是否啟用
+        /// </summary>
+        [Column("is_active")]
+        public bool IsActive { get; set; } = true;
+
+        /// <summary>
+        /// 建立時間
+        /// </summary>
+        [Column("created_at")]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        /// <summary>
+        /// 更新時間
+        /// </summary>
+        [Column("updated_at")]
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        // 導航屬性
+        public virtual ICollection<ShoppingCartItem> CartItems { get; set; } = new List<ShoppingCartItem>();
+        public virtual ICollection<StoreOrderItem> OrderItems { get; set; } = new List<StoreOrderItem>();
+    }
+
+    /// <summary>
+    /// 購物車實體
+    /// </summary>
+    [Table("shopping_carts")]
+    public class ShoppingCart
+    {
+        /// <summary>
+        /// 購物車編號 (主鍵)
+        /// </summary>
+        [Key]
+        [Column("cart_id")]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int CartId { get; set; }
+
+        /// <summary>
+        /// 使用者編號 (外鍵)
+        /// </summary>
+        [Required]
+        [Column("user_id")]
+        [ForeignKey("User")]
+        public int UserId { get; set; }
+
+        /// <summary>
+        /// 建立時間
+        /// </summary>
+        [Column("created_at")]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        /// <summary>
+        /// 更新時間
+        /// </summary>
+        [Column("updated_at")]
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        // 導航屬性
+        public virtual User User { get; set; } = null!;
+        public virtual ICollection<ShoppingCartItem> Items { get; set; } = new List<ShoppingCartItem>();
+    }
+
+    /// <summary>
+    /// 購物車項目實體
+    /// </summary>
+    [Table("shopping_cart_items")]
+    public class ShoppingCartItem
+    {
+        /// <summary>
+        /// 項目編號 (主鍵)
+        /// </summary>
+        [Key]
+        [Column("item_id")]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int ItemId { get; set; }
+
+        /// <summary>
+        /// 購物車編號 (外鍵)
+        /// </summary>
+        [Required]
+        [Column("cart_id")]
+        [ForeignKey("ShoppingCart")]
+        public int CartId { get; set; }
+
+        /// <summary>
+        /// 產品編號 (外鍵)
+        /// </summary>
+        [Required]
+        [Column("product_id")]
+        [ForeignKey("StoreProduct")]
+        public int ProductId { get; set; }
+
+        /// <summary>
+        /// 數量
+        /// </summary>
+        [Required]
+        [Column("quantity")]
+        [Range(1, int.MaxValue)]
+        public int Quantity { get; set; }
+
+        /// <summary>
+        /// 單價
+        /// </summary>
+        [Required]
+        [Column("unit_price")]
+        [Range(0, double.MaxValue)]
+        public decimal UnitPrice { get; set; }
+
+        /// <summary>
+        /// 加入時間
+        /// </summary>
+        [Column("added_at")]
+        public DateTime AddedAt { get; set; } = DateTime.UtcNow;
+
+        // 導航屬性
+        public virtual ShoppingCart ShoppingCart { get; set; } = null!;
+        public virtual StoreProduct StoreProduct { get; set; } = null!;
+    }
+
+    /// <summary>
+    /// 商城訂單實體
+    /// </summary>
+    [Table("store_orders")]
+    public class StoreOrder
+    {
+        /// <summary>
+        /// 訂單編號 (主鍵)
+        /// </summary>
+        [Key]
+        [Column("order_id")]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int OrderId { get; set; }
+
+        /// <summary>
+        /// 訂單號碼
+        /// </summary>
+        [Required]
+        [Column("order_number")]
+        [StringLength(50)]
+        public string OrderNumber { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 使用者編號 (外鍵)
+        /// </summary>
+        [Required]
+        [Column("user_id")]
+        [ForeignKey("User")]
+        public int UserId { get; set; }
+
+        /// <summary>
+        /// 訂單狀態
+        /// </summary>
+        [Required]
+        [Column("status")]
+        [StringLength(20)]
+        public string Status { get; set; } = "pending";
+
+        /// <summary>
+        /// 總金額
+        /// </summary>
+        [Required]
+        [Column("total_amount")]
+        [Range(0, double.MaxValue)]
+        public decimal TotalAmount { get; set; }
+
+        /// <summary>
+        /// 運送地址
+        /// </summary>
+        [Column("shipping_address")]
+        public string? ShippingAddress { get; set; }
+
+        /// <summary>
+        /// 付款方式
+        /// </summary>
+        [Column("payment_method")]
+        [StringLength(50)]
+        public string? PaymentMethod { get; set; }
+
+        /// <summary>
+        /// 建立時間
+        /// </summary>
+        [Column("created_at")]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        /// <summary>
+        /// 更新時間
+        /// </summary>
+        [Column("updated_at")]
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        // 導航屬性
+        public virtual User User { get; set; } = null!;
+        public virtual ICollection<StoreOrderItem> Items { get; set; } = new List<StoreOrderItem>();
+    }
+
+    /// <summary>
+    /// 商城訂單項目實體
+    /// </summary>
+    [Table("store_order_items")]
+    public class StoreOrderItem
+    {
+        /// <summary>
+        /// 項目編號 (主鍵)
+        /// </summary>
+        [Key]
+        [Column("item_id")]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int ItemId { get; set; }
+
+        /// <summary>
+        /// 訂單編號 (外鍵)
+        /// </summary>
+        [Required]
+        [Column("order_id")]
+        [ForeignKey("StoreOrder")]
+        public int OrderId { get; set; }
+
+        /// <summary>
+        /// 產品編號 (外鍵)
+        /// </summary>
+        [Required]
+        [Column("product_id")]
+        [ForeignKey("StoreProduct")]
+        public int ProductId { get; set; }
+
+        /// <summary>
+        /// 數量
+        /// </summary>
+        [Required]
+        [Column("quantity")]
+        [Range(1, int.MaxValue)]
+        public int Quantity { get; set; }
+
+        /// <summary>
+        /// 單價
+        /// </summary>
+        [Required]
+        [Column("unit_price")]
+        [Range(0, double.MaxValue)]
+        public decimal UnitPrice { get; set; }
+
+        /// <summary>
+        /// 小計
+        /// </summary>
+        [Required]
+        [Column("subtotal")]
+        [Range(0, double.MaxValue)]
+        public decimal Subtotal { get; set; }
+
+        // 導航屬性
+        public virtual StoreOrder StoreOrder { get; set; } = null!;
+        public virtual StoreProduct StoreProduct { get; set; } = null!;
     }
 }

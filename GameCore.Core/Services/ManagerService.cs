@@ -1,5 +1,6 @@
 using GameCore.Core.Entities;
 using GameCore.Core.Interfaces;
+using GameCore.Core.DTOs;
 using GameCore.Core.Services;
 using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
@@ -650,6 +651,63 @@ namespace GameCore.Core.Services
                 LastLoginAt = manager.LastLoginAt,
                 Permissions = permissions
             };
+        }
+
+        public async Task<ManagerUpdateResult> UpdateManagerRoleAsync(int managerId, int updaterId, string newRole)
+        {
+            try
+            {
+                var manager = await _managerRepository.GetByIdAsync(managerId);
+                if (manager == null)
+                {
+                    return new ManagerUpdateResult
+                    {
+                        Success = false,
+                        Message = "管理員不存在"
+                    };
+                }
+
+                manager.Role = newRole;
+                manager.UpdatedAt = DateTime.UtcNow;
+                _managerRepository.Update(manager);
+                await _unitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("管理員角色更新成功: {ManagerId} -> {NewRole}", managerId, newRole);
+
+                return new ManagerUpdateResult
+                {
+                    Success = true,
+                    Message = "角色更新成功"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "更新管理員角色失敗: {ManagerId}", managerId);
+                return new ManagerUpdateResult
+                {
+                    Success = false,
+                    Message = "更新失敗"
+                };
+            }
+        }
+
+        public async Task<IEnumerable<ManagerRolePermissionDto>> GetRolePermissionsAsync(string role)
+        {
+            try
+            {
+                var permissions = await _managerRolePermissionRepository.GetByRoleAsync(role);
+                return permissions.Select(p => new ManagerRolePermissionDto
+                {
+                    Role = p.Role,
+                    Permission = p.Permission,
+                    Description = p.Description
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "獲取角色權限失敗: {Role}", role);
+                return Enumerable.Empty<ManagerRolePermissionDto>();
+            }
         }
 
         private string HashPassword(string password)

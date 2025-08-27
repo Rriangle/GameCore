@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using GameCore.Core.DTOs;
 
 namespace GameCore.Core.Entities
 {

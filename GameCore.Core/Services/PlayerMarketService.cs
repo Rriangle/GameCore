@@ -1,5 +1,6 @@
 using GameCore.Core.Entities;
 using GameCore.Core.Interfaces;
+using GameCore.Core.DTOs;
 using GameCore.Core.Services;
 using Microsoft.Extensions.Logging;
 
@@ -591,6 +592,236 @@ namespace GameCore.Core.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "延長市場商品過期時間失敗: {MarketItemId}", marketItemId);
+                return false;
+            }
+        }
+
+        public async Task<IEnumerable<Entities.PlayerMarketItem>> GetActiveItemsAsync(string? category = null, decimal? minPrice = null, decimal? maxPrice = null, int page = 1, int pageSize = 20)
+        {
+            try
+            {
+                return await _playerMarketRepository.GetActiveItemsAsync(category, minPrice, maxPrice, page, pageSize);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "獲取活躍商品失敗");
+                return Enumerable.Empty<Entities.PlayerMarketItem>();
+            }
+        }
+
+        public async Task<IEnumerable<Entities.PlayerMarketItem>> SearchItemsAsync(string keyword, string? category = null, decimal? minPrice = null, decimal? maxPrice = null, int page = 1, int pageSize = 20)
+        {
+            try
+            {
+                return await _playerMarketRepository.SearchItemsAsync(keyword, category, minPrice, maxPrice, page, pageSize);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "搜尋商品失敗");
+                return Enumerable.Empty<Entities.PlayerMarketItem>();
+            }
+        }
+
+        public async Task<Entities.PlayerMarketItem?> GetItemAsync(int itemId)
+        {
+            try
+            {
+                return await _playerMarketRepository.GetByIdAsync(itemId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "獲取商品失敗: {ItemId}", itemId);
+                return null;
+            }
+        }
+
+        public async Task<ItemCreateResult> CreateItemAsync(int userId, ItemCreate itemCreate)
+        {
+            try
+            {
+                var item = new PlayerMarketItem
+                {
+                    SellerId = userId,
+                    Title = itemCreate.Title,
+                    Description = itemCreate.Description,
+                    Price = itemCreate.Price,
+                    Category = itemCreate.Category,
+                    Condition = itemCreate.Condition,
+                    ImageUrl = itemCreate.ImageUrl,
+                    Status = MarketItemStatus.Active,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    ExpiresAt = DateTime.UtcNow.AddDays(30)
+                };
+
+                _playerMarketRepository.Add(item);
+                await _unitOfWork.SaveChangesAsync();
+
+                return new ItemCreateResult
+                {
+                    Success = true,
+                    Message = "商品創建成功",
+                    ItemId = item.Id
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "創建商品失敗: {UserId}", userId);
+                return new ItemCreateResult
+                {
+                    Success = false,
+                    Message = "商品創建失敗"
+                };
+            }
+        }
+
+        public async Task<bool> UpdateItemAsync(int itemId, int userId, ItemUpdate itemUpdate)
+        {
+            try
+            {
+                var item = await _playerMarketRepository.GetByIdAsync(itemId);
+                if (item == null || item.SellerId != userId) return false;
+
+                item.Title = itemUpdate.Title;
+                item.Description = itemUpdate.Description;
+                item.Price = itemUpdate.Price;
+                item.Category = itemUpdate.Category;
+                item.Condition = itemUpdate.Condition;
+                item.ImageUrl = itemUpdate.ImageUrl;
+                item.UpdatedAt = DateTime.UtcNow;
+
+                _playerMarketRepository.Update(item);
+                await _unitOfWork.SaveChangesAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "更新商品失敗: {ItemId}", itemId);
+                return false;
+            }
+        }
+
+        public async Task<bool> DeactivateItemAsync(int itemId, int userId)
+        {
+            try
+            {
+                var item = await _playerMarketRepository.GetByIdAsync(itemId);
+                if (item == null || item.SellerId != userId) return false;
+
+                item.Status = MarketItemStatus.Inactive;
+                item.UpdatedAt = DateTime.UtcNow;
+
+                _playerMarketRepository.Update(item);
+                await _unitOfWork.SaveChangesAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "下架商品失敗: {ItemId}", itemId);
+                return false;
+            }
+        }
+
+        public async Task<IEnumerable<Entities.PlayerMarketItem>> GetItemsByUserAsync(int userId, int page, int pageSize)
+        {
+            try
+            {
+                return await _playerMarketRepository.GetBySellerIdAsync(userId, page, pageSize);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "獲取用戶商品失敗: {UserId}", userId);
+                return Enumerable.Empty<Entities.PlayerMarketItem>();
+            }
+        }
+
+        public async Task<IEnumerable<string>> GetItemCategoriesAsync()
+        {
+            try
+            {
+                return await _playerMarketRepository.GetCategoriesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "獲取商品分類失敗");
+                return Enumerable.Empty<string>();
+            }
+        }
+
+        public async Task<bool> PurchaseItemAsync(int buyerId, int itemId)
+        {
+            try
+            {
+                return await _playerMarketRepository.PurchaseItemAsync(buyerId, itemId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "購買商品失敗: {BuyerId}, {ItemId}", buyerId, itemId);
+                return false;
+            }
+        }
+
+        public async Task<IEnumerable<TransactionDto>> GetTransactionsByUserAsync(int userId, int page, int pageSize)
+        {
+            try
+            {
+                var transactions = await _playerMarketRepository.GetTransactionsByUserAsync(userId, page, pageSize);
+                return transactions.Select(t => new TransactionDto
+                {
+                    Id = t.Id,
+                    ItemId = t.ItemId,
+                    SellerId = t.SellerId,
+                    BuyerId = t.BuyerId,
+                    Price = t.Price,
+                    Status = t.Status,
+                    CreatedAt = t.CreatedAt,
+                    CompletedAt = t.CompletedAt
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "獲取用戶交易失敗: {UserId}", userId);
+                return Enumerable.Empty<TransactionDto>();
+            }
+        }
+
+        public async Task<bool> ConfirmTransactionAsync(int userId, int transactionId)
+        {
+            try
+            {
+                return await _playerMarketRepository.ConfirmTransactionAsync(userId, transactionId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "確認交易失敗: {UserId}, {TransactionId}", userId, transactionId);
+                return false;
+            }
+        }
+
+        public async Task<bool> CancelTransactionAsync(int userId, int transactionId)
+        {
+            try
+            {
+                return await _playerMarketRepository.CancelTransactionAsync(userId, transactionId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "取消交易失敗: {UserId}, {TransactionId}", userId, transactionId);
+                return false;
+            }
+        }
+
+        public async Task<bool> ReviewTransactionAsync(int userId, int transactionId, TransactionReview review)
+        {
+            try
+            {
+                return await _playerMarketRepository.ReviewTransactionAsync(userId, transactionId, review);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "評價交易失敗: {UserId}, {TransactionId}", userId, transactionId);
                 return false;
             }
         }

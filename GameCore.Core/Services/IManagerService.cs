@@ -1,4 +1,5 @@
 using GameCore.Core.Services;
+using GameCore.Core.DTOs;
 
 namespace GameCore.Core.Services
 {
@@ -13,10 +14,10 @@ namespace GameCore.Core.Services
         Task<IEnumerable<string>> GetManagerPermissionsAsync(int managerId);
         Task<IEnumerable<ManagerDto>> GetAllManagersAsync();
         Task<ManagerCreateResult> CreateManagerAsync(ManagerCreateDto createDto);
-        Task<ManagerUpdateResult> UpdateManagerRoleAsync(int managerId, int updaterId, ManagerRole newRole);
+        Task<ManagerUpdateResult> UpdateManagerRoleAsync(int managerId, int updaterId, string newRole);
         Task<ManagerUpdateResult> ActivateManagerAsync(int managerId, int updaterId);
         Task<ManagerUpdateResult> DeactivateManagerAsync(int managerId, int updaterId);
-        Task<IEnumerable<ManagerRolePermissionDto>> GetRolePermissionsAsync(ManagerRole role);
+        Task<IEnumerable<ManagerRolePermissionDto>> GetRolePermissionsAsync(string role);
         Task<bool> ExistsAsync(int managerId);
         Task<bool> ExistsByUsernameAsync(string username);
         Task<bool> ExistsByEmailAsync(string email);

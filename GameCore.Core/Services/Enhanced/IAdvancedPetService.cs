@@ -1,4 +1,5 @@
 using GameCore.Core.Entities;
+using GameCore.Core.DTOs;
 
 namespace GameCore.Core.Services.Enhanced
 {

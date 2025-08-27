@@ -61,12 +61,13 @@ namespace GameCore.Web.Controllers
             try
             {
                 var userId = GetCurrentUserId();
-                var post = await _forumService.CreatePostAsync(
-                    userId, 
-                    request.ForumId, 
-                    request.Title, 
-                    request.Content, 
-                    request.Tags);
+                var postCreate = new PostCreateDto
+                {
+                    ForumId = request.ForumId,
+                    Title = request.Title,
+                    Content = request.Content
+                };
+                var post = await _forumService.CreatePostAsync(userId, postCreate);
                 return Ok(new { Success = true, Data = post, Message = "貼文創建成功" });
             }
             catch (InvalidOperationException ex)
@@ -129,7 +130,7 @@ namespace GameCore.Web.Controllers
             try
             {
                 var userId = GetCurrentUserId();
-                await _forumService.LikePostAsync(id, userId);
+                await _forumService.LikePostAsync(userId, id);
                 return Ok(new { Success = true, Message = "貼文按讚成功" });
             }
             catch (InvalidOperationException ex)
@@ -150,7 +151,7 @@ namespace GameCore.Web.Controllers
             try
             {
                 var userId = GetCurrentUserId();
-                await _forumService.UnlikePostAsync(id, userId);
+                await _forumService.UnlikePostAsync(userId, id);
                 return Ok(new { Success = true, Message = "取消按讚成功" });
             }
             catch (InvalidOperationException ex)
@@ -171,7 +172,7 @@ namespace GameCore.Web.Controllers
             try
             {
                 var userId = GetCurrentUserId();
-                await _forumService.BookmarkPostAsync(id, userId);
+                await _forumService.BookmarkPostAsync(userId, id);
                 return Ok(new { Success = true, Message = "貼文收藏成功" });
             }
             catch (InvalidOperationException ex)

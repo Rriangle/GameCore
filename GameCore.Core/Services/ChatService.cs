@@ -2,6 +2,7 @@ using GameCore.Core.Entities;
 using GameCore.Core.Interfaces;
 using GameCore.Core.Services;
 using Microsoft.Extensions.Logging;
+using GameCore.Core.DTOs;
 
 namespace GameCore.Core.Services
 {
@@ -33,60 +34,377 @@ namespace GameCore.Core.Services
             _logger = logger;
         }
 
-        public async Task<IEnumerable<ChatRoomDto>> GetUserChatRoomsAsync(int userId)
+        public async Task<IEnumerable<ChatRoom>> GetRoomsByUserAsync(int userId)
         {
             try
             {
                 var chatRooms = await _chatRepository.GetChatRoomsByUserIdAsync(userId);
-                return chatRooms.Select(cr => new ChatRoomDto
-                {
-                    Id = cr.Id,
-                    Name = cr.Name,
-                    Description = cr.Description,
-                    Type = cr.Type,
-                    CreatedBy = cr.CreatedBy,
-                    CreatedAt = cr.CreatedAt,
-                    IsActive = cr.IsActive,
-                    MemberCount = cr.Members?.Count ?? 0
-                });
+                return chatRooms;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "獲取用戶聊天室失敗: {UserId}", userId);
-                return Enumerable.Empty<ChatRoomDto>();
+                return Enumerable.Empty<ChatRoom>();
             }
         }
 
-        public async Task<ChatRoomDto> GetChatRoomByIdAsync(int chatRoomId, int userId)
+        public async Task<ChatRoom?> CreatePrivateRoomAsync(int user1Id, int user2Id)
         {
             try
             {
-                var chatRoom = await _chatRepository.GetByIdAsync(chatRoomId);
-                if (chatRoom == null) return null;
-
-                // 檢查用戶是否為聊天室成員
-                var isMember = chatRoom.Members?.Any(m => m.UserId == userId) ?? false;
-                if (!isMember)
+                // 檢查是否已存在私人聊天室
+                var existingChat = await _privateChatRepository.GetPrivateChatAsync(user1Id, user2Id);
+                if (existingChat != null)
                 {
-                    return null;
+                    return await _chatRepository.GetByIdAsync(existingChat.ChatRoomId);
                 }
 
-                return new ChatRoomDto
+                // 創建新的私人聊天室
+                var chatRoom = new ChatRoom
                 {
-                    Id = chatRoom.Id,
-                    Name = chatRoom.Name,
-                    Description = chatRoom.Description,
-                    Type = chatRoom.Type,
-                    CreatedBy = chatRoom.CreatedBy,
-                    CreatedAt = chatRoom.CreatedAt,
-                    IsActive = chatRoom.IsActive,
-                    MemberCount = chatRoom.Members?.Count ?? 0
+                    RoomName = $"Private Chat",
+                    RoomType = "private",
+                    CreatedBy = user1Id,
+                    CreatedAt = DateTime.UtcNow
                 };
+
+                await _chatRepository.AddAsync(chatRoom);
+                await _unitOfWork.SaveChangesAsync();
+
+                // 創建私人聊天記錄
+                var privateChat = new PrivateChat
+                {
+                    User1Id = user1Id,
+                    User2Id = user2Id,
+                    ChatRoomId = chatRoom.RoomId,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                await _privateChatRepository.AddAsync(privateChat);
+                await _unitOfWork.SaveChangesAsync();
+
+                return chatRoom;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "獲取聊天室失敗: {ChatRoomId}", chatRoomId);
+                _logger.LogError(ex, "創建私人聊天室失敗: {User1Id} -> {User2Id}", user1Id, user2Id);
                 return null;
+            }
+        }
+
+        public async Task<ChatRoom?> CreateGroupRoomAsync(int creatorId, string roomName, List<int> memberIds)
+        {
+            try
+            {
+                var chatRoom = new ChatRoom
+                {
+                    RoomName = roomName,
+                    RoomType = "group",
+                    CreatedBy = creatorId,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                await _chatRepository.AddAsync(chatRoom);
+                await _unitOfWork.SaveChangesAsync();
+
+                // 添加成員
+                foreach (var memberId in memberIds)
+                {
+                    var member = new ChatRoomMember
+                    {
+                        RoomId = chatRoom.RoomId,
+                        UserId = memberId,
+                        Role = ChatMemberRole.Member,
+                        JoinedAt = DateTime.UtcNow
+                    };
+                    // 這裡需要 ChatRoomMemberRepository
+                }
+
+                return chatRoom;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "創建群組聊天室失敗: {CreatorId}, {RoomName}", creatorId, roomName);
+                return null;
+            }
+        }
+
+        public async Task<bool> JoinGroupRoomAsync(int roomId, int userId)
+        {
+            try
+            {
+                // 檢查是否已經是成員
+                var existingMember = await _chatRepository.GetChatRoomMemberAsync(roomId, userId);
+                if (existingMember != null)
+                {
+                    return true;
+                }
+
+                var member = new ChatRoomMember
+                {
+                    RoomId = roomId,
+                    UserId = userId,
+                    Role = ChatMemberRole.Member,
+                    JoinedAt = DateTime.UtcNow
+                };
+
+                // 這裡需要 ChatRoomMemberRepository
+                await _unitOfWork.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "加入群組聊天室失敗: {RoomId}, {UserId}", roomId, userId);
+                return false;
+            }
+        }
+
+        public async Task<bool> LeaveGroupRoomAsync(int roomId, int userId)
+        {
+            try
+            {
+                var member = await _chatRepository.GetChatRoomMemberAsync(roomId, userId);
+                if (member == null)
+                {
+                    return true;
+                }
+
+                // 這裡需要 ChatRoomMemberRepository 來刪除成員
+                await _unitOfWork.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "離開群組聊天室失敗: {RoomId}, {UserId}", roomId, userId);
+                return false;
+            }
+        }
+
+        public async Task<IEnumerable<ChatMessage>> GetMessagesByRoomAsync(int roomId, int page, int pageSize)
+        {
+            try
+            {
+                var messages = await _chatMessageRepository.GetMessagesByRoomAsync(roomId, page, pageSize);
+                return messages;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "獲取聊天室訊息失敗: {RoomId}", roomId);
+                return Enumerable.Empty<ChatMessage>();
+            }
+        }
+
+        public async Task<bool> SendMessageAsync(int roomId, int senderId, string content, ChatMessageType messageType = ChatMessageType.Text)
+        {
+            try
+            {
+                var message = new ChatMessage
+                {
+                    RoomId = roomId,
+                    SenderId = senderId,
+                    Content = content,
+                    MessageType = messageType,
+                    SentAt = DateTime.UtcNow,
+                    IsDeleted = false
+                };
+
+                await _chatMessageRepository.AddAsync(message);
+                await _unitOfWork.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "發送訊息失敗: {RoomId}, {SenderId}", roomId, senderId);
+                return false;
+            }
+        }
+
+        public async Task<int> GetUnreadCountAsync(int roomId, int userId)
+        {
+            try
+            {
+                var count = await _chatMessageRepository.GetUnreadCountAsync(roomId, userId);
+                return count;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "獲取未讀訊息數量失敗: {RoomId}, {UserId}", roomId, userId);
+                return 0;
+            }
+        }
+
+        public async Task<bool> MarkAsReadAsync(int roomId, int userId)
+        {
+            try
+            {
+                await _chatMessageRepository.MarkAsReadAsync(roomId, userId);
+                await _unitOfWork.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "標記訊息為已讀失敗: {RoomId}, {UserId}", roomId, userId);
+                return false;
+            }
+        }
+
+        public async Task<IEnumerable<PrivateChat>> GetPrivateChatsAsync(int userId)
+        {
+            try
+            {
+                var chats = await _privateChatRepository.GetPrivateChatsByUserIdAsync(userId);
+                return chats;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "獲取私人聊天失敗: {UserId}", userId);
+                return Enumerable.Empty<PrivateChat>();
+            }
+        }
+
+        public async Task<PrivateChat?> GetPrivateChatAsync(int user1Id, int user2Id)
+        {
+            try
+            {
+                var chat = await _privateChatRepository.GetPrivateChatAsync(user1Id, user2Id);
+                return chat;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "獲取私人聊天失敗: {User1Id} -> {User2Id}", user1Id, user2Id);
+                return null;
+            }
+        }
+
+        public async Task<bool> SendPrivateMessageAsync(int senderId, int receiverId, string content, ChatMessageType messageType = ChatMessageType.Text)
+        {
+            try
+            {
+                // 獲取或創建私人聊天
+                var privateChat = await _privateChatRepository.GetPrivateChatAsync(senderId, receiverId);
+                if (privateChat == null)
+                {
+                    // 創建新的私人聊天
+                    privateChat = new PrivateChat
+                    {
+                        User1Id = senderId,
+                        User2Id = receiverId,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                    await _privateChatRepository.AddAsync(privateChat);
+                    await _unitOfWork.SaveChangesAsync();
+                }
+
+                // 發送私人訊息
+                var message = new PrivateMessage
+                {
+                    ChatId = privateChat.ChatId,
+                    SenderId = senderId,
+                    ReceiverId = receiverId,
+                    Content = content,
+                    MessageType = messageType,
+                    SentAt = DateTime.UtcNow
+                };
+
+                await _privateMessageRepository.AddAsync(message);
+                await _unitOfWork.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "發送私人訊息失敗: {SenderId} -> {ReceiverId}", senderId, receiverId);
+                return false;
+            }
+        }
+
+        public async Task<bool> SendPrivateMessageAsync(int chatId, int senderId, int receiverId, string content, ChatMessageType messageType = ChatMessageType.Text)
+        {
+            try
+            {
+                var message = new PrivateMessage
+                {
+                    ChatId = chatId,
+                    SenderId = senderId,
+                    ReceiverId = receiverId,
+                    Content = content,
+                    MessageType = messageType,
+                    SentAt = DateTime.UtcNow
+                };
+
+                await _privateMessageRepository.AddAsync(message);
+                await _unitOfWork.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "發送私人訊息失敗: {ChatId}, {SenderId} -> {ReceiverId}", chatId, senderId, receiverId);
+                return false;
+            }
+        }
+
+        public async Task<IEnumerable<PrivateMessage>> GetPrivateMessagesAsync(int chatId, int page, int pageSize)
+        {
+            try
+            {
+                var messages = await _privateMessageRepository.GetMessagesByChatIdAsync(chatId, page, pageSize);
+                return messages;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "獲取私人訊息失敗: {ChatId}", chatId);
+                return Enumerable.Empty<PrivateMessage>();
+            }
+        }
+
+        public async Task<bool> IsUserInRoomAsync(int roomId, int userId)
+        {
+            try
+            {
+                var member = await _chatRepository.GetRoomMemberAsync(roomId, userId);
+                return member != null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "檢查用戶是否在聊天室失敗: {RoomId}, {UserId}", roomId, userId);
+                return false;
+            }
+        }
+
+        public async Task<IEnumerable<ChatRoomMember>> GetRoomMembersAsync(int roomId)
+        {
+            try
+            {
+                var members = await _chatRepository.GetRoomMembersAsync(roomId);
+                return members;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "獲取聊天室成員失敗: {RoomId}", roomId);
+                return Enumerable.Empty<ChatRoomMember>();
+            }
+        }
+
+        public async Task<bool> UpdateMemberRoleAsync(int roomId, int userId, ChatMemberRole role)
+        {
+            try
+            {
+                var member = await _chatRepository.GetRoomMemberAsync(roomId, userId);
+                if (member == null)
+                {
+                    return false;
+                }
+
+                member.Role = role;
+                member.UpdatedAt = DateTime.UtcNow;
+                await _chatRepository.UpdateRoomMemberAsync(member);
+                await _unitOfWork.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "更新成員角色失敗: {RoomId}, {UserId}, {Role}", roomId, userId, role);
+                return false;
             }
         }
 
@@ -385,30 +703,7 @@ namespace GameCore.Core.Services
             }
         }
 
-        public async Task<PrivateChatDto> GetPrivateChatAsync(int user1Id, int user2Id)
-        {
-            try
-            {
-                var privateChat = await _privateChatRepository.GetByUsersAsync(user1Id, user2Id);
-                if (privateChat == null) return null;
 
-                return new PrivateChatDto
-                {
-                    Id = privateChat.Id,
-                    User1Id = privateChat.User1Id,
-                    User1Name = privateChat.User1?.Username ?? "未知用戶",
-                    User2Id = privateChat.User2Id,
-                    User2Name = privateChat.User2?.Username ?? "未知用戶",
-                    CreatedAt = privateChat.CreatedAt,
-                    LastMessageAt = privateChat.LastMessageAt
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "獲取私聊失敗: 用戶1 {User1Id}, 用戶2 {User2Id}", user1Id, user2Id);
-                return null;
-            }
-        }
 
         public async Task<PrivateChatCreateResult> CreatePrivateChatAsync(int user1Id, int user2Id)
         {

@@ -658,4 +658,58 @@ namespace GameCore.Core.DTOs
         public List<string> ExcludedTags { get; set; } = new();
         public string SortPreference { get; set; } = string.Empty;
     }
+
+    // 購買相關DTO
+    public class PurchaseResult
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public int? OrderId { get; set; }
+        public decimal TotalAmount { get; set; }
+    }
+
+    // 市場交易相關DTO
+    public class MarketTransaction
+    {
+        public int TransactionId { get; set; }
+        public int BuyerId { get; set; }
+        public int SellerId { get; set; }
+        public int ItemId { get; set; }
+        public decimal Amount { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public DateTime? CompletedAt { get; set; }
+    }
+
+    // 通知相關DTO
+    public class NotificationSource
+    {
+        public int SourceId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public bool IsEnabled { get; set; }
+    }
+
+    public class NotificationAction
+    {
+        public int ActionId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string ActionType { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+    }
+
+    // 商店產品相關DTO
+    public class StoreProduct
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public int StockQuantity { get; set; }
+        public string Category { get; set; } = string.Empty;
+        public string ImageUrl { get; set; } = string.Empty;
+        public bool IsActive { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
 } 

@@ -226,4 +226,62 @@ namespace GameCore.Core.DTOs
         Fair,
         Poor
     }
+
+    // 為了相容性而添加的別名DTO
+    
+    /// <summary>
+    /// 交易記錄 DTO (別名)
+    /// </summary>
+    public class TransactionDto
+    {
+        public int Id { get; set; }
+        public int MarketItemId { get; set; }
+        public string MarketItemTitle { get; set; } = string.Empty;
+        public int BuyerId { get; set; }
+        public string BuyerName { get; set; } = string.Empty;
+        public int SellerId { get; set; }
+        public string SellerName { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public DateTime? CompletedAt { get; set; }
+    }
+
+    /// <summary>
+    /// 評價 DTO (別名)
+    /// </summary>
+    public class ReviewDto
+    {
+        public int Id { get; set; }
+        public int TransactionId { get; set; }
+        public int ReviewerId { get; set; }
+        public string ReviewerName { get; set; } = string.Empty;
+        public int RevieweeId { get; set; }
+        public string RevieweeName { get; set; } = string.Empty;
+        public int Rating { get; set; }
+        public string Comment { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public string ReviewType { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// 創建評價 DTO (別名)
+    /// </summary>
+    public class ReviewCreateDto
+    {
+        public int TransactionId { get; set; }
+        public int Rating { get; set; }
+        public string Comment { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// 評價創建結果 (別名)
+    /// </summary>
+    public class ReviewCreateResult
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public int? ReviewId { get; set; }
+        public ReviewDto? Review { get; set; }
+    }
 } 

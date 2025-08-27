@@ -1,31 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Tests\\GameCore.Tests.csproj": {}
+    "/workspace/GameCore.Tests/GameCore.Tests.csproj": {}
   },
   "projects": {
-    "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Core\\GameCore.Core.csproj": {
+    "/workspace/GameCore.Core/GameCore.Core.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Core\\GameCore.Core.csproj",
+        "projectUniqueName": "/workspace/GameCore.Core/GameCore.Core.csproj",
         "projectName": "GameCore.Core",
-        "projectPath": "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Core\\GameCore.Core.csproj",
-        "packagesPath": "C:\\Users\\n2029\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Core\\obj\\",
+        "projectPath": "/workspace/GameCore.Core/GameCore.Core.csproj",
+        "packagesPath": "/home/ubuntu/.nuget/packages/",
+        "outputPath": "/workspace/GameCore.Core/obj/",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\n2029\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/home/ubuntu/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -43,8 +37,7 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "9.0.300"
+        }
       },
       "frameworks": {
         "net8.0": {
@@ -75,40 +68,34 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/8.0.413/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Infrastructure\\GameCore.Infrastructure.csproj": {
+    "/workspace/GameCore.Infrastructure/GameCore.Infrastructure.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Infrastructure\\GameCore.Infrastructure.csproj",
+        "projectUniqueName": "/workspace/GameCore.Infrastructure/GameCore.Infrastructure.csproj",
         "projectName": "GameCore.Infrastructure",
-        "projectPath": "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Infrastructure\\GameCore.Infrastructure.csproj",
-        "packagesPath": "C:\\Users\\n2029\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Infrastructure\\obj\\",
+        "projectPath": "/workspace/GameCore.Infrastructure/GameCore.Infrastructure.csproj",
+        "packagesPath": "/home/ubuntu/.nuget/packages/",
+        "outputPath": "/workspace/GameCore.Infrastructure/obj/",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\n2029\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/home/ubuntu/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Core\\GameCore.Core.csproj": {
-                "projectPath": "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Core\\GameCore.Core.csproj"
+              "/workspace/GameCore.Core/GameCore.Core.csproj": {
+                "projectPath": "/workspace/GameCore.Core/GameCore.Core.csproj"
               }
             }
           }
@@ -122,8 +109,7 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "9.0.300"
+        }
       },
       "frameworks": {
         "net8.0": {
@@ -158,46 +144,40 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/8.0.413/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Tests\\GameCore.Tests.csproj": {
+    "/workspace/GameCore.Tests/GameCore.Tests.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Tests\\GameCore.Tests.csproj",
+        "projectUniqueName": "/workspace/GameCore.Tests/GameCore.Tests.csproj",
         "projectName": "GameCore.Tests",
-        "projectPath": "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Tests\\GameCore.Tests.csproj",
-        "packagesPath": "C:\\Users\\n2029\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Tests\\obj\\",
+        "projectPath": "/workspace/GameCore.Tests/GameCore.Tests.csproj",
+        "packagesPath": "/home/ubuntu/.nuget/packages/",
+        "outputPath": "/workspace/GameCore.Tests/obj/",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\n2029\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/home/ubuntu/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Core\\GameCore.Core.csproj": {
-                "projectPath": "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Core\\GameCore.Core.csproj"
+              "/workspace/GameCore.Core/GameCore.Core.csproj": {
+                "projectPath": "/workspace/GameCore.Core/GameCore.Core.csproj"
               },
-              "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Infrastructure\\GameCore.Infrastructure.csproj": {
-                "projectPath": "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Infrastructure\\GameCore.Infrastructure.csproj"
+              "/workspace/GameCore.Infrastructure/GameCore.Infrastructure.csproj": {
+                "projectPath": "/workspace/GameCore.Infrastructure/GameCore.Infrastructure.csproj"
               },
-              "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Web\\GameCore.Web.csproj": {
-                "projectPath": "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Web\\GameCore.Web.csproj"
+              "/workspace/GameCore.Web/GameCore.Web.csproj": {
+                "projectPath": "/workspace/GameCore.Web/GameCore.Web.csproj"
               }
             }
           }
@@ -211,8 +191,7 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "9.0.300"
+        }
       },
       "frameworks": {
         "net8.0": {
@@ -263,43 +242,37 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/8.0.413/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Web\\GameCore.Web.csproj": {
+    "/workspace/GameCore.Web/GameCore.Web.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Web\\GameCore.Web.csproj",
+        "projectUniqueName": "/workspace/GameCore.Web/GameCore.Web.csproj",
         "projectName": "GameCore.Web",
-        "projectPath": "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Web\\GameCore.Web.csproj",
-        "packagesPath": "C:\\Users\\n2029\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Web\\obj\\",
+        "projectPath": "/workspace/GameCore.Web/GameCore.Web.csproj",
+        "packagesPath": "/home/ubuntu/.nuget/packages/",
+        "outputPath": "/workspace/GameCore.Web/obj/",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\n2029\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/home/ubuntu/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Core\\GameCore.Core.csproj": {
-                "projectPath": "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Core\\GameCore.Core.csproj"
+              "/workspace/GameCore.Core/GameCore.Core.csproj": {
+                "projectPath": "/workspace/GameCore.Core/GameCore.Core.csproj"
               },
-              "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Infrastructure\\GameCore.Infrastructure.csproj": {
-                "projectPath": "C:\\Users\\n2029\\Desktop\\GameCore\\GameCore.Infrastructure\\GameCore.Infrastructure.csproj"
+              "/workspace/GameCore.Infrastructure/GameCore.Infrastructure.csproj": {
+                "projectPath": "/workspace/GameCore.Infrastructure/GameCore.Infrastructure.csproj"
               }
             }
           }
@@ -313,8 +286,7 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "9.0.300"
+        }
       },
       "frameworks": {
         "net8.0": {
@@ -366,7 +338,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/8.0.413/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

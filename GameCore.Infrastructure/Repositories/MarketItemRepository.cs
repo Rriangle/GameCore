@@ -23,7 +23,7 @@ namespace GameCore.Infrastructure.Repositories
                 .Where(i => i.Status == "Active");
 
             if (!string.IsNullOrEmpty(category))
-                query = query.Where(i => i.Category.Name == category);
+                query = query.Where(i => i.Category == category);
 
             if (minPrice.HasValue)
                 query = query.Where(i => i.Price >= minPrice.Value);
@@ -47,7 +47,7 @@ namespace GameCore.Infrastructure.Repositories
                            (i.Name.Contains(keyword) || i.Description.Contains(keyword)));
 
             if (!string.IsNullOrEmpty(category))
-                query = query.Where(i => i.Category.Name == category);
+                query = query.Where(i => i.Category == category);
 
             if (minPrice.HasValue)
                 query = query.Where(i => i.Price >= minPrice.Value);

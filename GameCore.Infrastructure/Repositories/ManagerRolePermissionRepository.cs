@@ -29,7 +29,7 @@ namespace GameCore.Infrastructure.Repositories
             return await _dbSet
                 .Include(rp => rp.Role)
                 .Include(rp => rp.Permission)
-                .Where(rp => rp.Permission.Name == permission)
+                .Where(rp => rp.Permission == permission)
                 .ToListAsync();
         }
 

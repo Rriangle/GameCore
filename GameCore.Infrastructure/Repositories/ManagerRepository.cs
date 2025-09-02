@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace GameCore.Infrastructure.Repositories
 {
     /// <summary>
-    /// 管理員倉庫實作
+    /// 管�??�倉庫實�?
     /// </summary>
     public class ManagerRepository : Repository<ManagerData>, IManagerRepository
     {
@@ -19,7 +19,7 @@ namespace GameCore.Infrastructure.Repositories
             _logger = logger;
         }
 
-        // 實現 IManagerRepository 接口的缺少方法
+        // 實現 IManagerRepository ?�口?�缺少方�?
         public async Task<ManagerData?> GetByIdAsync(int id)
         {
             return await _context.ManagerData.FindAsync(id);
@@ -84,7 +84,7 @@ namespace GameCore.Infrastructure.Repositories
         {
             return await _context.ManagerData
                 .OrderBy(m => m.CreatedAt)
-                .ToListAsync();
+                .Select(p => p.PermissionName).ToListAsync();
         }
 
         public async Task<bool> ExistsAsync(int id)
@@ -100,7 +100,7 @@ namespace GameCore.Infrastructure.Repositories
             return manager;
         }
 
-        // 保留原有的 Manager 相關方法（用於向後兼容）
+        // 保�??��???Manager ?��??��?（用?��?後兼容�?
         public async Task<Manager?> GetByAccountAsync(string account)
         {
             return await _context.Managers
@@ -113,7 +113,7 @@ namespace GameCore.Infrastructure.Repositories
         {
             return await _context.Managers
                 .Where(m => m.Role == roleId.ToString())
-                .ToListAsync();
+                .Select(p => p.PermissionName).ToListAsync();
         }
 
         public async Task<IEnumerable<Manager>> GetActiveManagersAsync()
@@ -121,7 +121,7 @@ namespace GameCore.Infrastructure.Repositories
             return await _context.Managers
                 .Where(m => m.IsActive)
                 .OrderBy(m => m.CreatedAt)
-                .ToListAsync();
+                .Select(p => p.PermissionName).ToListAsync();
         }
 
         public async Task<bool> HasPermissionAsync(int managerId, string permissionCode)
@@ -129,16 +129,16 @@ namespace GameCore.Infrastructure.Repositories
             return await _context.Managers
                 .Where(m => m.ManagerId == managerId)
                 .SelectMany(m => m.RolePermissions)
-                .AnyAsync(rp => rp.Permission.Code == permissionCode);
+                .AnyAsync(rp => rp.Permission == permissionCode);
         }
 
-        public async Task<IEnumerable<Permission>> GetManagerPermissionsAsync(int managerId)
+        public async Task<IEnumerable<string>> GetManagerPermissionsAsync(int managerId)
         {
             return await _context.Managers
                 .Where(m => m.ManagerId == managerId)
                 .SelectMany(m => m.RolePermissions)
                 .Select(rp => rp.Permission)
-                .ToListAsync();
+                .Select(p => p.PermissionName).ToListAsync();
         }
 
         public async Task<IEnumerable<GameCore.Domain.Entities.ManagerRole>> GetAllRolesAsync()
@@ -147,7 +147,7 @@ namespace GameCore.Infrastructure.Repositories
                 .Include(r => r.RolePermissions)
                 .ThenInclude(rp => rp.Permission)
                 .OrderBy(r => r.CreateTime)
-                .ToListAsync();
+                .Select(p => p.PermissionName).ToListAsync();
         }
 
         public async Task<GameCore.Domain.Entities.ManagerRole?> GetRoleByIdAsync(int roleId)
@@ -158,18 +158,18 @@ namespace GameCore.Infrastructure.Repositories
                 .FirstOrDefaultAsync(r => r.Id == roleId);
         }
 
-        public async Task<Permission?> GetPermissionByCodeAsync(string code)
+        public async Task<ManagerRolePermission?> GetPermissionByCodeAsync(string code)
         {
-            return await _context.Permissions
-                .FirstOrDefaultAsync(p => p.Code == code);
+            return await _context.ManagerRolePermissions
+                .FirstOrDefaultAsync(p => p.PermissionName == code);
         }
 
-        public async Task<IEnumerable<Permission>> GetAllPermissionsAsync()
+        public async Task<IEnumerable<string>> GetAllPermissionsAsync()
         {
-            return await _context.Permissions
-                .OrderBy(p => p.Category)
-                .ThenBy(p => p.Name)
-                .ToListAsync();
+            return await _context.ManagerRolePermissions
+                .OrderBy(p => p.Description)
+                .ThenBy(p => p.PermissionName)
+                .Select(p => p.PermissionName).ToListAsync();
         }
     }
 }

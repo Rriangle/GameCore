@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace GameCore.Infrastructure.Repositories
 {
     /// <summary>
-    /// 玩家市場倉庫實作
+    /// ?�家市場?�庫實�?
     /// </summary>
     public class PlayerMarketRepository : Repository<PlayerMarketProductInfo>, IPlayerMarketRepository
     {
@@ -19,7 +19,7 @@ namespace GameCore.Infrastructure.Repositories
             _logger = logger;
         }
 
-        // IPlayerMarketRepository 接口方法實現
+        // IPlayerMarketRepository ?�口?��?實現
         public async Task<IEnumerable<PlayerMarketProductInfo>> GetMarketItemsAsync()
         {
             return await _context.PlayerMarketProductInfos
@@ -97,19 +97,19 @@ namespace GameCore.Infrastructure.Repositories
 
         public async Task<bool> ConfirmTransactionAsync(int transactionId)
         {
-            // 這裡需要實現交易確認邏輯
+            // ?�裡?�要實?�交?�確認�?�?
             throw new NotImplementedException();
         }
 
         public async Task<bool> CancelTransactionAsync(int transactionId)
         {
-            // 這裡需要實現交易取消邏輯
+            // ?�裡?�要實?�交?��?消�?�?
             throw new NotImplementedException();
         }
 
         public async Task<bool> ReviewTransactionAsync(int transactionId, int rating, string comment)
         {
-            // 這裡需要實現交易評價邏輯
+            // ?�裡?�要實?�交?��??��?�?
             throw new NotImplementedException();
         }
 
@@ -185,23 +185,23 @@ namespace GameCore.Infrastructure.Repositories
 
         public async Task<bool> ConfirmTransactionAsync(int transactionId, int itemId)
         {
-            // 這裡需要實現交易確認邏輯
+            // ?�裡?�要實?�交?�確認�?�?
             throw new NotImplementedException();
         }
 
         public async Task<bool> CancelTransactionAsync(int transactionId, int itemId)
         {
-            // 這裡需要實現交易取消邏輯
+            // ?�裡?�要實?�交?��?消�?�?
             throw new NotImplementedException();
         }
 
-        // 保留原有的 MarketTransaction 相關方法作為內部實現
+        // 保�??��???MarketTransaction ?��??��?作為?�部實現
         public async Task<IEnumerable<MarketTransaction>> GetActiveListingsAsync(int page = 1, int pageSize = 20)
         {
             return await _context.MarketTransactions
                 .Include(mt => mt.Seller)
                 .Include(mt => mt.Buyer)
-                .Where(mt => mt.Status == MarketTransactionStatus.Listed)
+                .Where(mt => mt.Status == MarketTransactionStatus.Listed.ToString())
                 .OrderByDescending(mt => mt.CreateTime)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -235,7 +235,7 @@ namespace GameCore.Infrastructure.Repositories
             var query = _context.MarketTransactions
                 .Include(mt => mt.Seller)
                 .Include(mt => mt.Buyer)
-                .Where(mt => mt.Status == MarketTransactionStatus.Listed);
+                .Where(mt => mt.Status == MarketTransactionStatus.Listed.ToString());
 
             if (!string.IsNullOrEmpty(keyword))
             {
@@ -273,7 +273,7 @@ namespace GameCore.Infrastructure.Repositories
             return await _context.MarketTransactions
                 .Include(mt => mt.Seller)
                 .Include(mt => mt.Buyer)
-                .Where(mt => mt.Status == status)
+                .Where(mt => mt.Status == status.ToString())
                 .OrderByDescending(mt => mt.CreateTime)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)

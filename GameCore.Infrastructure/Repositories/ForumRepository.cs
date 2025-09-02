@@ -71,7 +71,7 @@ namespace GameCore.Infrastructure.Repositories
             return await _context.Forums.AnyAsync(f => f.Id == id);
         }
 
-        // 實現 IForumRepository 接口的缺少方法
+        // 實現 IForumRepository ?�口?�缺少方�?
         public async Task<IEnumerable<Forum>> GetActiveForumsAsync(int limit)
         {
             return await _context.Forums
@@ -88,7 +88,7 @@ namespace GameCore.Infrastructure.Repositories
             return await _context.Forums
                 .Include(f => f.Category)
                 .Include(f => f.Posts)
-                .Where(f => f.Category.Name == category && f.IsActive)
+                .Where(f => f.Category == category && f.IsActive)
                 .OrderBy(f => f.Order)
                 .ThenBy(f => f.Name)
                 .ToListAsync();
@@ -209,7 +209,7 @@ namespace GameCore.Infrastructure.Repositories
                 .Where(f => f.IsActive &&
                            (f.Name.Contains(searchTerm) || 
                             f.Description.Contains(searchTerm) ||
-                            f.Category.Name.Contains(searchTerm)))
+                            f.Category.Contains(searchTerm)))
                 .OrderBy(f => f.Order)
                 .ThenBy(f => f.Name)
                 .ToListAsync();

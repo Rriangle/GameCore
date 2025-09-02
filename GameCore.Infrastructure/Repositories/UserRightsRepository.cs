@@ -28,7 +28,7 @@ namespace GameCore.Infrastructure.Repositories
             return await _dbSet
                 .Include(r => r.User)
                 .Include(r => r.RightType)
-                .Where(r => r.RightType.Name == rightType)
+                .Where(r => r.RightType == rightType)
                 .ToListAsync();
         }
 

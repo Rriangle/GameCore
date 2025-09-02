@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace GameCore.Domain.Entities
 {
-    // 注意：以下為相容性暫時適配，僅供編譯通過，不改變資料庫 Schema
+    // 注�?：以下為?�容?�暫?�適?��??��?編譯?��?，�??��?資�?�?Schema
 
     public partial class Forum
     {

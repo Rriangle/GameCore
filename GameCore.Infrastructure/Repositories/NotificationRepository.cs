@@ -15,7 +15,7 @@ namespace GameCore.Infrastructure.Repositories
             _logger = logger;
         }
 
-        // 實現 INotificationRepository 接口的缺少方法
+        // 實現 INotificationRepository ?�口?�缺少方�?
         public async Task<Notification?> GetByIdAsync(int id)
         {
             return await _context.Notifications
@@ -63,9 +63,9 @@ namespace GameCore.Infrastructure.Repositories
             var notification = new Notification
             {
                 UserId = userId,
-                Type = "PetColorChange",
-                Title = "寵物顏色變更通知",
-                Content = $"您的寵物顏色已從 {oldColor} 變更為 {newColor}",
+                Type = 1,
+                Title = "寵物顏色變更?�知",
+                Content = $"?��?寵物顏色已�? {oldColor} 變更??{newColor}",
                 IsRead = false,
                 CreateTime = DateTime.UtcNow
             };
@@ -78,7 +78,7 @@ namespace GameCore.Infrastructure.Repositories
             return await _context.Notifications
                 .Include(n => n.NotificationSource)
                 .Include(n => n.NotificationAction)
-                .FirstOrDefaultAsync(n => n.UserId == userId && n.Type == action);
+                .FirstOrDefaultAsync(n => n.UserId == userId && n.Type.ToString() == action);
         }
 
         public async Task<IEnumerable<Notification>> GetUserNotificationsAsync(int userId, int page = 1, int pageSize = 20)
@@ -114,7 +114,7 @@ namespace GameCore.Infrastructure.Repositories
             return await _context.Notifications
                 .Include(n => n.NotificationSource)
                 .Include(n => n.NotificationAction)
-                .Where(n => n.UserId == userId && n.Type == type)
+                .Where(n => n.UserId == userId && n.Type.ToString() == type)
                 .OrderByDescending(n => n.CreateTime)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -153,7 +153,7 @@ namespace GameCore.Infrastructure.Repositories
                 .Include(n => n.NotificationSource)
                 .Include(n => n.NotificationAction)
                 .Where(n => n.UserId == userId && 
-                           n.NotificationSource.SourceId == sourceId.ToString() && 
+                           n.NotificationSource.SourceId == sourceId && 
                            n.NotificationSource.SourceType == sourceType)
                 .OrderByDescending(n => n.CreateTime)
                 .ToListAsync();
@@ -196,7 +196,7 @@ namespace GameCore.Infrastructure.Repositories
             return await _context.Notifications
                 .Include(n => n.NotificationSource)
                 .Include(n => n.NotificationAction)
-                .Where(n => n.Type == "System")
+                .Where(n => n.Type.ToString() == "System")
                 .OrderByDescending(n => n.CreateTime)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -208,7 +208,7 @@ namespace GameCore.Infrastructure.Repositories
             return await _context.Notifications
                 .Where(n => n.UserId == userId && !n.IsRead)
                 .GroupBy(n => n.Type)
-                .ToDictionaryAsync(g => g.Key, g => g.Count());
+                .ToDictionaryAsync(g => g.Key.ToString(), g => g.Count());
         }
 
         public async Task<IEnumerable<Notification>> GetRecentNotificationsAsync(int userId, TimeSpan timeSpan)

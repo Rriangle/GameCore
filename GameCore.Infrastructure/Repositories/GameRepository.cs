@@ -27,7 +27,7 @@ namespace GameCore.Infrastructure.Repositories
         {
             return await _dbSet
                 .Include(g => g.Category)
-                .Where(g => g.Category.Name == category)
+                .Where(g => g.Category == category)
                 .OrderBy(g => g.Name)
                 .ToListAsync();
         }

@@ -8,7 +8,7 @@ using System.Linq.Expressions;
 namespace GameCore.Infrastructure.Repositories
 {
     /// <summary>
-    /// 用戶資料庫操作實作
+    /// ?�戶資�?庫�?作實�?
     /// </summary>
     public class UserRepository : Repository<User>, IUserRepository
     {
@@ -20,7 +20,7 @@ namespace GameCore.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// 根據ID取得用戶
+        /// ?��?ID?��??�戶
         /// </summary>
         public override async Task<User?> GetByIdAsync(int userId, CancellationToken cancellationToken = default)
         {
@@ -31,13 +31,13 @@ namespace GameCore.Infrastructure.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "根據ID取得用戶失敗: {UserId}", userId);
+                _logger.LogError(ex, "?��?ID?��??�戶失�?: {UserId}", userId);
                 return null;
             }
         }
 
         /// <summary>
-        /// 根據帳號取得用戶
+        /// ?��?帳�??��??�戶
         /// </summary>
         public async Task<User?> GetByAccountAsync(string account)
         {
@@ -48,13 +48,13 @@ namespace GameCore.Infrastructure.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "根據帳號取得用戶失敗: {Account}", account);
+                _logger.LogError(ex, "?��?帳�??��??�戶失�?: {Account}", account);
                 return null;
             }
         }
 
         /// <summary>
-        /// 根據電子郵件取得用戶
+        /// ?��??��??�件?��??�戶
         /// </summary>
         public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
@@ -66,13 +66,13 @@ namespace GameCore.Infrastructure.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "根據電子郵件取得用戶失敗: {Email}", email);
+                _logger.LogError(ex, "?��??��??�件?��??�戶失�?: {Email}", email);
                 return null;
             }
         }
 
         /// <summary>
-        /// 根據用戶名取得用戶
+        /// ?��??�戶?��?得用??
         /// </summary>
         public async Task<User?> GetByUserNameAsync(string userName, CancellationToken cancellationToken = default)
         {
@@ -84,13 +84,13 @@ namespace GameCore.Infrastructure.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "根據用戶名取得用戶失敗: {UserName}", userName);
+                _logger.LogError(ex, "?��??�戶?��?得用?�失?? {UserName}", userName);
                 return null;
             }
         }
 
         /// <summary>
-        /// 檢查電子郵件是否存在
+        /// 檢查?��??�件?�否存在
         /// </summary>
         public async Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
@@ -102,13 +102,13 @@ namespace GameCore.Infrastructure.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "檢查電子郵件是否存在失敗: {Email}", email);
+                _logger.LogError(ex, "檢查?��??�件?�否存在失�?: {Email}", email);
                 return false;
             }
         }
 
         /// <summary>
-        /// 檢查用戶名是否存在
+        /// 檢查?�戶?�是?��???
         /// </summary>
         public async Task<bool> ExistsByUserNameAsync(string userName, CancellationToken cancellationToken = default)
         {
@@ -120,31 +120,31 @@ namespace GameCore.Infrastructure.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "檢查用戶名是否存在失敗: {UserName}", userName);
+                _logger.LogError(ex, "檢查?�戶?�是?��??�失?? {UserName}", userName);
                 return false;
             }
         }
 
         /// <summary>
-        /// 取得活躍用戶
+        /// ?��?活�??�戶
         /// </summary>
         public async Task<IEnumerable<User>> GetActiveUsersAsync(CancellationToken cancellationToken = default)
         {
             try
             {
                 return await _context.Users
-                    .Where(u => u.User_Status == true)
+                    .Where(u => u.User_Status == "Active")
                     .ToListAsync(cancellationToken);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "取得活躍用戶失敗");
+                _logger.LogError(ex, "?��?活�??�戶失�?");
                 return new List<User>();
             }
         }
 
         /// <summary>
-        /// 根據角色取得用戶
+        /// ?��?角色?��??�戶
         /// </summary>
         public async Task<IEnumerable<User>> GetUsersByRoleAsync(string role, CancellationToken cancellationToken = default)
         {
@@ -157,13 +157,13 @@ namespace GameCore.Infrastructure.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "根據角色取得用戶失敗: {Role}", role);
+                _logger.LogError(ex, "?��?角色?��??�戶失�?: {Role}", role);
                 return new List<User>();
             }
         }
 
         /// <summary>
-        /// 搜尋用戶
+        /// ?��??�戶
         /// </summary>
         public async Task<IEnumerable<User>> SearchUsersAsync(string searchTerm, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
         {
@@ -181,20 +181,20 @@ namespace GameCore.Infrastructure.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "搜尋用戶失敗: {SearchTerm}", searchTerm);
+                _logger.LogError(ex, "?��??�戶失�?: {SearchTerm}", searchTerm);
                 return new List<User>();
             }
         }
 
         /// <summary>
-        /// 取得用戶統計資料
+        /// ?��??�戶統�?資�?
         /// </summary>
         public async Task<object> GetUserStatsAsync(CancellationToken cancellationToken = default)
         {
             try
             {
                 var totalUsers = await _context.Users.CountAsync(cancellationToken);
-                var activeUsers = await _context.Users.CountAsync(u => u.User_Status == true, cancellationToken);
+                var activeUsers = await _context.Users.CountAsync(u => u.User_Status == "Active", cancellationToken);
                 var newUsersThisMonth = await _context.Users
                     .CountAsync(u => u.User_CreatedAt >= DateTime.Now.AddDays(-30), cancellationToken);
 
@@ -207,7 +207,7 @@ namespace GameCore.Infrastructure.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "取得用戶統計資料失敗");
+                _logger.LogError(ex, "?��??�戶統�?資�?失�?");
                 return new
                 {
                     TotalUsers = 0,
@@ -218,7 +218,7 @@ namespace GameCore.Infrastructure.Repositories
         }
 
         /// <summary>
-        /// 取得完整的用戶資訊（包含所有關聯資料）
+        /// ?��?完整?�用?��?訊�??�含?�?��??��??��?
         /// </summary>
         public async Task<User?> GetFullUserInfoAsync(int userId)
         {
@@ -234,13 +234,13 @@ namespace GameCore.Infrastructure.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "取得完整用戶資訊失敗: {UserId}", userId);
+                _logger.LogError(ex, "?��?完整?�戶資�?失�?: {UserId}", userId);
                 return null;
             }
         }
 
         /// <summary>
-        /// 根據暱稱取得用戶
+        /// ?��??�稱?��??�戶
         /// </summary>
         public async Task<User?> GetByNickNameAsync(string nickName)
         {
@@ -252,13 +252,13 @@ namespace GameCore.Infrastructure.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "根據暱稱取得用戶失敗: {NickName}", nickName);
+                _logger.LogError(ex, "?��??�稱?��??�戶失�?: {NickName}", nickName);
                 return null;
             }
         }
 
         /// <summary>
-        /// 新增用戶
+        /// ?��??�戶
         /// </summary>
         public override async Task<User> AddAsync(User entity, CancellationToken cancellationToken = default)
         {
@@ -270,13 +270,13 @@ namespace GameCore.Infrastructure.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "新增用戶失敗");
+                _logger.LogError(ex, "?��??�戶失�?");
                 throw;
             }
         }
 
         /// <summary>
-        /// 更新用戶
+        /// ?�新?�戶
         /// </summary>
         public override Task UpdateAsync(User entity, CancellationToken cancellationToken = default)
         {
@@ -287,13 +287,13 @@ namespace GameCore.Infrastructure.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "更新用戶失敗");
+                _logger.LogError(ex, "?�新?�戶失�?");
                 throw;
             }
         }
 
         /// <summary>
-        /// 刪除用戶
+        /// ?�除?�戶
         /// </summary>
         public override async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
         {
@@ -308,13 +308,13 @@ namespace GameCore.Infrastructure.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "刪除用戶失敗: {UserId}", id);
+                _logger.LogError(ex, "?�除?�戶失�?: {UserId}", id);
                 throw;
             }
         }
 
         /// <summary>
-        /// 檢查用戶是否存在
+        /// 檢查?�戶?�否存在
         /// </summary>
         public override async Task<bool> ExistsAsync(int id, CancellationToken cancellationToken = default)
         {
@@ -324,13 +324,13 @@ namespace GameCore.Infrastructure.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "檢查用戶是否存在失敗: {UserId}", id);
+                _logger.LogError(ex, "檢查?�戶?�否存在失�?: {UserId}", id);
                 return false;
             }
         }
 
         /// <summary>
-        /// 計算用戶數量
+        /// 計�??�戶?��?
         /// </summary>
         public override async Task<int> CountAsync(CancellationToken cancellationToken = default)
         {
@@ -340,13 +340,13 @@ namespace GameCore.Infrastructure.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "計算用戶數量失敗");
+                _logger.LogError(ex, "計�??�戶?��?失�?");
                 return 0;
             }
         }
 
         /// <summary>
-        /// 取得分頁用戶
+        /// ?��??��??�戶
         /// </summary>
         public override async Task<IEnumerable<User>> GetPagedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default)
         {
@@ -359,13 +359,13 @@ namespace GameCore.Infrastructure.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "取得分頁用戶失敗");
+                _logger.LogError(ex, "?��??��??�戶失�?");
                 return new List<User>();
             }
         }
 
         /// <summary>
-        /// 根據條件取得分頁用戶
+        /// ?��?條件?��??��??�戶
         /// </summary>
         public override async Task<IEnumerable<User>> GetPagedAsync(Expression<Func<User, bool>> predicate, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
         {
@@ -379,7 +379,7 @@ namespace GameCore.Infrastructure.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "根據條件取得分頁用戶失敗");
+                _logger.LogError(ex, "?��?條件?��??��??�戶失�?");
                 return new List<User>();
             }
         }

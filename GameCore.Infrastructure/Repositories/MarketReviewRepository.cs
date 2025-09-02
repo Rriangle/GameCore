@@ -48,7 +48,7 @@ namespace GameCore.Infrastructure.Repositories
                 .Select(r => r.Rating)
                 .ToListAsync();
 
-            return reviews.Any() ? reviews.Average() : 0;
+            return reviews.Any() ? (decimal)reviews.Average() : 0;
         }
 
         public async Task<MarketReview> AddAsync(MarketReview review)

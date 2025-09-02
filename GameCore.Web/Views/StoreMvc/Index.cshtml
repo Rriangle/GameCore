@@ -1,0 +1,422 @@
+@model GameCore.Web.Controllers.StoreMvcController.StoreIndexViewModel
+@{
+    ViewData["Title"] = "GameCore 官方商城";
+    ViewData["Description"] = "精選遊戲軟體、硬體周邊，享受最佳遊戲體驗";
+}
+
+@section Styles {
+    <style>
+        .store-hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4rem 0;
+            margin-bottom: 2rem;
+        }
+        
+        .category-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+        
+        .category-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .product-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: #f8f9fa;
+        }
+        
+        .price-tag {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        .search-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .filter-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+        }
+        
+        .pagination .page-link {
+            padding: 0.5rem 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            color: #007bff;
+            text-decoration: none;
+        }
+        
+        .pagination .page-link:hover {
+            background-color: #e9ecef;
+        }
+        
+        .pagination .page-link.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+    </style>
+}
+
+<!-- 商城英雄區 -->
+<section class="store-hero">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-3">GameCore 官方商城</h1>
+                <p class="lead mb-4">精選遊戲軟體、硬體周邊，享受最佳遊戲體驗</p>
+                <div class="d-flex gap-3">
+                    <a href="#products" class="btn btn-light btn-lg">立即購物</a>
+                    <a href="#categories" class="btn btn-outline-light btn-lg">瀏覽分類</a>
+                </div>
+            </div>
+            <div class="col-lg-6 text-center">
+                <div class="position-relative">
+                    <div class="bg-white bg-opacity-10 rounded-circle d-inline-block p-5">
+                        <i class="fas fa-gamepad fa-5x text-white"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 搜尋與篩選區 -->
+<section class="search-section">
+    <div class="container">
+        <form method="get" action="@Url.Action("Index", "StoreMvc")" id="searchForm">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control form-control-lg" 
+                           name="search" value="@Model.CurrentSearch" 
+                           placeholder="搜尋商品...">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select form-select-lg" name="category">
+                        <option value="">所有分類</option>
+                        @foreach (var category in Model.Categories)
+                        {
+                            <option value="@category" @(category == Model.CurrentCategory ? "selected" : "")>
+                                @category
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" class="form-control" name="minPrice" 
+                           value="@Model.CurrentMinPrice" placeholder="最低價格">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" class="form-control" name="maxPrice" 
+                           value="@Model.CurrentMaxPrice" placeholder="最高價格">
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>
+
+<!-- 商品分類區 -->
+<section id="categories" class="mb-5">
+    <div class="container">
+        <h2 class="text-center mb-4">商品分類</h2>
+        <div class="row g-4">
+            @foreach (var category in Model.Categories.Take(6))
+            {
+                <div class="col-md-4 col-lg-2">
+                    <a href="@Url.Action("Category", "StoreMvc", new { category = category })" 
+                       class="text-decoration-none">
+                        <div class="category-card">
+                            <div class="mb-3">
+                                <i class="fas fa-tags fa-2x text-primary"></i>
+                            </div>
+                            <h6 class="mb-0">@category</h6>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- 熱門商品區 -->
+@if (Model.PopularProducts.Any())
+{
+    <section class="mb-5">
+        <div class="container">
+            <h2 class="text-center mb-4">熱門商品</h2>
+            <div class="row g-4">
+                @foreach (var product in Model.PopularProducts)
+                {
+                    <div class="col-md-6 col-lg-3">
+                        <div class="product-card h-100">
+                            <img src="@(string.IsNullOrEmpty(product.ImageUrl) ? "/images/placeholder.jpg" : product.ImageUrl)" 
+                                 alt="@product.ProductName" class="product-image">
+                            <div class="p-3">
+                                <h6 class="mb-2">@product.ProductName</h6>
+                                <p class="text-muted small mb-2">@product.Category</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="price-tag">NT$ @product.Price.ToString("N0")</span>
+                                    <a href="@Url.Action("Product", "StoreMvc", new { id = product.ProductId })" 
+                                       class="btn btn-outline-primary btn-sm">查看詳情</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+<!-- 商品列表區 -->
+<section id="products" class="mb-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">
+                @if (!string.IsNullOrEmpty(Model.CurrentSearch))
+                {
+                    <span>搜尋結果：@Model.CurrentSearch</span>
+                }
+                else if (!string.IsNullOrEmpty(Model.CurrentCategory))
+                {
+                    <span>@Model.CurrentCategory 分類</span>
+                }
+                else
+                {
+                    <span>所有商品</span>
+                }
+            </h2>
+            <div class="text-muted">
+                共 @Model.Products.Count 件商品
+            </div>
+        </div>
+
+        @if (Model.Products.Any())
+        {
+            <div class="row g-4">
+                @foreach (var product in Model.Products)
+                {
+                    <div class="col-md-6 col-lg-4">
+                        <div class="product-card h-100">
+                            <img src="@(string.IsNullOrEmpty(product.ImageUrl) ? "/images/placeholder.jpg" : product.ImageUrl)" 
+                                 alt="@product.ProductName" class="product-image">
+                            <div class="p-3">
+                                <h6 class="mb-2">@product.ProductName</h6>
+                                <p class="text-muted small mb-2">@product.Category</p>
+                                <p class="text-muted small mb-3">@(product.Description?.Length > 100 ? product.Description.Substring(0, 100) + "..." : product.Description)</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="price-tag">NT$ @product.Price.ToString("N0")</span>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-primary btn-sm add-to-cart" 
+                                                data-product-id="@product.ProductId">
+                                            <i class="fas fa-cart-plus"></i> 加入購物車
+                                        </button>
+                                        <a href="@Url.Action("Product", "StoreMvc", new { id = product.ProductId })" 
+                                           class="btn btn-outline-primary btn-sm">詳情</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- 分頁 -->
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="pagination">
+                    @if (Model.CurrentPage > 1)
+                    {
+                        <a class="page-link" href="@Url.Action("Index", "StoreMvc", new { 
+                            category = Model.CurrentCategory, 
+                            search = Model.CurrentSearch, 
+                            minPrice = Model.CurrentMinPrice, 
+                            maxPrice = Model.CurrentMaxPrice, 
+                            page = Model.CurrentPage - 1 
+                        })">上一頁</a>
+                    }
+
+                    @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
+                    {
+                        <a class="page-link @(i == Model.CurrentPage ? "active" : "")" 
+                           href="@Url.Action("Index", "StoreMvc", new { 
+                               category = Model.CurrentCategory, 
+                               search = Model.CurrentSearch, 
+                               minPrice = Model.CurrentMinPrice, 
+                               maxPrice = Model.CurrentMaxPrice, 
+                               page = i 
+                           })">@i</a>
+                    }
+
+                    @if (Model.CurrentPage < Model.TotalPages)
+                    {
+                        <a class="page-link" href="@Url.Action("Index", "StoreMvc", new { 
+                            category = Model.CurrentCategory, 
+                            search = Model.CurrentSearch, 
+                            minPrice = Model.CurrentMinPrice, 
+                            maxPrice = Model.CurrentMaxPrice, 
+                            page = Model.CurrentPage + 1 
+                        })">下一頁</a>
+                    }
+                </nav>
+            }
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">沒有找到符合條件的商品</h4>
+                <p class="text-muted">請嘗試調整搜尋條件或瀏覽其他分類</p>
+                <a href="@Url.Action("Index", "StoreMvc")" class="btn btn-primary">返回首頁</a>
+            </div>
+        }
+    </div>
+</section>
+
+<!-- 銷售排行榜區 -->
+@if (Model.SalesRanking.Any())
+{
+    <section class="mb-5">
+        <div class="container">
+            <h2 class="text-center mb-4">本週銷售排行榜</h2>
+            <div class="row g-4">
+                @foreach (var (product, index) in Model.SalesRanking.Select((p, i) => (p, i + 1)))
+                {
+                    <div class="col-md-6 col-lg-4">
+                        <div class="product-card h-100 position-relative">
+                            @if (index <= 3)
+                            {
+                                <div class="position-absolute top-0 start-0 m-2">
+                                    <span class="badge @(index == 1 ? "bg-warning" : index == 2 ? "bg-secondary" : "bg-danger") fs-6">
+                                        @(index == 1 ? "🥇" : index == 2 ? "🥈" : "🥉") 第 @index 名
+                                    </span>
+                                </div>
+                            }
+                            <img src="@(string.IsNullOrEmpty(product.ImageUrl) ? "/images/placeholder.jpg" : product.ImageUrl)" 
+                                 alt="@product.ProductName" class="product-image">
+                            <div class="p-3">
+                                <h6 class="mb-2">@product.ProductName</h6>
+                                <p class="text-muted small mb-2">@product.Category</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="price-tag">NT$ @product.Price.ToString("N0")</span>
+                                    <a href="@Url.Action("Product", "StoreMvc", new { id = product.ProductId })" 
+                                       class="btn btn-outline-primary btn-sm">查看詳情</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // 加入購物車功能
+            $('.add-to-cart').click(function() {
+                const productId = $(this).data('product-id');
+                const button = $(this);
+                
+                // 檢查是否已登入
+                if (!@User.Identity.IsAuthenticated.ToString().ToLower()) {
+                    window.location.href = '/Auth/Login';
+                    return;
+                }
+                
+                // 發送加入購物車請求
+                $.ajax({
+                    url: '/api/Store/cart/add',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        productId: productId,
+                        quantity: 1
+                    }),
+                    success: function(response) {
+                        if (response.success) {
+                            button.html('<i class="fas fa-check"></i> 已加入');
+                            button.removeClass('btn-primary').addClass('btn-success');
+                            
+                            // 顯示成功訊息
+                            showToast('成功加入購物車！', 'success');
+                        } else {
+                            showToast(response.message || '加入購物車失敗', 'error');
+                        }
+                    },
+                    error: function() {
+                        showToast('加入購物車失敗，請稍後再試', 'error');
+                    }
+                });
+            });
+            
+            // 顯示 Toast 訊息
+            function showToast(message, type) {
+                const toast = $(`
+                    <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0" role="alert">
+                        <div class="d-flex">
+                            <div class="toast-body">${message}</div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                        </div>
+                    </div>
+                `);
+                
+                $('.toast-container').append(toast);
+                const bsToast = new bootstrap.Toast(toast[0]);
+                bsToast.show();
+                
+                // 自動移除
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
+            }
+        });
+    </script>
+} 

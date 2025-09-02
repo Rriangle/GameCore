@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - GameCore</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="~/manifest.json" />
+    <meta name="theme-color" content="#7557ff" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="GameCore" />
+    
+    <!-- Performance Optimization -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+    <link rel="dns-prefetch" href="//api.gamecore.com" />
+    
+    <!-- Critical CSS Inline -->
+    <style>
+        /* Critical Above-the-fold Styles */
+        :root {
+            --primary: #7557ff;
+            --primary-dark: #5d45cc;
+            --surface: rgba(255,255,255,.95);
+            --glass: rgba(255,255,255,.45);
+            --text: #1f2937;
+            --text-muted: #64748b;
+            --border: #e5e7eb;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --radius: 12px;
+            --shadow: 0 8px 32px rgba(17,24,39,.08);
+            --blur: 16px;
+            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --surface: rgba(22,30,48,.95);
+                --glass: rgba(18,24,39,.65);
+                --text: #e5edff;
+                --text-muted: #9fb1c9;
+                --border: #1e2b43;
+            }
+        }
+        
+        @media (prefers-reduced-motion: reduce) {
+            :root {
+                --transition: none;
+            }
+            
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            transition: var(--transition);
+        }
+        
+        /* Skip Link for Accessibility */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 6px;
+            background: var(--primary);
+            color: white;
+            padding: 8px;
+            text-decoration: none;
+            border-radius: var(--radius);
+            z-index: 10000;
+            transition: top 0.3s;
+        }
+        
+        .skip-link:focus {
+            top: 6px;
+        }
+        
+        /* Focus Indicators */
+        :focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
+    </style>
+    
+    <!-- Non-Critical CSS -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    
+    <!-- Preload Critical Resources -->
+    <link rel="modulepreload" href="~/js/app.js" />
+    <link rel="preload" href="~/fonts/gamecore-icons.woff2" as="font" type="font/woff2" crossorigin />
+</head>
+<body>
+    <!-- Skip Navigation for Screen Readers -->
+    <a href="#main-content" class="skip-link">跳至主要內容</a>
+    
+    <!-- Main Application Shell -->
+    <div id="app" class="app-shell">
+        <!-- Navigation -->
+        <nav class="navbar" role="navigation" aria-label="主要導覽">
+            <div class="container">
+                <div class="navbar-brand">
+                    <a href="/" aria-label="GameCore 首頁">
+                        <img src="~/images/logo.svg" alt="GameCore" width="32" height="32" />
+                        <span>GameCore</span>
+                    </a>
+                </div>
+            </div>
+        </nav>
+        
+        <!-- Main Content Area -->
+        <main id="main-content" role="main" tabindex="-1">
+            @RenderBody()
+        </main>
+    </div>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js');
+            });
+        }
+    </script>
+    
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

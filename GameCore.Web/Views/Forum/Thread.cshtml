@@ -1,0 +1,688 @@
+@model long
+@{
+    ViewData["Title"] = "主題詳情 - GameCore";
+}
+
+<div class="container-fluid">
+    <!-- 論壇導航 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="論壇導航">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">首頁</a></li>
+                    <li class="breadcrumb-item"><a href="/forum">論壇</a></li>
+                    <li class="breadcrumb-item"><a href="#" id="forumLink">論壇版面</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">主題詳情</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- 主題內容 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0" id="threadTitle">載入中...</h4>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="likeBtn" onclick="toggleLike()">
+                            <i class="fas fa-heart"></i> <span id="likeCount">0</span>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="bookmarkBtn" onclick="toggleBookmark()">
+                            <i class="fas fa-bookmark"></i>
+                        </button>
+                        <button type="button" class="btn btn-success btn-sm" onclick="showReplyModal()">
+                            <i class="fas fa-reply"></i> 回覆
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="threadContent">
+                        <!-- 主題內容將在這裡動態載入 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 回覆列表 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-comments me-2"></i>回覆列表
+                    </h5>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-success btn-sm" onclick="showReplyModal()">
+                            <i class="fas fa-plus"></i> 發表回覆
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="postsList">
+                        <!-- 回覆列表將在這裡動態載入 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 回覆 Modal -->
+<div class="modal fade" id="replyModal" tabindex="-1" aria-labelledby="replyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="replyModalLabel">發表回覆</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="replyForm">
+                    <div class="mb-3">
+                        <label for="replyContent" class="form-label">回覆內容</label>
+                        <textarea class="form-control" id="replyContent" rows="6" required placeholder="請輸入回覆內容（支援 Markdown 格式）"></textarea>
+                        <div class="form-text">
+                            <small>支援 Markdown 格式：**粗體**、*斜體*、`程式碼`、[連結](URL)</small>
+                        </div>
+                    </div>
+                    <div class="mb-3" id="parentPostInfo" style="display: none;">
+                        <div class="alert alert-info">
+                            <small>
+                                <strong>回覆給：</strong>
+                                <span id="parentPostAuthor"></span>
+                                <button type="button" class="btn btn-sm btn-outline-secondary ms-2" onclick="clearParentPost()">
+                                    <i class="fas fa-times"></i> 取消
+                                </button>
+                            </small>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="submitReply()">發表回覆</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const threadId = @Model;
+        let threadData = null;
+        let currentUserId = null;
+        let selectedParentPostId = null;
+
+        // 頁面載入時初始化
+        $(document).ready(function() {
+            loadThreadDetail();
+            loadCurrentUser();
+        });
+
+        // 載入當前用戶資訊
+        function loadCurrentUser() {
+            $.ajax({
+                url: '/api/auth/me',
+                method: 'GET',
+                success: function(user) {
+                    currentUserId = user.userId;
+                },
+                error: function(xhr) {
+                    console.log('用戶未登入或載入失敗');
+                }
+            });
+        }
+
+        // 載入主題詳情
+        function loadThreadDetail() {
+            $.ajax({
+                url: `/api/forum/threads/${threadId}`,
+                method: 'GET',
+                success: function(thread) {
+                    threadData = thread;
+                    renderThreadDetail(thread);
+                    renderPosts(thread.posts);
+                },
+                error: function(xhr) {
+                    console.error('載入主題詳情失敗:', xhr);
+                    showAlert('載入主題詳情失敗', 'danger');
+                }
+            });
+        }
+
+        // 渲染主題詳情
+        function renderThreadDetail(thread) {
+            $('#threadTitle').text(thread.title);
+            $('#likeCount').text(thread.likeCount);
+            
+            // 更新讚按鈕狀態
+            updateLikeButton(thread.isLikedByCurrentUser);
+            updateBookmarkButton(thread.isBookmarkedByCurrentUser);
+
+            // 更新論壇連結
+            if (thread.posts.length > 0) {
+                const firstPost = thread.posts[0];
+                $('#forumLink').attr('href', `/forum/board/${firstPost.forumId || 1}`);
+            }
+
+            // 渲染主題內容
+            const contentHtml = `
+                <div class="d-flex align-items-start mb-4">
+                    <div class="flex-shrink-0 me-3">
+                        <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                            ${thread.authorNickname.charAt(0).toUpperCase()}
+                        </div>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <h6 class="mb-1">${thread.authorNickname}</h6>
+                                <small class="text-muted">
+                                    <i class="fas fa-clock me-1"></i>${formatTimeAgo(thread.createdAt)}
+                                </small>
+                            </div>
+                            <div class="d-flex gap-2">
+                                ${thread.authorUserId === currentUserId ? `
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="editThread()">
+                                        <i class="fas fa-edit"></i> 編輯
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteThread()">
+                                        <i class="fas fa-trash"></i> 刪除
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                        <div class="thread-content">
+                            ${thread.posts[0]?.contentHtml || '內容載入中...'}
+                        </div>
+                    </div>
+                </div>
+            `;
+            $('#threadContent').html(contentHtml);
+        }
+
+        // 渲染回覆列表
+        function renderPosts(posts) {
+            const container = $('#postsList');
+            container.empty();
+
+            if (posts.length === 0) {
+                container.html(`
+                    <div class="text-center py-5">
+                        <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">暫無回覆</h5>
+                        <p class="text-muted">成為第一個回覆的人吧！</p>
+                        <button type="button" class="btn btn-primary" onclick="showReplyModal()">
+                            <i class="fas fa-plus"></i> 發表回覆
+                        </button>
+                    </div>
+                `);
+                return;
+            }
+
+            posts.forEach((post, index) => {
+                if (index === 0) return; // 跳過主題的第一篇（已在上面顯示）
+
+                const postHtml = `
+                    <div class="post-item mb-4" data-post-id="${post.id}">
+                        <div class="d-flex align-items-start">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="avatar bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                    ${post.authorNickname.charAt(0).toUpperCase()}
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="mb-1">${post.authorNickname}</h6>
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>${formatTimeAgo(post.createdAt)}
+                                        </small>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="togglePostLike(${post.id})">
+                                            <i class="fas fa-heart"></i> <span class="like-count">${post.likeCount}</span>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="replyToPost(${post.id}, '${post.authorNickname}')">
+                                            <i class="fas fa-reply"></i> 回覆
+                                        </button>
+                                        ${post.authorUserId === currentUserId ? `
+                                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="editPost(${post.id})">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="deletePost(${post.id})">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                                <div class="post-content">
+                                    ${post.contentHtml}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 子回覆 -->
+                        ${post.childPosts.length > 0 ? `
+                            <div class="child-posts ms-5 mt-3">
+                                ${post.childPosts.map(childPost => `
+                                    <div class="child-post-item mb-3" data-post-id="${childPost.id}">
+                                        <div class="d-flex align-items-start">
+                                            <div class="flex-shrink-0 me-2">
+                                                <div class="avatar bg-light text-dark rounded-circle d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; font-size: 12px;">
+                                                    ${childPost.authorNickname.charAt(0).toUpperCase()}
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="d-flex justify-content-between align-items-start mb-1">
+                                                    <div>
+                                                        <small class="fw-bold">${childPost.authorNickname}</small>
+                                                        <small class="text-muted ms-2">
+                                                            <i class="fas fa-clock me-1"></i>${formatTimeAgo(childPost.createdAt)}
+                                                        </small>
+                                                    </div>
+                                                    <div class="d-flex gap-1">
+                                                        <button type="button" class="btn btn-outline-primary btn-sm btn-sm" onclick="togglePostLike(${childPost.id})">
+                                                            <i class="fas fa-heart"></i> <span class="like-count">${childPost.likeCount}</span>
+                                                        </button>
+                                                        ${childPost.authorUserId === currentUserId ? `
+                                                            <button type="button" class="btn btn-outline-primary btn-sm btn-sm" onclick="editPost(${childPost.id})">
+                                                                <i class="fas fa-edit"></i>
+                                                            </button>
+                                                            <button type="button" class="btn btn-outline-danger btn-sm btn-sm" onclick="deletePost(${childPost.id})">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        ` : ''}
+                                                    </div>
+                                                </div>
+                                                <div class="child-post-content">
+                                                    ${childPost.contentHtml}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                container.append(postHtml);
+            });
+        }
+
+        // 切換主題讚狀態
+        function toggleLike() {
+            if (!currentUserId) {
+                showAlert('請先登入', 'warning');
+                return;
+            }
+
+            const isLiked = threadData.isLikedByCurrentUser;
+            const request = {
+                targetType: 'thread',
+                targetId: threadId,
+                kind: 'like'
+            };
+
+            const url = isLiked ? '/api/forum/reactions' : '/api/forum/reactions';
+            const method = isLiked ? 'DELETE' : 'POST';
+
+            $.ajax({
+                url: url,
+                method: method,
+                contentType: 'application/json',
+                data: JSON.stringify(request),
+                success: function(response) {
+                    threadData.isLikedByCurrentUser = !isLiked;
+                    threadData.likeCount += isLiked ? -1 : 1;
+                    updateLikeButton(threadData.isLikedByCurrentUser);
+                    $('#likeCount').text(threadData.likeCount);
+                },
+                error: function(xhr) {
+                    console.error('切換讚狀態失敗:', xhr);
+                    showAlert('操作失敗', 'danger');
+                }
+            });
+        }
+
+        // 切換收藏狀態
+        function toggleBookmark() {
+            if (!currentUserId) {
+                showAlert('請先登入', 'warning');
+                return;
+            }
+
+            const isBookmarked = threadData.isBookmarkedByCurrentUser;
+            const request = {
+                targetType: 'thread',
+                targetId: threadId
+            };
+
+            const url = isBookmarked ? '/api/forum/bookmarks' : '/api/forum/bookmarks';
+            const method = isBookmarked ? 'DELETE' : 'POST';
+
+            $.ajax({
+                url: url,
+                method: method,
+                contentType: 'application/json',
+                data: JSON.stringify(request),
+                success: function(response) {
+                    threadData.isBookmarkedByCurrentUser = !isBookmarked;
+                    updateBookmarkButton(threadData.isBookmarkedByCurrentUser);
+                    showAlert(isBookmarked ? '已取消收藏' : '已加入收藏', 'success');
+                },
+                error: function(xhr) {
+                    console.error('切換收藏狀態失敗:', xhr);
+                    showAlert('操作失敗', 'danger');
+                }
+            });
+        }
+
+        // 更新讚按鈕狀態
+        function updateLikeButton(isLiked) {
+            const btn = $('#likeBtn');
+            if (isLiked) {
+                btn.removeClass('btn-outline-primary').addClass('btn-primary');
+            } else {
+                btn.removeClass('btn-primary').addClass('btn-outline-primary');
+            }
+        }
+
+        // 更新收藏按鈕狀態
+        function updateBookmarkButton(isBookmarked) {
+            const btn = $('#bookmarkBtn');
+            if (isBookmarked) {
+                btn.removeClass('btn-outline-secondary').addClass('btn-secondary');
+            } else {
+                btn.removeClass('btn-secondary').addClass('btn-outline-secondary');
+            }
+        }
+
+        // 顯示回覆 Modal
+        function showReplyModal() {
+            if (!currentUserId) {
+                showAlert('請先登入', 'warning');
+                return;
+            }
+            $('#replyModal').modal('show');
+        }
+
+        // 回覆特定貼文
+        function replyToPost(postId, authorName) {
+            if (!currentUserId) {
+                showAlert('請先登入', 'warning');
+                return;
+            }
+            selectedParentPostId = postId;
+            $('#parentPostAuthor').text(authorName);
+            $('#parentPostInfo').show();
+            $('#replyModal').modal('show');
+        }
+
+        // 清除父回覆
+        function clearParentPost() {
+            selectedParentPostId = null;
+            $('#parentPostInfo').hide();
+        }
+
+        // 提交回覆
+        function submitReply() {
+            const content = $('#replyContent').val().trim();
+
+            if (!content) {
+                showAlert('請輸入回覆內容', 'warning');
+                return;
+            }
+
+            const request = {
+                threadId: threadId,
+                content: content,
+                parentPostId: selectedParentPostId
+            };
+
+            $.ajax({
+                url: '/api/forum/posts',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(request),
+                success: function(response) {
+                    $('#replyModal').modal('hide');
+                    $('#replyForm')[0].reset();
+                    clearParentPost();
+                    showAlert('回覆發表成功！', 'success');
+                    
+                    // 重新載入主題詳情
+                    loadThreadDetail();
+                },
+                error: function(xhr) {
+                    console.error('發表回覆失敗:', xhr);
+                    const message = xhr.responseJSON?.message || '發表回覆失敗';
+                    showAlert(message, 'danger');
+                }
+            });
+        }
+
+        // 切換回覆讚狀態
+        function togglePostLike(postId) {
+            if (!currentUserId) {
+                showAlert('請先登入', 'warning');
+                return;
+            }
+
+            const request = {
+                targetType: 'thread_post',
+                targetId: postId,
+                kind: 'like'
+            };
+
+            $.ajax({
+                url: '/api/forum/reactions',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(request),
+                success: function(response) {
+                    // 重新載入主題詳情以更新讚數
+                    loadThreadDetail();
+                },
+                error: function(xhr) {
+                    console.error('切換回覆讚狀態失敗:', xhr);
+                    showAlert('操作失敗', 'danger');
+                }
+            });
+        }
+
+        // 編輯主題
+        function editThread() {
+            if (!currentUserId) {
+                showAlert('請先登入', 'warning');
+                return;
+            }
+
+            const newTitle = prompt('請輸入新的主題標題:', threadData.title);
+            if (!newTitle || newTitle.trim() === '') return;
+
+            $.ajax({
+                url: `/api/forum/threads/${threadId}`,
+                method: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(newTitle),
+                success: function(response) {
+                    showAlert('主題更新成功！', 'success');
+                    loadThreadDetail();
+                },
+                error: function(xhr) {
+                    console.error('更新主題失敗:', xhr);
+                    const message = xhr.responseJSON?.message || '更新主題失敗';
+                    showAlert(message, 'danger');
+                }
+            });
+        }
+
+        // 刪除主題
+        function deleteThread() {
+            if (!currentUserId) {
+                showAlert('請先登入', 'warning');
+                return;
+            }
+
+            if (!confirm('確定要刪除這個主題嗎？此操作無法復原。')) return;
+
+            $.ajax({
+                url: `/api/forum/threads/${threadId}`,
+                method: 'DELETE',
+                success: function(response) {
+                    showAlert('主題已刪除', 'success');
+                    setTimeout(() => {
+                        window.history.back();
+                    }, 1500);
+                },
+                error: function(xhr) {
+                    console.error('刪除主題失敗:', xhr);
+                    const message = xhr.responseJSON?.message || '刪除主題失敗';
+                    showAlert(message, 'danger');
+                }
+            });
+        }
+
+        // 編輯回覆
+        function editPost(postId) {
+            if (!currentUserId) {
+                showAlert('請先登入', 'warning');
+                return;
+            }
+
+            const newContent = prompt('請輸入新的回覆內容:');
+            if (!newContent || newContent.trim() === '') return;
+
+            $.ajax({
+                url: `/api/forum/posts/${postId}`,
+                method: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(newContent),
+                success: function(response) {
+                    showAlert('回覆更新成功！', 'success');
+                    loadThreadDetail();
+                },
+                error: function(xhr) {
+                    console.error('更新回覆失敗:', xhr);
+                    const message = xhr.responseJSON?.message || '更新回覆失敗';
+                    showAlert(message, 'danger');
+                }
+            });
+        }
+
+        // 刪除回覆
+        function deletePost(postId) {
+            if (!currentUserId) {
+                showAlert('請先登入', 'warning');
+                return;
+            }
+
+            if (!confirm('確定要刪除這個回覆嗎？此操作無法復原。')) return;
+
+            $.ajax({
+                url: `/api/forum/posts/${postId}`,
+                method: 'DELETE',
+                success: function(response) {
+                    showAlert('回覆已刪除', 'success');
+                    loadThreadDetail();
+                },
+                error: function(xhr) {
+                    console.error('刪除回覆失敗:', xhr);
+                    const message = xhr.responseJSON?.message || '刪除回覆失敗';
+                    showAlert(message, 'danger');
+                }
+            });
+        }
+
+        // 格式化時間
+        function formatTimeAgo(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / (1000 * 60));
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+            if (diffMins < 1) return '剛剛';
+            if (diffMins < 60) return `${diffMins} 分鐘前`;
+            if (diffHours < 24) return `${diffHours} 小時前`;
+            if (diffDays < 7) return `${diffDays} 天前`;
+            
+            return date.toLocaleDateString('zh-TW');
+        }
+
+        // 顯示提示訊息
+        function showAlert(message, type) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            $('.container-fluid').prepend(alertHtml);
+            
+            // 自動隱藏
+            setTimeout(() => {
+                $('.alert').alert('close');
+            }, 5000);
+        }
+
+        // Modal 關閉時清除狀態
+        $('#replyModal').on('hidden.bs.modal', function() {
+            clearParentPost();
+            $('#replyForm')[0].reset();
+        });
+    </script>
+}
+
+<style>
+    .post-item {
+        border-left: 3px solid #e9ecef;
+        padding-left: 15px;
+    }
+
+    .child-posts {
+        border-left: 2px solid #f8f9fa;
+        padding-left: 15px;
+    }
+
+    .child-post-item {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 10px;
+    }
+
+    .thread-content, .post-content, .child-post-content {
+        line-height: 1.6;
+    }
+
+    .thread-content img, .post-content img, .child-post-content img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    .avatar {
+        font-weight: bold;
+    }
+
+    .breadcrumb a {
+        color: #007bff;
+        text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+</style> 

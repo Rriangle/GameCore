@@ -1,0 +1,317 @@
+@model GameCore.Web.Controllers.WalletMvcController.WalletIndexViewModel
+@{
+    ViewData["Title"] = "我的錢包";
+}
+
+<div class="container-fluid">
+    <!-- 頁面標題 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-wallet text-primary"></i>
+                我的錢包
+            </h1>
+            <p class="text-muted">管理您的點數餘額和銷售錢包</p>
+        </div>
+    </div>
+
+    <!-- 錢包概覽卡片 -->
+    <div class="row mb-4">
+        <!-- 主錢包餘額 -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                主錢包餘額
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @Model.WalletBalance.UserPoint.ToString("N0") 點
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-coins fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 銷售錢包餘額 -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                銷售錢包餘額
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @Model.SalesWallet.UserSalesWallet.ToString("N0") 點
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-store fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 本月銷售額 -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                本月銷售額
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @Model.SalesStatistics.MonthlySales.ToString("N0") 點
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 銷售權限狀態 -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                銷售權限
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @(Model.SalesWallet.HasSalesAuthority ? "已啟用" : "未啟用")
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-shield-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 功能按鈕區 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">快速操作</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <a href="@Url.Action("Ledger", "WalletMvc")" class="btn btn-primary btn-block">
+                                <i class="fas fa-list"></i>
+                                查看流水記錄
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="@Url.Action("SalesWallet", "WalletMvc")" class="btn btn-success btn-block">
+                                <i class="fas fa-store"></i>
+                                銷售錢包管理
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="@Url.Action("SalesPermission", "WalletMvc")" class="btn btn-info btn-block">
+                                <i class="fas fa-key"></i>
+                                申請銷售權限
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button type="button" class="btn btn-warning btn-block" data-toggle="modal" data-target="#transferModal">
+                                <i class="fas fa-exchange-alt"></i>
+                                轉移點數
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 銷售統計圖表 -->
+    <div class="row">
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">銷售趨勢</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 銷售統計詳情 -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">銷售統計</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="h4 font-weight-bold text-primary">@Model.SalesStatistics.TotalOrders</div>
+                                <div class="text-xs text-muted">總訂單數</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="h4 font-weight-bold text-success">@Model.SalesStatistics.TotalSales.ToString("N0")</div>
+                                <div class="text-xs text-muted">累計銷售額</div>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="h4 font-weight-bold text-info">@Model.SalesStatistics.AverageOrderValue.ToString("N0")</div>
+                                <div class="text-xs text-muted">平均訂單金額</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="h4 font-weight-bold text-warning">@Model.SalesStatistics.MonthlyOrders</div>
+                                <div class="text-xs text-muted">本月訂單數</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 轉移點數 Modal -->
+<div class="modal fade" id="transferModal" tabindex="-1" role="dialog" aria-labelledby="transferModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="transferModalLabel">轉移點數</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="transferForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="transferAmount">轉移金額</label>
+                        <input type="number" class="form-control" id="transferAmount" name="amount" min="1" max="@Model.WalletBalance.UserPoint" required>
+                        <small class="form-text text-muted">可轉移金額：@Model.WalletBalance.UserPoint 點</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="transferDirection">轉移方向</label>
+                        <select class="form-control" id="transferDirection" name="direction" required>
+                            <option value="to_sales">轉移到銷售錢包</option>
+                            <option value="from_sales">從銷售錢包提領</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">確認轉移</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // 銷售趨勢圖表
+        var ctx = document.getElementById('salesChart').getContext('2d');
+        var salesChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
+                datasets: [{
+                    label: '銷售額',
+                    data: [1200, 1900, 3000, 5000, 2000, 3000],
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // 轉移點數表單處理
+        document.getElementById('transferForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const amount = parseInt(document.getElementById('transferAmount').value);
+            const direction = document.getElementById('transferDirection').value;
+            
+            try {
+                let response;
+                if (direction === 'to_sales') {
+                    response = await fetch('/api/wallet/sales/transfer', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ amount: amount })
+                    });
+                } else {
+                    response = await fetch('/api/wallet/sales/withdraw', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ amount: amount })
+                    });
+                }
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    alert(result.message);
+                    location.reload();
+                } else {
+                    const error = await response.json();
+                    alert('轉移失敗：' + error.error);
+                }
+            } catch (error) {
+                alert('轉移失敗：' + error.message);
+            }
+        });
+
+        // 根據轉移方向調整最大金額
+        document.getElementById('transferDirection').addEventListener('change', function() {
+            const direction = this.value;
+            const amountInput = document.getElementById('transferAmount');
+            
+            if (direction === 'to_sales') {
+                amountInput.max = @Model.WalletBalance.UserPoint;
+                amountInput.placeholder = '可轉移金額：@Model.WalletBalance.UserPoint 點';
+            } else {
+                amountInput.max = @Model.SalesWallet.UserSalesWallet;
+                amountInput.placeholder = '可提領金額：@Model.SalesWallet.UserSalesWallet 點';
+            }
+        });
+    </script>
+} 

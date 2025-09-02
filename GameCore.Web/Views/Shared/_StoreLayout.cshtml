@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - GameCore 官方商城</title>
+    <meta name="description" content="@ViewData["Description"]" />
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="~/css/store.css" rel="stylesheet" />
+    
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <!-- 導航欄 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="@Url.Action("Index", "StoreMvc")">
+                <i class="fas fa-gamepad me-2"></i>
+                GameCore 官方商城
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="@Url.Action("Index", "StoreMvc")">
+                            <i class="fas fa-home me-1"></i>首頁
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-th-large me-1"></i>商品分類
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="@Url.Action("Category", "StoreMvc", new { category = "gaming" })">遊戲相關</a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("Category", "StoreMvc", new { category = "hardware" })">硬體設備</a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("Category", "StoreMvc", new { category = "accessories" })">配件周邊</a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("Category", "StoreMvc", new { category = "collectibles" })">收藏品</a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("Category", "StoreMvc", new { category = "clothing" })">服飾</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="@Url.Action("Index", "StoreMvc")">
+                            <i class="fas fa-fire me-1"></i>熱門商品
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="@Url.Action("Index", "StoreMvc")">
+                            <i class="fas fa-tags me-1"></i>特價活動
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- 搜尋欄 -->
+                <form class="d-flex me-3" role="search" method="get" action="@Url.Action("Search", "StoreMvc")">
+                    <div class="input-group">
+                        <input class="form-control" type="search" name="q" placeholder="搜尋商品..." 
+                               value="@Context.Request.Query["q"]" aria-label="搜尋商品">
+                        <button class="btn btn-outline-light" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- 右側選單 -->
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="@Url.Action("Cart", "StoreMvc")">
+                            <i class="fas fa-shopping-cart me-1"></i>
+                            購物車
+                            <span class="badge bg-danger ms-1" id="cartCount">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i>我的帳戶
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="@Url.Action("MyOrders", "StoreMvc")">
+                                <i class="fas fa-receipt me-2"></i>我的訂單
+                            </a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("Index", "StoreMvc")">
+                                <i class="fas fa-heart me-2"></i>我的收藏
+                            </a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("Index", "StoreMvc")">
+                                <i class="fas fa-map-marker-alt me-2"></i>收貨地址
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="@Url.Action("Index", "Home")">
+                                <i class="fas fa-home me-2"></i>返回主站
+                            </a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("Logout", "Account")">
+                                <i class="fas fa-sign-out-alt me-2"></i>登出
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要內容 -->
+    <main role="main">
+        @RenderBody()
+    </main>
+
+    <!-- 頁腳 -->
+    <footer class="bg-dark text-light py-5 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-3">
+                    <h5>關於 GameCore</h5>
+                    <p class="text-muted">專注於遊戲社群與電競文化的綜合平台，提供優質的遊戲相關商品與服務。</p>
+                </div>
+                <div class="col-md-3">
+                    <h5>客戶服務</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-muted text-decoration-none">購物須知</a></li>
+                        <li><a href="#" class="text-muted text-decoration-none">退換貨政策</a></li>
+                        <li><a href="#" class="text-muted text-decoration-none">配送說明</a></li>
+                        <li><a href="#" class="text-muted text-decoration-none">常見問題</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h5>聯絡我們</h5>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-phone me-2"></i>客服專線：0800-123-456</li>
+                        <li><i class="fas fa-envelope me-2"></i>客服信箱：service@gamecore.com</li>
+                        <li><i class="fas fa-clock me-2"></i>服務時間：09:00-18:00</li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h5>追蹤我們</h5>
+                    <div class="d-flex gap-3">
+                        <a href="#" class="text-muted text-decoration-none">
+                            <i class="fab fa-facebook fa-2x"></i>
+                        </a>
+                        <a href="#" class="text-muted text-decoration-none">
+                            <i class="fab fa-twitter fa-2x"></i>
+                        </a>
+                        <a href="#" class="text-muted text-decoration-none">
+                            <i class="fab fa-instagram fa-2x"></i>
+                        </a>
+                        <a href="#" class="text-muted text-decoration-none">
+                            <i class="fab fa-youtube fa-2x"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-4">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="mb-0 text-muted">&copy; 2025 GameCore. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <img src="/images/payment-methods.png" alt="付款方式" height="30" class="me-2">
+                    <span class="text-muted small">支援多種付款方式</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast 容器 -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- Custom JS -->
+    <script src="~/js/store.js"></script>
+    
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html> 

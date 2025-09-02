@@ -1,0 +1,453 @@
+@model GameCore.Web.Controllers.StoreMvcController.CheckoutViewModel
+@{
+    ViewData["Title"] = "結帳";
+    ViewData["Description"] = "完成您的訂單";
+}
+
+@section Styles {
+    <style>
+        .checkout-container {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .order-summary {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 2rem;
+            position: sticky;
+            top: 2rem;
+        }
+        
+        .order-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .order-item:last-child {
+            border-bottom: none;
+        }
+        
+        .order-item-image {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 6px;
+            background: #f8f9fa;
+            margin-right: 1rem;
+        }
+        
+        .form-section {
+            margin-bottom: 2rem;
+        }
+        
+        .form-section h5 {
+            color: #495057;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #007bff;
+        }
+        
+        .payment-method {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .payment-method:hover {
+            border-color: #007bff;
+            background: #f8f9fa;
+        }
+        
+        .payment-method.selected {
+            border-color: #007bff;
+            background: #e7f3ff;
+        }
+        
+        .payment-method input[type="radio"] {
+            margin-right: 0.5rem;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .summary-row:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #dc3545;
+        }
+        
+        .btn-place-order {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border: none;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: transform 0.2s;
+        }
+        
+        .btn-place-order:hover {
+            transform: translateY(-2px);
+            color: white;
+        }
+        
+        .btn-place-order:disabled {
+            background: #6c757d;
+            transform: none;
+        }
+    </style>
+}
+
+<div class="container py-4">
+    <!-- 頁面標題 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">
+            <i class="fas fa-credit-card text-primary me-2"></i>
+            結帳
+        </h1>
+        <a href="@Url.Action("Cart", "StoreMvc")" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left me-2"></i>
+            返回購物車
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- 結帳表單 -->
+        <div class="col-lg-8">
+            <form id="checkoutForm" method="post" action="@Url.Action("PlaceOrder", "StoreMvc")">
+                <!-- 收貨資訊 -->
+                <div class="checkout-container">
+                    <div class="form-section">
+                        <h5><i class="fas fa-shipping-fast me-2"></i>收貨資訊</h5>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="shippingName" class="form-label">收貨人姓名 <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="shippingName" name="shippingName" 
+                                       value="@Model.ShippingName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="shippingPhone" class="form-label">聯絡電話 <span class="text-danger">*</span></label>
+                                <input type="tel" class="form-control" id="shippingPhone" name="shippingPhone" 
+                                       value="@Model.ShippingPhone" required>
+                            </div>
+                            <div class="col-12">
+                                <label for="shippingAddress" class="form-label">收貨地址 <span class="text-danger">*</span></label>
+                                <textarea class="form-control" id="shippingAddress" name="shippingAddress" 
+                                          rows="3" required>@Model.ShippingAddress</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 支付方式 -->
+                    <div class="form-section">
+                        <h5><i class="fas fa-credit-card me-2"></i>支付方式</h5>
+                        <div class="payment-method" onclick="selectPayment('credit_card')">
+                            <input type="radio" name="paymentMethod" value="credit_card" 
+                                   @(Model.PaymentMethod == "credit_card" ? "checked" : "") required>
+                            <label class="form-label mb-0">
+                                <i class="fas fa-credit-card me-2"></i>
+                                信用卡 / 金融卡
+                            </label>
+                        </div>
+                        <div class="payment-method" onclick="selectPayment('bank_transfer')">
+                            <input type="radio" name="paymentMethod" value="bank_transfer" 
+                                   @(Model.PaymentMethod == "bank_transfer" ? "checked" : "")>
+                            <label class="form-label mb-0">
+                                <i class="fas fa-university me-2"></i>
+                                銀行轉帳
+                            </label>
+                        </div>
+                        <div class="payment-method" onclick="selectPayment('convenience_store')">
+                            <input type="radio" name="paymentMethod" value="convenience_store" 
+                                   @(Model.PaymentMethod == "convenience_store" ? "checked" : "")>
+                            <label class="form-label mb-0">
+                                <i class="fas fa-store me-2"></i>
+                                超商取貨付款
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 訂單備註 -->
+                    <div class="form-section">
+                        <h5><i class="fas fa-sticky-note me-2"></i>訂單備註</h5>
+                        <div class="mb-3">
+                            <textarea class="form-control" id="orderNote" name="orderNote" rows="3" 
+                                      placeholder="如有特殊需求或注意事項，請在此說明..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- 服務條款 -->
+                    <div class="form-section">
+                        <h5><i class="fas fa-file-contract me-2"></i>服務條款</h5>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="agreeTerms" required>
+                            <label class="form-check-label" for="agreeTerms">
+                                我已閱讀並同意 <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">服務條款</a> 和 
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#privacyModal">隱私政策</a>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- 訂單摘要 -->
+        <div class="col-lg-4">
+            <div class="order-summary">
+                <h4 class="mb-4">訂單摘要</h4>
+                
+                <!-- 商品列表 -->
+                <div class="mb-4">
+                    <h6 class="mb-3">商品清單</h6>
+                    @foreach (var item in Model.CartItems)
+                    {
+                        <div class="order-item">
+                            <img src="@(string.IsNullOrEmpty(item.ImageUrl) ? "/images/placeholder.jpg" : item.ImageUrl)" 
+                                 alt="@item.ProductName" class="order-item-image">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">@item.ProductName</h6>
+                                <p class="text-muted small mb-0">數量: @item.Quantity</p>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold">NT$ @item.Subtotal.ToString("N0")</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- 費用明細 -->
+                <div class="mb-4">
+                    <h6 class="mb-3">費用明細</h6>
+                    <div class="summary-row">
+                        <span>商品小計</span>
+                        <span>NT$ @Model.TotalAmount.ToString("N0")</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>運費</span>
+                        <span>NT$ 0</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>總計</span>
+                        <span>NT$ @Model.TotalAmount.ToString("N0")</span>
+                    </div>
+                </div>
+
+                <!-- 下單按鈕 -->
+                <div class="d-grid">
+                    <button type="submit" form="checkoutForm" class="btn btn-place-order" id="placeOrderBtn" disabled>
+                        <i class="fas fa-lock me-2"></i>
+                        確認下單
+                    </button>
+                </div>
+
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="fas fa-shield-alt me-1"></i>
+                        您的個人資料將受到保護，不會洩露給第三方
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 服務條款 Modal -->
+<div class="modal fade" id="termsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">服務條款</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6>1. 商品品質保證</h6>
+                <p>我們保證所有商品均為正版授權，品質有保障。</p>
+                
+                <h6>2. 退換貨政策</h6>
+                <p>商品到貨後7天內，如發現商品有瑕疵或與描述不符，可申請退換貨。</p>
+                
+                <h6>3. 配送服務</h6>
+                <p>我們提供安全、快速的配送服務，確保商品完整送達。</p>
+                
+                <h6>4. 隱私保護</h6>
+                <p>您的個人資料將受到嚴格保護，不會用於其他用途。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">我已了解</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 隱私政策 Modal -->
+<div class="modal fade" id="privacyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">隱私政策</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6>1. 資料收集</h6>
+                <p>我們只收集必要的個人資料，用於訂單處理和客戶服務。</p>
+                
+                <h6>2. 資料使用</h6>
+                <p>您的資料僅用於訂單處理、配送和客戶服務，不會用於其他商業目的。</p>
+                
+                <h6>3. 資料保護</h6>
+                <p>我們採用先進的加密技術保護您的個人資料安全。</p>
+                
+                <h6>4. 資料分享</h6>
+                <p>我們不會將您的個人資料分享給第三方，除非法律要求或您明確同意。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">我已了解</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // 選擇支付方式
+            window.selectPayment = function(method) {
+                // 移除所有選中狀態
+                $('.payment-method').removeClass('selected');
+                $('input[name="paymentMethod"]').prop('checked', false);
+                
+                // 選中指定方式
+                $(`.payment-method input[value="${method}"]`).prop('checked', true);
+                $(`.payment-method input[value="${method}"]`).closest('.payment-method').addClass('selected');
+            };
+            
+            // 檢查表單完整性
+            function checkFormComplete() {
+                const requiredFields = [
+                    'shippingName',
+                    'shippingPhone', 
+                    'shippingAddress'
+                ];
+                
+                const paymentMethod = $('input[name="paymentMethod"]:checked').val();
+                const agreeTerms = $('#agreeTerms').is(':checked');
+                
+                let isComplete = true;
+                
+                // 檢查必填欄位
+                requiredFields.forEach(field => {
+                    const value = $(`#${field}`).val().trim();
+                    if (!value) {
+                        isComplete = false;
+                    }
+                });
+                
+                // 檢查支付方式
+                if (!paymentMethod) {
+                    isComplete = false;
+                }
+                
+                // 檢查同意條款
+                if (!agreeTerms) {
+                    isComplete = false;
+                }
+                
+                // 更新按鈕狀態
+                $('#placeOrderBtn').prop('disabled', !isComplete);
+            }
+            
+            // 綁定表單事件
+            $('#checkoutForm input, #checkoutForm textarea, #checkoutForm select').on('input change', checkFormComplete);
+            $('#agreeTerms').on('change', checkFormComplete);
+            
+            // 表單提交
+            $('#checkoutForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                if (!$('#agreeTerms').is(':checked')) {
+                    showToast('請先同意服務條款和隱私政策', 'error');
+                    return;
+                }
+                
+                // 顯示確認對話框
+                if (!confirm('確定要下單嗎？下單後將無法取消。')) {
+                    return;
+                }
+                
+                // 禁用按鈕防止重複提交
+                $('#placeOrderBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>處理中...');
+                
+                // 提交表單
+                $.ajax({
+                    url: '/api/Store/orders/create',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        cartIds: @Html.Raw(Json.Serialize(Model.CartItems.Select(item => item.CartId))),
+                        shippingAddress: $('#shippingAddress').val(),
+                        shippingPhone: $('#shippingPhone').val(),
+                        shippingName: $('#shippingName').val(),
+                        paymentMethod: $('input[name="paymentMethod"]:checked').val(),
+                        note: $('#orderNote').val()
+                    }),
+                    success: function(response) {
+                        if (response.success) {
+                            showToast('訂單建立成功！', 'success');
+                            
+                            // 跳轉到訂單確認頁面
+                            setTimeout(() => {
+                                window.location.href = `/StoreMvc/OrderConfirmation/${response.data.orderId}`;
+                            }, 1500);
+                        } else {
+                            showToast(response.message || '訂單建立失敗', 'error');
+                            $('#placeOrderBtn').prop('disabled', false).html('<i class="fas fa-lock me-2"></i>確認下單');
+                        }
+                    },
+                    error: function() {
+                        showToast('訂單建立失敗，請稍後再試', 'error');
+                        $('#placeOrderBtn').prop('disabled', false).html('<i class="fas fa-lock me-2"></i>確認下單');
+                    }
+                });
+            });
+            
+            // 顯示 Toast 訊息
+            function showToast(message, type) {
+                const toast = $(`
+                    <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0" role="alert">
+                        <div class="d-flex">
+                            <div class="toast-body">${message}</div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                        </div>
+                    </div>
+                `);
+                
+                $('.toast-container').append(toast);
+                const bsToast = new bootstrap.Toast(toast[0]);
+                bsToast.show();
+                
+                // 自動移除
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
+            }
+            
+            // 初始化檢查
+            checkFormComplete();
+        });
+    </script>
+} 

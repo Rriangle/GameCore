@@ -1,0 +1,750 @@
+@model GameCore.Core.Entities.MarketTransaction
+@{
+    ViewData["Title"] = "上架商品";
+    ViewData["ActivePage"] = "PlayerMarket";
+}
+
+<div class="container-fluid">
+    <!-- 頁面標題 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-plus text-success"></i>
+                上架商品
+            </h1>
+            <p class="text-muted">將您的遊戲物品上架到玩家市場，與其他玩家交易</p>
+        </div>
+    </div>
+
+    <form id="createListingForm" method="post" action="/api/playermarket/create" enctype="multipart/form-data">
+        <div class="row">
+            <!-- 左側：商品資訊表單 -->
+            <div class="col-lg-8 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle"></i>
+                            商品基本資訊
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label for="itemName" class="form-label">商品名稱 <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="itemName" name="ItemName" 
+                                       value="@Model?.ItemName" required maxlength="100" 
+                                       placeholder="例如：傳說級魔法劍、稀有寵物蛋等">
+                                <div class="form-text">請使用清楚、吸引人的商品名稱</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="category" class="form-label">商品分類 <span class="text-danger">*</span></label>
+                                <select class="form-select" id="category" name="Category" required>
+                                    <option value="">請選擇分類</option>
+                                    <option value="裝備" @(Model?.Category == "裝備" ? "selected" : "")>裝備</option>
+                                    <option value="道具" @(Model?.Category == "道具" ? "selected" : "")>道具</option>
+                                    <option value="材料" @(Model?.Category == "材料" ? "selected" : "")>材料</option>
+                                    <option value="寵物" @(Model?.Category == "寵物" ? "selected" : "")>寵物</option>
+                                    <option value="坐騎" @(Model?.Category == "坐騎" ? "selected" : "")>坐騎</option>
+                                    <option value="時裝" @(Model?.Category == "時裝" ? "selected" : "")>時裝</option>
+                                    <option value="其他" @(Model?.Category == "其他" ? "selected" : "")>其他</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">商品描述 <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="description" name="Description" rows="4" required 
+                                      maxlength="500" placeholder="詳細描述您的商品，包括屬性、效果、稀有度等資訊...">@Model?.Description</textarea>
+                            <div class="form-text">
+                                <span id="charCount">0</span>/500 字元
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="quantity" class="form-label">上架數量 <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="quantity" name="Quantity" 
+                                       value="@(Model?.Quantity ?? 1)" required min="1" max="999">
+                                <div class="form-text">一次最多可上架 999 個相同商品</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="price" class="form-label">售價 (NT$) <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text">NT$</span>
+                                    <input type="number" class="form-control" id="price" name="Price" 
+                                           value="@Model?.Price" required min="1" step="1" 
+                                           placeholder="請輸入售價">
+                                </div>
+                                <div class="form-text">建議參考市場行情設定合理價格</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="originalPrice" class="form-label">原價 (NT$)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">NT$</span>
+                                    <input type="number" class="form-control" id="originalPrice" name="OriginalPrice" 
+                                           value="@Model?.OriginalPrice" min="0" step="1" 
+                                           placeholder="可選，用於顯示折扣">
+                                </div>
+                                <div class="form-text">設定原價可突出折扣優惠</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="isRare" class="form-label">稀有度</label>
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="isRare" name="IsRare" 
+                                           value="true" @(Model?.IsRare == true ? "checked" : "")>
+                                    <label class="form-check-label" for="isRare">
+                                        標記為稀有商品
+                                    </label>
+                                </div>
+                                <div class="form-text">稀有商品會獲得特殊標籤和優先展示</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="condition" class="form-label">商品狀況</label>
+                                <select class="form-select" id="condition" name="Condition">
+                                    <option value="全新" @(Model?.Condition == "全新" ? "selected" : "")>全新</option>
+                                    <option value="九成新" @(Model?.Condition == "九成新" ? "selected" : "")>九成新</option>
+                                    <option value="八成新" @(Model?.Condition == "八成新" ? "selected" : "")>八成新</option>
+                                    <option value="七成新" @(Model?.Condition == "七成新" ? "selected" : "")>七成新</option>
+                                    <option value="六成新" @(Model?.Condition == "六成新" ? "selected" : "")>六成新</option>
+                                    <option value="五成新以下" @(Model?.Condition == "五成新以下" ? "selected" : "")>五成新以下</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="expiryDate" class="form-label">上架期限</label>
+                                <select class="form-select" id="expiryDate" name="ExpiryDays">
+                                    <option value="7" @(Model?.ExpiryDays == 7 ? "selected" : "")>7 天</option>
+                                    <option value="14" @(Model?.ExpiryDays == 14 ? "selected" : "")>14 天</option>
+                                    <option value="30" @(Model?.ExpiryDays == 30 ? "selected" : "")>30 天</option>
+                                    <option value="60" @(Model?.ExpiryDays == 60 ? "selected" : "")>60 天</option>
+                                    <option value="90" @(Model?.ExpiryDays == 90 ? "selected" : "")>90 天</option>
+                                </select>
+                                <div class="form-text">到期後商品會自動下架</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 商品圖片 -->
+                <div class="card shadow-sm mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-images"></i>
+                            商品圖片
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="imageUpload" class="form-label">上傳商品圖片</label>
+                            <input type="file" class="form-control" id="imageUpload" name="ImageFile" 
+                                   accept="image/*" multiple onchange="handleImageUpload(this)">
+                            <div class="form-text">支援 JPG、PNG、GIF 格式，最多 5 張圖片，每張不超過 5MB</div>
+                        </div>
+                        
+                        <div class="image-preview-container" id="imagePreviewContainer">
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-image fa-3x mb-3"></i>
+                                <p>尚未選擇圖片</p>
+                            </div>
+                        </div>
+                        
+                        <div class="image-upload-tips mt-3">
+                            <h6>圖片上傳建議：</h6>
+                            <ul class="small text-muted">
+                                <li>使用高品質、清晰的圖片</li>
+                                <li>圖片尺寸建議 800x600 像素以上</li>
+                                <li>背景簡潔，突出商品主體</li>
+                                <li>可從多角度拍攝展示商品細節</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 交易設定 -->
+                <div class="card shadow-sm mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-cog"></i>
+                            交易設定
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="autoAccept" class="form-label">自動接受</label>
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="autoAccept" name="AutoAccept" 
+                                           value="true" @(Model?.AutoAccept == true ? "checked" : "")>
+                                    <label class="form-check-label" for="autoAccept">
+                                        自動接受購買請求
+                                    </label>
+                                </div>
+                                <div class="form-text">啟用後買家可直接購買，無需等待確認</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="allowNegotiation" class="form-label">允許議價</label>
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="allowNegotiation" name="AllowNegotiation" 
+                                           value="true" @(Model?.AllowNegotiation == true ? "checked" : "")>
+                                    <label class="form-check-label" for="allowNegotiation">
+                                        允許買家議價
+                                    </label>
+                                </div>
+                                <div class="form-text">買家可發送議價請求</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="specialRequirements" class="form-label">特殊要求</label>
+                            <textarea class="form-control" id="specialRequirements" name="SpecialRequirements" rows="3" 
+                                      maxlength="200" placeholder="例如：僅限等級 50 以上玩家、需要完成特定任務等...">@Model?.SpecialRequirements</textarea>
+                            <div class="form-text">
+                                <span id="reqCharCount">0</span>/200 字元
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側：預覽和提交 -->
+            <div class="col-lg-4 mb-4">
+                <div class="card shadow-sm sticky-top" style="top: 2rem;">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-eye"></i>
+                            商品預覽
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="preview-item mb-3">
+                            <div class="preview-image-container mb-3">
+                                <div class="preview-image-placeholder d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-image text-muted fa-3x"></i>
+                                </div>
+                            </div>
+                            <h6 id="previewItemName" class="text-muted">商品名稱</h6>
+                            <p id="previewDescription" class="text-muted small">商品描述</p>
+                            <div class="preview-meta mb-2">
+                                <span id="previewCategory" class="badge bg-primary">分類</span>
+                                <span id="previewQuantity" class="badge bg-secondary">數量: 0</span>
+                                <span id="previewRare" class="badge bg-warning" style="display: none;">稀有</span>
+                            </div>
+                            <div class="preview-price">
+                                <div id="previewCurrentPrice" class="current-price">NT$ 0</div>
+                                <div id="previewOriginalPrice" class="original-price" style="display: none;">NT$ 0</div>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="listing-summary mb-3">
+                            <h6 class="mb-3">上架摘要</h6>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>商品數量</span>
+                                <span id="summaryQuantity">0</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>單價</span>
+                                <span id="summaryPrice">NT$ 0</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>上架手續費</span>
+                                <span id="summaryFee">NT$ 0</span>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between">
+                                <strong>預估收益</strong>
+                                <strong class="text-success" id="summaryRevenue">NT$ 0</strong>
+                            </div>
+                        </div>
+                        
+                        <div class="listing-tips mb-3">
+                            <h6 class="mb-2">上架須知</h6>
+                            <ul class="small text-muted">
+                                <li>上架手續費為售價的 5%</li>
+                                <li>商品售出後收取 3% 交易手續費</li>
+                                <li>請確保商品資訊真實準確</li>
+                                <li>違規商品將被下架並處罰</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <button type="submit" class="btn btn-success w-100 mb-2" id="submitBtn">
+                                <i class="fas fa-upload"></i> 立即上架
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary w-100 mb-2" onclick="saveAsDraft()">
+                                <i class="fas fa-save"></i> 儲存草稿
+                            </button>
+                            <a href="/PlayerMarket" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-arrow-left"></i> 返回市場
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- 圖片預覽 Modal -->
+<div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-labelledby="imagePreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imagePreviewModalLabel">
+                    <i class="fas fa-image"></i> 圖片預覽
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" class="img-fluid" alt="圖片預覽">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .sticky-top {
+            z-index: 1020;
+        }
+
+        .image-preview-container {
+            min-height: 200px;
+            border: 2px dashed #dee2e6;
+            border-radius: 0.375rem;
+            background-color: #f8f9fc;
+        }
+
+        .image-preview-item {
+            position: relative;
+            display: inline-block;
+            margin: 0.5rem;
+            border-radius: 0.375rem;
+            overflow: hidden;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+
+        .image-preview-item img {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .image-preview-item:hover img {
+            transform: scale(1.05);
+        }
+
+        .image-preview-item .remove-btn {
+            position: absolute;
+            top: 0.25rem;
+            right: 0.25rem;
+            background-color: rgba(220, 53, 69, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .image-preview-item .remove-btn:hover {
+            background-color: #dc3545;
+        }
+
+        .preview-image-container {
+            height: 200px;
+            background-color: #f8f9fc;
+            border-radius: 0.375rem;
+            overflow: hidden;
+        }
+
+        .preview-image-placeholder {
+            width: 100%;
+            height: 100%;
+            color: #858796;
+        }
+
+        .preview-image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .current-price {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .original-price {
+            font-size: 1rem;
+            text-decoration: line-through;
+            color: #6c757d;
+        }
+
+        .listing-tips ul {
+            padding-left: 1rem;
+            margin-bottom: 0;
+        }
+
+        .listing-tips li {
+            margin-bottom: 0.25rem;
+        }
+
+        .action-buttons .btn {
+            padding: 0.75rem 1rem;
+            font-weight: 500;
+        }
+
+        .form-check-input:checked {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+
+        .badge {
+            font-size: 0.8rem;
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 991.98px) {
+            .sticky-top {
+                position: static !important;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        let uploadedImages = [];
+        let currentImageIndex = 0;
+
+        // 頁面載入完成後初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            updatePreview();
+            updateSummary();
+        });
+
+        // 設定事件監聽器
+        function setupEventListeners() {
+            // 字元計數
+            document.getElementById('description').addEventListener('input', function() {
+                updateCharCount('description', 'charCount', 500);
+                updatePreview();
+            });
+            
+            document.getElementById('specialRequirements').addEventListener('input', function() {
+                updateCharCount('specialRequirements', 'reqCharCount', 200);
+            });
+            
+            // 表單欄位變更時更新預覽
+            ['itemName', 'category', 'quantity', 'price', 'originalPrice', 'isRare'].forEach(fieldId => {
+                document.getElementById(fieldId).addEventListener('input', function() {
+                    updatePreview();
+                    updateSummary();
+                });
+            });
+            
+            // 表單提交
+            document.getElementById('createListingForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                submitListing();
+            });
+        }
+
+        // 更新字元計數
+        function updateCharCount(fieldId, counterId, maxLength) {
+            const field = document.getElementById(fieldId);
+            const counter = document.getElementById(counterId);
+            const currentLength = field.value.length;
+            
+            counter.textContent = currentLength;
+            
+            if (currentLength > maxLength * 0.8) {
+                counter.className = 'form-text text-warning';
+            } else {
+                counter.className = 'form-text';
+            }
+        }
+
+        // 處理圖片上傳
+        function handleImageUpload(input) {
+            const files = input.files;
+            if (files.length === 0) return;
+            
+            if (files.length > 5) {
+                showToast('最多只能上傳 5 張圖片', 'warning');
+                return;
+            }
+            
+            uploadedImages = [];
+            const container = document.getElementById('imagePreviewContainer');
+            container.innerHTML = '';
+            
+            Array.from(files).forEach((file, index) => {
+                if (!file.type.startsWith('image/')) {
+                    showToast(`${file.name} 不是有效的圖片檔案`, 'warning');
+                    return;
+                }
+                
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast(`${file.name} 檔案大小超過 5MB`, 'warning');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imageData = {
+                        file: file,
+                        dataUrl: e.target.result,
+                        index: index
+                    };
+                    uploadedImages.push(imageData);
+                    displayImagePreview(imageData);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // 顯示圖片預覽
+        function displayImagePreview(imageData) {
+            const container = document.getElementById('imagePreviewContainer');
+            
+            const previewItem = document.createElement('div');
+            previewItem.className = 'image-preview-item';
+            previewItem.innerHTML = `
+                <img src="${imageData.dataUrl}" alt="預覽圖片 ${imageData.index + 1}" 
+                     onclick="showImageModal('${imageData.dataUrl}')">
+                <button type="button" class="remove-btn" onclick="removeImage(${imageData.index})">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            container.appendChild(previewItem);
+            
+            // 更新商品預覽的第一張圖片
+            if (imageData.index === 0) {
+                updatePreviewImage(imageData.dataUrl);
+            }
+        }
+
+        // 移除圖片
+        function removeImage(index) {
+            uploadedImages.splice(index, 1);
+            refreshImagePreviews();
+        }
+
+        // 重新整理圖片預覽
+        function refreshImagePreviews() {
+            const container = document.getElementById('imagePreviewContainer');
+            container.innerHTML = '';
+            
+            if (uploadedImages.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-image fa-3x mb-3"></i>
+                        <p>尚未選擇圖片</p>
+                    </div>
+                `;
+                updatePreviewImage('');
+                return;
+            }
+            
+            uploadedImages.forEach((imageData, index) => {
+                imageData.index = index;
+                displayImagePreview(imageData);
+            });
+        }
+
+        // 更新預覽圖片
+        function updatePreviewImage(dataUrl) {
+            const container = document.querySelector('.preview-image-container');
+            if (dataUrl) {
+                container.innerHTML = `<img src="${dataUrl}" alt="商品預覽">`;
+            } else {
+                container.innerHTML = `
+                    <div class="preview-image-placeholder d-flex align-items-center justify-content-center">
+                        <i class="fas fa-image text-muted fa-3x"></i>
+                    </div>
+                `;
+            }
+        }
+
+        // 顯示圖片 Modal
+        function showImageModal(dataUrl) {
+            document.getElementById('modalImage').src = dataUrl;
+            const modal = new bootstrap.Modal(document.getElementById('imagePreviewModal'));
+            modal.show();
+        }
+
+        // 更新商品預覽
+        function updatePreview() {
+            const itemName = document.getElementById('itemName').value || '商品名稱';
+            const description = document.getElementById('description').value || '商品描述';
+            const category = document.getElementById('category').value || '分類';
+            const quantity = document.getElementById('quantity').value || 0;
+            const price = document.getElementById('price').value || 0;
+            const originalPrice = document.getElementById('originalPrice').value || 0;
+            const isRare = document.getElementById('isRare').checked;
+            
+            document.getElementById('previewItemName').textContent = itemName;
+            document.getElementById('previewDescription').textContent = description;
+            document.getElementById('previewCategory').textContent = category;
+            document.getElementById('previewQuantity').textContent = `數量: ${quantity}`;
+            document.getElementById('previewCurrentPrice').textContent = `NT$ ${parseInt(price).toLocaleString()}`;
+            
+            if (originalPrice > 0 && originalPrice > price) {
+                document.getElementById('previewOriginalPrice').textContent = `NT$ ${parseInt(originalPrice).toLocaleString()}`;
+                document.getElementById('previewOriginalPrice').style.display = 'block';
+            } else {
+                document.getElementById('previewOriginalPrice').style.display = 'none';
+            }
+            
+            if (isRare) {
+                document.getElementById('previewRare').style.display = 'inline-block';
+            } else {
+                document.getElementById('previewRare').style.display = 'none';
+            }
+        }
+
+        // 更新上架摘要
+        function updateSummary() {
+            const quantity = parseInt(document.getElementById('quantity').value) || 0;
+            const price = parseInt(document.getElementById('price').value) || 0;
+            const listingFee = Math.ceil(price * 0.05); // 5% 上架手續費
+            const totalRevenue = (price * quantity) - listingFee;
+            
+            document.getElementById('summaryQuantity').textContent = quantity;
+            document.getElementById('summaryPrice').textContent = `NT$ ${price.toLocaleString()}`;
+            document.getElementById('summaryFee').textContent = `NT$ ${listingFee.toLocaleString()}`;
+            document.getElementById('summaryRevenue').textContent = `NT$ ${totalRevenue.toLocaleString()}`;
+        }
+
+        // 提交上架
+        function submitListing() {
+            if (!validateForm()) {
+                return;
+            }
+            
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 上架中...';
+            
+            // 收集表單數據
+            const formData = new FormData();
+            
+            // 基本資訊
+            formData.append('ItemName', document.getElementById('itemName').value);
+            formData.append('Category', document.getElementById('category').value);
+            formData.append('Description', document.getElementById('description').value);
+            formData.append('Quantity', document.getElementById('quantity').value);
+            formData.append('Price', document.getElementById('price').value);
+            formData.append('OriginalPrice', document.getElementById('originalPrice').value || '');
+            formData.append('IsRare', document.getElementById('isRare').checked);
+            formData.append('Condition', document.getElementById('condition').value);
+            formData.append('ExpiryDays', document.getElementById('expiryDate').value);
+            formData.append('AutoAccept', document.getElementById('autoAccept').checked);
+            formData.append('AllowNegotiation', document.getElementById('allowNegotiation').checked);
+            formData.append('SpecialRequirements', document.getElementById('specialRequirements').value);
+            
+            // 圖片檔案
+            uploadedImages.forEach((imageData, index) => {
+                formData.append(`ImageFiles`, imageData.file);
+            });
+            
+            // 提交到 API
+            fetch('/api/playermarket/create', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('商品上架成功！', 'success');
+                    setTimeout(() => {
+                        window.location.href = `/PlayerMarket/Item/${data.data.id}`;
+                    }, 1500);
+                } else {
+                    showToast(`上架失敗：${data.message}`, 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-upload"></i> 立即上架';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('上架時發生錯誤，請稍後再試。', 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-upload"></i> 立即上架';
+            });
+        }
+
+        // 驗證表單
+        function validateForm() {
+            const requiredFields = ['itemName', 'category', 'description', 'quantity', 'price'];
+            
+            for (const fieldId of requiredFields) {
+                const field = document.getElementById(fieldId);
+                if (!field.value.trim()) {
+                    showToast(`請填寫 ${field.previousElementSibling.textContent.replace('*', '').trim()}`, 'warning');
+                    field.focus();
+                    return false;
+                }
+            }
+            
+            const quantity = parseInt(document.getElementById('quantity').value);
+            const price = parseInt(document.getElementById('price').value);
+            
+            if (quantity < 1 || quantity > 999) {
+                showToast('上架數量必須在 1-999 之間', 'warning');
+                document.getElementById('quantity').focus();
+                return false;
+            }
+            
+            if (price < 1) {
+                showToast('售價必須大於 0', 'warning');
+                document.getElementById('price').focus();
+                return false;
+            }
+            
+            if (uploadedImages.length === 0) {
+                showToast('請至少上傳一張商品圖片', 'warning');
+                return false;
+            }
+            
+            return true;
+        }
+
+        // 儲存草稿
+        function saveAsDraft() {
+            // 這裡應該調用儲存草稿的 API
+            showToast('草稿儲存功能開發中', 'info');
+        }
+
+        // 顯示提示訊息
+        function showToast(message, type = 'info') {
+            if (type === 'success') {
+                alert('✅ ' + message);
+            } else if (type === 'error') {
+                alert('❌ ' + message);
+            } else if (type === 'warning') {
+                alert('⚠️ ' + message);
+            } else {
+                alert(message);
+            }
+        }
+    </script>
+}

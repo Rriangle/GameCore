@@ -1,0 +1,424 @@
+@model GameCore.Web.Controllers.StoreMvcController.CategoryViewModel
+@{
+    ViewData["Title"] = $"{Model.CurrentCategory} 分類";
+    ViewData["Description"] = $"瀏覽 {Model.CurrentCategory} 分類的商品";
+}
+
+@section Styles {
+    <style>
+        .category-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 3rem 0;
+            margin-bottom: 2rem;
+            border-radius: 12px;
+        }
+        
+        .filter-sidebar {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 2rem;
+        }
+        
+        .filter-section {
+            margin-bottom: 2rem;
+        }
+        
+        .filter-section h6 {
+            color: #495057;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .filter-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .filter-option input[type="checkbox"] {
+            margin-right: 0.5rem;
+        }
+        
+        .price-range {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .price-range input {
+            width: 100px;
+        }
+        
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .product-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: #f8f9fa;
+        }
+        
+        .price-tag {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        .sort-controls {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+        }
+        
+        .pagination .page-link {
+            padding: 0.5rem 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            color: #007bff;
+            text-decoration: none;
+        }
+        
+        .pagination .page-link:hover {
+            background-color: #e9ecef;
+        }
+        
+        .pagination .page-link.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        
+        .no-products {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .no-products i {
+            font-size: 4rem;
+            color: #6c757d;
+            margin-bottom: 1rem;
+        }
+    </style>
+}
+
+<div class="container py-4">
+    <!-- 分類標題 -->
+    <div class="category-header text-center">
+        <h1 class="display-4 fw-bold mb-3">@Model.CurrentCategory</h1>
+        <p class="lead mb-0">精選 @Model.CurrentCategory 分類商品，滿足您的需求</p>
+    </div>
+
+    <div class="row">
+        <!-- 篩選側邊欄 -->
+        <div class="col-lg-3 mb-4">
+            <div class="filter-sidebar">
+                <h5 class="mb-4">
+                    <i class="fas fa-filter text-primary me-2"></i>
+                    篩選條件
+                </h5>
+
+                <!-- 分類篩選 -->
+                <div class="filter-section">
+                    <h6>商品分類</h6>
+                    @foreach (var category in Model.Categories)
+                    {
+                        <div class="filter-option">
+                            <input type="checkbox" id="cat_@category" name="categories" value="@category" 
+                                   @(category == Model.CurrentCategory ? "checked" : "") onchange="applyFilters()">
+                            <label for="cat_@category">@category</label>
+                        </div>
+                    }
+                </div>
+
+                <!-- 價格範圍 -->
+                <div class="filter-section">
+                    <h6>價格範圍</h6>
+                    <div class="price-range">
+                        <input type="number" class="form-control" id="minPrice" placeholder="最低價格" onchange="applyFilters()">
+                        <span>-</span>
+                        <input type="number" class="form-control" id="maxPrice" placeholder="最高價格" onchange="applyFilters()">
+                    </div>
+                </div>
+
+                <!-- 排序方式 -->
+                <div class="filter-section">
+                    <h6>排序方式</h6>
+                    <div class="filter-option">
+                        <input type="radio" id="sort_name" name="sort" value="name" checked onchange="applyFilters()">
+                        <label for="sort_name">依名稱排序</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="radio" id="sort_price_low" name="sort" value="price_low" onchange="applyFilters()">
+                        <label for="sort_price_low">價格由低到高</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="radio" id="sort_price_high" name="sort" value="price_high" onchange="applyFilters()">
+                        <label for="sort_price_high">價格由高到低</label>
+                    </div>
+                    <div class="filter-option">
+                        <input type="radio" id="sort_newest" name="sort" value="newest" onchange="applyFilters()">
+                        <label for="sort_newest">最新上架</label>
+                    </div>
+                </div>
+
+                <!-- 清除篩選 -->
+                <div class="filter-section">
+                    <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                        <i class="fas fa-undo me-2"></i>
+                        清除篩選
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 商品列表 -->
+        <div class="col-lg-9">
+            <!-- 排序控制 -->
+            <div class="sort-controls">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted">顯示 @Model.Products.Count 件商品</span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-primary btn-sm" onclick="changeView('grid')">
+                            <i class="fas fa-th"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="changeView('list')">
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 商品網格 -->
+            @if (Model.Products.Any())
+            {
+                <div class="product-grid" id="productGrid">
+                    @foreach (var product in Model.Products)
+                    {
+                        <div class="product-card">
+                            <img src="@(string.IsNullOrEmpty(product.ImageUrl) ? "/images/placeholder.jpg" : product.ImageUrl)" 
+                                 alt="@product.ProductName" class="product-image">
+                            <div class="p-3">
+                                <h6 class="mb-2">@product.ProductName</h6>
+                                <p class="text-muted small mb-2">@product.Category</p>
+                                <p class="text-muted small mb-3">@(product.Description?.Length > 80 ? product.Description.Substring(0, 80) + "..." : product.Description)</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="price-tag">NT$ @product.Price.ToString("N0")</span>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-primary btn-sm add-to-cart" 
+                                                data-product-id="@product.ProductId">
+                                            <i class="fas fa-cart-plus"></i>
+                                        </button>
+                                        <a href="@Url.Action("Product", "StoreMvc", new { id = product.ProductId })" 
+                                           class="btn btn-outline-primary btn-sm">詳情</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- 分頁 -->
+                @if (Model.TotalPages > 1)
+                {
+                    <nav class="pagination">
+                        @if (Model.CurrentPage > 1)
+                        {
+                            <a class="page-link" href="@Url.Action("Category", "StoreMvc", new { 
+                                category = Model.CurrentCategory, 
+                                page = Model.CurrentPage - 1 
+                            })">上一頁</a>
+                        }
+
+                        @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
+                        {
+                            <a class="page-link @(i == Model.CurrentPage ? "active" : "")" 
+                               href="@Url.Action("Category", "StoreMvc", new { 
+                                   category = Model.CurrentCategory, 
+                                   page = i 
+                               })">@i</a>
+                        }
+
+                        @if (Model.CurrentPage < Model.TotalPages)
+                        {
+                            <a class="page-link" href="@Url.Action("Category", "StoreMvc", new { 
+                                category = Model.CurrentCategory, 
+                                page = Model.CurrentPage + 1 
+                            })">下一頁</a>
+                        }
+                    </nav>
+                }
+            }
+            else
+            {
+                <!-- 無商品 -->
+                <div class="no-products">
+                    <i class="fas fa-search"></i>
+                    <h3 class="text-muted">沒有找到符合條件的商品</h3>
+                    <p class="text-muted mb-4">請嘗試調整篩選條件或瀏覽其他分類</p>
+                    <a href="@Url.Action("Index", "StoreMvc")" class="btn btn-primary">返回首頁</a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // 加入購物車功能
+            $('.add-to-cart').click(function() {
+                const productId = $(this).data('product-id');
+                const button = $(this);
+                
+                // 檢查是否已登入
+                if (!@User.Identity.IsAuthenticated.ToString().ToLower()) {
+                    window.location.href = '/Auth/Login';
+                    return;
+                }
+                
+                // 發送加入購物車請求
+                $.ajax({
+                    url: '/api/Store/cart/add',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        productId: productId,
+                        quantity: 1
+                    }),
+                    success: function(response) {
+                        if (response.success) {
+                            button.html('<i class="fas fa-check"></i>');
+                            button.removeClass('btn-primary').addClass('btn-success');
+                            
+                            // 顯示成功訊息
+                            showToast('成功加入購物車！', 'success');
+                        } else {
+                            showToast(response.message || '加入購物車失敗', 'error');
+                        }
+                    },
+                    error: function() {
+                        showToast('加入購物車失敗，請稍後再試', 'error');
+                    }
+                });
+            });
+            
+            // 應用篩選
+            window.applyFilters = function() {
+                const categories = [];
+                $('input[name="categories"]:checked').each(function() {
+                    categories.push($(this).val());
+                });
+                
+                const minPrice = $('#minPrice').val();
+                const maxPrice = $('#maxPrice').val();
+                const sort = $('input[name="sort"]:checked').val();
+                
+                // 構建查詢參數
+                const params = new URLSearchParams();
+                if (categories.length > 0) {
+                    params.append('categories', categories.join(','));
+                }
+                if (minPrice) {
+                    params.append('minPrice', minPrice);
+                }
+                if (maxPrice) {
+                    params.append('maxPrice', maxPrice);
+                }
+                if (sort) {
+                    params.append('sort', sort);
+                }
+                
+                // 重新載入頁面
+                const url = new URL(window.location);
+                url.search = params.toString();
+                window.location.href = url.toString();
+            };
+            
+            // 清除篩選
+            window.clearFilters = function() {
+                $('input[name="categories"]').prop('checked', false);
+                $('#minPrice').val('');
+                $('#maxPrice').val('');
+                $('#sort_name').prop('checked', true);
+                
+                // 重新載入頁面
+                window.location.href = window.location.pathname;
+            };
+            
+            // 切換視圖模式
+            window.changeView = function(mode) {
+                const grid = $('#productGrid');
+                
+                if (mode === 'grid') {
+                    grid.removeClass('product-list').addClass('product-grid');
+                    $('.btn-outline-primary').removeClass('btn-outline-primary').addClass('btn-outline-secondary');
+                    $('.btn-outline-secondary').removeClass('btn-outline-secondary').addClass('btn-outline-primary');
+                } else {
+                    grid.removeClass('product-grid').addClass('product-list');
+                    $('.btn-outline-secondary').removeClass('btn-outline-secondary').addClass('btn-outline-primary');
+                    $('.btn-outline-primary').removeClass('btn-outline-primary').addClass('btn-outline-secondary');
+                }
+            };
+            
+            // 顯示 Toast 訊息
+            function showToast(message, type) {
+                const toast = $(`
+                    <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0" role="alert">
+                        <div class="d-flex">
+                            <div class="toast-body">${message}</div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                        </div>
+                    </div>
+                `);
+                
+                $('.toast-container').append(toast);
+                const bsToast = new bootstrap.Toast(toast[0]);
+                bsToast.show();
+                
+                // 自動移除
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
+            }
+        });
+    </script>
+} 

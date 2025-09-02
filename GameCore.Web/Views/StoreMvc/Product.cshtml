@@ -1,0 +1,463 @@
+@model GameCore.Web.Controllers.StoreMvcController.ProductDetailViewModel
+@{
+    ViewData["Title"] = Model.Product.ProductName;
+    ViewData["Description"] = Model.Product.Description;
+}
+
+@section Styles {
+    <style>
+        .product-gallery {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .product-image-main {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        
+        .product-info {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .price-display {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .quantity-selector {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .quantity-btn {
+            width: 40px;
+            height: 40px;
+            border: 1px solid #dee2e6;
+            background: white;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .quantity-btn:hover {
+            background: #f8f9fa;
+            border-color: #adb5bd;
+        }
+        
+        .quantity-input {
+            width: 80px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 0.5rem;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .btn-buy-now {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border: none;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: transform 0.2s;
+        }
+        
+        .btn-buy-now:hover {
+            transform: translateY(-2px);
+            color: white;
+        }
+        
+        .btn-add-cart {
+            background: linear-gradient(135deg, #007bff, #6610f2);
+            border: none;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: transform 0.2s;
+        }
+        
+        .btn-add-cart:hover {
+            transform: translateY(-2px);
+            color: white;
+        }
+        
+        .product-details {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 2rem;
+        }
+        
+        .detail-row {
+            display: flex;
+            padding: 1rem 0;
+            border-bottom: 1px solid #f1f3f4;
+        }
+        
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        
+        .detail-label {
+            font-weight: bold;
+            color: #6c757d;
+            width: 120px;
+            flex-shrink: 0;
+        }
+        
+        .detail-value {
+            color: #212529;
+        }
+        
+        .related-products {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 2rem;
+        }
+        
+        .related-product-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .related-product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .related-product-image {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+        
+        .stock-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: bold;
+        }
+        
+        .stock-available {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .stock-low {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .stock-out {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+}
+
+<div class="container py-4">
+    <!-- 麵包屑導航 -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="@Url.Action("Index", "StoreMvc")">商城首頁</a></li>
+            <li class="breadcrumb-item"><a href="@Url.Action("Category", "StoreMvc", new { category = Model.Product.Category })">@Model.Product.Category</a></li>
+            <li class="breadcrumb-item active" aria-current="page">@Model.Product.ProductName</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- 商品圖片區 -->
+        <div class="col-lg-6 mb-4">
+            <div class="product-gallery">
+                <img src="@(string.IsNullOrEmpty(Model.Product.ImageUrl) ? "/images/placeholder.jpg" : Model.Product.ImageUrl)" 
+                     alt="@Model.Product.ProductName" class="product-image-main">
+            </div>
+        </div>
+
+        <!-- 商品資訊區 -->
+        <div class="col-lg-6 mb-4">
+            <div class="product-info">
+                <h1 class="mb-3">@Model.Product.ProductName</h1>
+                
+                <!-- 價格顯示 -->
+                <div class="price-display">
+                    <div class="h3 mb-0">NT$ @Model.Product.Price.ToString("N0")</div>
+                </div>
+
+                <!-- 庫存狀態 -->
+                <div class="mb-3">
+                    @if (Model.Product.StockQuantity > 10)
+                    {
+                        <span class="stock-status stock-available">庫存充足</span>
+                    }
+                    else if (Model.Product.StockQuantity > 0)
+                    {
+                        <span class="stock-status stock-low">庫存不足 (剩餘 @Model.Product.StockQuantity 件)</span>
+                    }
+                    else
+                    {
+                        <span class="stock-status stock-out">缺貨中</span>
+                    }
+                </div>
+
+                <!-- 商品描述 -->
+                @if (!string.IsNullOrEmpty(Model.Product.Description))
+                {
+                    <div class="mb-4">
+                        <h6>商品描述</h6>
+                        <p class="text-muted">@Model.Product.Description</p>
+                    </div>
+                }
+
+                <!-- 數量選擇器 -->
+                <div class="quantity-selector">
+                    <label class="form-label mb-0">數量：</label>
+                    <button class="quantity-btn" onclick="changeQuantity(-1)">-</button>
+                    <input type="number" class="quantity-input" id="quantity" value="1" min="1" max="@Model.Product.StockQuantity">
+                    <button class="quantity-btn" onclick="changeQuantity(1)">+</button>
+                </div>
+
+                <!-- 操作按鈕 -->
+                <div class="action-buttons">
+                    @if (Model.Product.StockQuantity > 0)
+                    {
+                        <button class="btn btn-buy-now flex-fill" onclick="buyNow()">
+                            <i class="fas fa-bolt"></i> 立即購買
+                        </button>
+                        <button class="btn btn-add-cart flex-fill" onclick="addToCart()">
+                            <i class="fas fa-cart-plus"></i> 加入購物車
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-secondary flex-fill" disabled>
+                            <i class="fas fa-times"></i> 暫時缺貨
+                        </button>
+                    }
+                </div>
+
+                <!-- 商品特色 -->
+                <div class="mb-4">
+                    <h6>商品特色</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success me-2"></i> 正版授權，品質保證</li>
+                        <li><i class="fas fa-check text-success me-2"></i> 快速配送，安全包裝</li>
+                        <li><i class="fas fa-check text-success me-2"></i> 7天鑑賞期，無條件退換</li>
+                        <li><i class="fas fa-check text-success me-2"></i> 專業客服，貼心服務</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 商品詳細資訊 -->
+    <div class="product-details">
+        <h3 class="mb-4">商品詳細資訊</h3>
+        <div class="detail-row">
+            <div class="detail-label">商品名稱</div>
+            <div class="detail-value">@Model.Product.ProductName</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">商品分類</div>
+            <div class="detail-value">@Model.Product.Category</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">商品價格</div>
+            <div class="detail-value">NT$ @Model.Product.Price.ToString("N0")</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">庫存數量</div>
+            <div class="detail-value">@Model.Product.StockQuantity 件</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">商品狀態</div>
+            <div class="detail-value">
+                @if (Model.Product.IsActive)
+                {
+                    <span class="badge bg-success">啟用中</span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary">已停用</span>
+                }
+            </div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">建立時間</div>
+            <div class="detail-value">@Model.Product.CreatedAt.ToString("yyyy-MM-dd HH:mm")</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">最後更新</div>
+            <div class="detail-value">@Model.Product.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</div>
+        </div>
+    </div>
+
+    <!-- 相關商品推薦 -->
+    @if (Model.RelatedProducts.Any())
+    {
+        <div class="related-products">
+            <h3 class="mb-4">相關商品推薦</h3>
+            <div class="row g-4">
+                @foreach (var product in Model.RelatedProducts)
+                {
+                    <div class="col-md-6 col-lg-3">
+                        <div class="related-product-card">
+                            <img src="@(string.IsNullOrEmpty(product.ImageUrl) ? "/images/placeholder.jpg" : product.ImageUrl)" 
+                                 alt="@product.ProductName" class="related-product-image">
+                            <div class="p-3">
+                                <h6 class="mb-2">@product.ProductName</h6>
+                                <p class="text-muted small mb-2">@product.Category</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold text-primary">NT$ @product.Price.ToString("N0")</span>
+                                    <a href="@Url.Action("Product", "StoreMvc", new { id = product.ProductId })" 
+                                       class="btn btn-outline-primary btn-sm">查看詳情</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // 數量變更功能
+            window.changeQuantity = function(delta) {
+                const input = document.getElementById('quantity');
+                const newValue = parseInt(input.value) + delta;
+                const max = @Model.Product.StockQuantity;
+                
+                if (newValue >= 1 && newValue <= max) {
+                    input.value = newValue;
+                }
+            };
+            
+            // 加入購物車功能
+            window.addToCart = function() {
+                const quantity = parseInt(document.getElementById('quantity').value);
+                
+                // 檢查是否已登入
+                if (!@User.Identity.IsAuthenticated.ToString().ToLower()) {
+                    window.location.href = '/Auth/Login';
+                    return;
+                }
+                
+                // 發送加入購物車請求
+                $.ajax({
+                    url: '/api/Store/cart/add',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        productId: @Model.Product.ProductId,
+                        quantity: quantity
+                    }),
+                    success: function(response) {
+                        if (response.success) {
+                            showToast('成功加入購物車！', 'success');
+                            
+                            // 更新按鈕狀態
+                            $('.btn-add-cart').html('<i class="fas fa-check"></i> 已加入購物車');
+                            $('.btn-add-cart').removeClass('btn-add-cart').addClass('btn-success').prop('disabled', true);
+                        } else {
+                            showToast(response.message || '加入購物車失敗', 'error');
+                        }
+                    },
+                    error: function() {
+                        showToast('加入購物車失敗，請稍後再試', 'error');
+                    }
+                });
+            };
+            
+            // 立即購買功能
+            window.buyNow = function() {
+                const quantity = parseInt(document.getElementById('quantity').value);
+                
+                // 檢查是否已登入
+                if (!@User.Identity.IsAuthenticated.ToString().ToLower()) {
+                    window.location.href = '/Auth/Login';
+                    return;
+                }
+                
+                // 先加入購物車，然後跳轉到結帳頁面
+                $.ajax({
+                    url: '/api/Store/cart/add',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        productId: @Model.Product.ProductId,
+                        quantity: quantity
+                    }),
+                    success: function(response) {
+                        if (response.success) {
+                            // 跳轉到結帳頁面
+                            window.location.href = '/StoreMvc/Checkout';
+                        } else {
+                            showToast(response.message || '操作失敗', 'error');
+                        }
+                    },
+                    error: function() {
+                        showToast('操作失敗，請稍後再試', 'error');
+                    }
+                });
+            };
+            
+            // 顯示 Toast 訊息
+            function showToast(message, type) {
+                const toast = $(`
+                    <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0" role="alert">
+                        <div class="d-flex">
+                            <div class="toast-body">${message}</div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                        </div>
+                    </div>
+                `);
+                
+                $('.toast-container').append(toast);
+                const bsToast = new bootstrap.Toast(toast[0]);
+                bsToast.show();
+                
+                // 自動移除
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
+            }
+        });
+    </script>
+} 

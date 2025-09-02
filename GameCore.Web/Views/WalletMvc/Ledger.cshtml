@@ -1,0 +1,379 @@
+@model GameCore.Web.Controllers.WalletMvcController.LedgerViewModel
+@{
+    ViewData["Title"] = "點數流水記錄";
+}
+
+<div class="container-fluid">
+    <!-- 頁面標題 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-list text-primary"></i>
+                點數流水記錄
+            </h1>
+            <p class="text-muted">查看您的點數變動歷史記錄</p>
+        </div>
+    </div>
+
+    <!-- 篩選條件 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-filter"></i>
+                        篩選條件
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="FromDate">開始日期</label>
+                                <input type="date" class="form-control" id="FromDate" name="FromDate" 
+                                       value="@(Model.QueryRequest.FromDate?.ToString("yyyy-MM-dd"))">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="ToDate">結束日期</label>
+                                <input type="date" class="form-control" id="ToDate" name="ToDate" 
+                                       value="@(Model.QueryRequest.ToDate?.ToString("yyyy-MM-dd"))">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="TransactionType">交易類型</label>
+                                <select class="form-control" id="TransactionType" name="TransactionType">
+                                    <option value="">全部類型</option>
+                                    <option value="signin" @(Model.QueryRequest.TransactionType == "signin" ? "selected" : "")>簽到獎勵</option>
+                                    <option value="minigame" @(Model.QueryRequest.TransactionType == "minigame" ? "selected" : "")>小遊戲</option>
+                                    <option value="pet_color_change" @(Model.QueryRequest.TransactionType == "pet_color_change" ? "selected" : "")>寵物換色</option>
+                                    <option value="adjustment" @(Model.QueryRequest.TransactionType == "adjustment" ? "selected" : "")>管理員調整</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-search"></i>
+                                        搜尋
+                                    </button>
+                                    <a href="@Url.Action("Ledger", "WalletMvc")" class="btn btn-secondary">
+                                        <i class="fas fa-redo"></i>
+                                        重置
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 統計摘要 -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                總記錄數
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @Model.Transactions.TotalCount.ToString("N0")
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                總收入
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @Model.Transactions.Transactions.Where(t => t.PointsChanged > 0).Sum(t => t.PointsChanged).ToString("N0") 點
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-plus-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                總支出
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @Math.Abs(Model.Transactions.Transactions.Where(t => t.PointsChanged < 0).Sum(t => t.PointsChanged)).ToString("N0") 點
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-minus-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                淨變化
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @Model.Transactions.Transactions.Sum(t => t.PointsChanged).ToString("N0") 點
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-balance-scale fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 流水記錄表格 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-table"></i>
+                        流水記錄
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.Transactions.Transactions.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-bordered" id="ledgerTable" width="100%" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th>交易時間</th>
+                                        <th>交易類型</th>
+                                        <th>點數變化</th>
+                                        <th>交易後餘額</th>
+                                        <th>交易描述</th>
+                                        <th>詳細資訊</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var transaction in Model.Transactions.Transactions)
+                                    {
+                                        <tr>
+                                            <td>@transaction.TransactionTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                            <td>
+                                                @{
+                                                    var typeClass = transaction.TransactionType switch
+                                                    {
+                                                        "signin" => "badge badge-success",
+                                                        "minigame" => "badge badge-primary",
+                                                        "pet_color_change" => "badge badge-warning",
+                                                        "adjustment" => "badge badge-info",
+                                                        _ => "badge badge-secondary"
+                                                    };
+                                                    var typeText = transaction.TransactionType switch
+                                                    {
+                                                        "signin" => "簽到獎勵",
+                                                        "minigame" => "小遊戲",
+                                                        "pet_color_change" => "寵物換色",
+                                                        "adjustment" => "管理員調整",
+                                                        _ => transaction.TransactionType
+                                                    };
+                                                }
+                                                <span class="@typeClass">@typeText</span>
+                                            </td>
+                                            <td>
+                                                @if (transaction.PointsChanged > 0)
+                                                {
+                                                    <span class="text-success font-weight-bold">
+                                                        +@transaction.PointsChanged.ToString("N0")
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-danger font-weight-bold">
+                                                        @transaction.PointsChanged.ToString("N0")
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <span class="font-weight-bold">@transaction.BalanceAfter.ToString("N0")</span>
+                                            </td>
+                                            <td>@transaction.Description</td>
+                                            <td>
+                                                @if (!string.IsNullOrEmpty(transaction.Metadata))
+                                                {
+                                                    <button type="button" class="btn btn-sm btn-outline-info" 
+                                                            data-toggle="modal" data-target="#detailModal" 
+                                                            data-metadata="@transaction.Metadata" 
+                                                            data-description="@transaction.Description">
+                                                        <i class="fas fa-info-circle"></i>
+                                                        詳情
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">無</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- 分頁 -->
+                        @if (Model.Transactions.TotalPages > 1)
+                        {
+                            <nav aria-label="流水記錄分頁">
+                                <ul class="pagination justify-content-center">
+                                    @if (Model.Transactions.CurrentPage > 1)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" href="@Url.Action("Ledger", "WalletMvc", new { 
+                                                page = Model.Transactions.CurrentPage - 1,
+                                                pageSize = Model.Transactions.PageSize,
+                                                fromDate = Model.QueryRequest.FromDate?.ToString("yyyy-MM-dd"),
+                                                toDate = Model.QueryRequest.ToDate?.ToString("yyyy-MM-dd"),
+                                                transactionType = Model.QueryRequest.TransactionType
+                                            })">
+                                                <i class="fas fa-chevron-left"></i>
+                                            </a>
+                                        </li>
+                                    }
+
+                                    @for (int i = Math.Max(1, Model.Transactions.CurrentPage - 2); i <= Math.Min(Model.Transactions.TotalPages, Model.Transactions.CurrentPage + 2); i++)
+                                    {
+                                        <li class="page-item @(i == Model.Transactions.CurrentPage ? "active" : "")">
+                                            <a class="page-link" href="@Url.Action("Ledger", "WalletMvc", new { 
+                                                page = i,
+                                                pageSize = Model.Transactions.PageSize,
+                                                fromDate = Model.QueryRequest.FromDate?.ToString("yyyy-MM-dd"),
+                                                toDate = Model.QueryRequest.ToDate?.ToString("yyyy-MM-dd"),
+                                                transactionType = Model.QueryRequest.TransactionType
+                                            })">@i</a>
+                                        </li>
+                                    }
+
+                                    @if (Model.Transactions.CurrentPage < Model.Transactions.TotalPages)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" href="@Url.Action("Ledger", "WalletMvc", new { 
+                                                page = Model.Transactions.CurrentPage + 1,
+                                                pageSize = Model.Transactions.PageSize,
+                                                fromDate = Model.QueryRequest.FromDate?.ToString("yyyy-MM-dd"),
+                                                toDate = Model.QueryRequest.ToDate?.ToString("yyyy-MM-dd"),
+                                                transactionType = Model.QueryRequest.TransactionType
+                                            })">
+                                                <i class="fas fa-chevron-right"></i>
+                                            </a>
+                                        </li>
+                                    }
+                                </ul>
+                            </nav>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fa-3x text-gray-300 mb-3"></i>
+                            <h5 class="text-gray-500">暫無流水記錄</h5>
+                            <p class="text-muted">您還沒有任何點數變動記錄</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 詳細資訊 Modal -->
+<div class="modal fade" id="detailModal" tabindex="-1" role="dialog" aria-labelledby="detailModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailModalLabel">交易詳情</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="detailContent">
+                    <!-- 詳細資訊將在這裡顯示 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // 詳細資訊 Modal 處理
+        $('#detailModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var metadata = button.data('metadata');
+            var description = button.data('description');
+            var modal = $(this);
+            
+            try {
+                var metadataObj = JSON.parse(metadata);
+                var detailHtml = '<div class="mb-3"><strong>交易描述：</strong>' + description + '</div>';
+                detailHtml += '<div><strong>詳細資訊：</strong></div>';
+                detailHtml += '<pre class="bg-light p-3 rounded">' + JSON.stringify(metadataObj, null, 2) + '</pre>';
+                modal.find('#detailContent').html(detailHtml);
+            } catch (e) {
+                modal.find('#detailContent').html('<div class="text-muted">無法解析詳細資訊</div>');
+            }
+        });
+
+        // 日期範圍驗證
+        document.getElementById('ToDate').addEventListener('change', function() {
+            var fromDate = document.getElementById('FromDate').value;
+            var toDate = this.value;
+            
+            if (fromDate && toDate && fromDate > toDate) {
+                alert('開始日期不能晚於結束日期');
+                this.value = '';
+            }
+        });
+
+        document.getElementById('FromDate').addEventListener('change', function() {
+            var fromDate = this.value;
+            var toDate = document.getElementById('ToDate').value;
+            
+            if (fromDate && toDate && fromDate > toDate) {
+                alert('開始日期不能晚於結束日期');
+                document.getElementById('ToDate').value = '';
+            }
+        });
+    </script>
+} 

@@ -1,0 +1,315 @@
+@model GameCore.Web.Controllers.WalletMvcController.SalesPermissionViewModel
+@{
+    ViewData["Title"] = "申請銷售權限";
+}
+
+<div class="container-fluid">
+    <!-- 頁面標題 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-key text-primary"></i>
+                申請銷售權限
+            </h1>
+            <p class="text-muted">申請在玩家市場上架商品的權限</p>
+        </div>
+    </div>
+
+    <!-- 權限狀態顯示 -->
+    @if (Model.HasAuthority)
+    {
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-success" role="alert">
+                    <h4 class="alert-heading">
+                        <i class="fas fa-check-circle"></i>
+                        恭喜！您已擁有銷售權限
+                    </h4>
+                    <p>您現在可以在玩家市場上架商品，開始您的銷售之旅！</p>
+                    <hr>
+                    <p class="mb-0">
+                        <a href="@Url.Action("SalesWallet", "WalletMvc")" class="btn btn-success">
+                            <i class="fas fa-store"></i>
+                            前往銷售錢包
+                        </a>
+                        <a href="/market" class="btn btn-primary">
+                            <i class="fas fa-shopping-cart"></i>
+                            前往玩家市場
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    }
+    else if (Model.CurrentStatus != null)
+    {
+        <div class="row mb-4">
+            <div class="col-12">
+                @if (Model.CurrentStatus.Status == "pending")
+                {
+                    <div class="alert alert-warning" role="alert">
+                        <h4 class="alert-heading">
+                            <i class="fas fa-clock"></i>
+                            申請審核中
+                        </h4>
+                        <p>您的銷售權限申請正在審核中，請耐心等待管理員審核結果。</p>
+                        <hr>
+                        <p class="mb-0">
+                            <strong>申請時間：</strong> @Model.CurrentStatus.ApplicationTime.ToString("yyyy-MM-dd HH:mm:ss")<br>
+                            <strong>申請狀態：</strong> 待審核
+                        </p>
+                    </div>
+                }
+                else if (Model.CurrentStatus.Status == "approved")
+                {
+                    <div class="alert alert-success" role="alert">
+                        <h4 class="alert-heading">
+                            <i class="fas fa-check-circle"></i>
+                            申請已通過
+                        </h4>
+                        <p>您的銷售權限申請已通過審核！</p>
+                        <hr>
+                        <p class="mb-0">
+                            <strong>審核時間：</strong> @(Model.CurrentStatus.ReviewedTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "未知")<br>
+                            <strong>審核結果：</strong> 已通過
+                        </p>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- 申請表單 -->
+    @if (!Model.HasAuthority && (Model.CurrentStatus == null || Model.CurrentStatus.Status != "pending"))
+    {
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card shadow">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">銷售權限申請表</h6>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" enctype="multipart/form-data">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="BankCode">銀行代號 <span class="text-danger">*</span></label>
+                                        <select class="form-control" id="BankCode" name="BankCode" required>
+                                            <option value="">請選擇銀行</option>
+                                            <option value="004">台灣銀行</option>
+                                            <option value="005">土地銀行</option>
+                                            <option value="006">合作金庫</option>
+                                            <option value="007">第一銀行</option>
+                                            <option value="008">華南銀行</option>
+                                            <option value="009">彰化銀行</option>
+                                            <option value="011">上海商銀</option>
+                                            <option value="012">台北富邦</option>
+                                            <option value="013">國泰世華</option>
+                                            <option value="016">高雄銀行</option>
+                                            <option value="017">兆豐商銀</option>
+                                            <option value="021">花旗銀行</option>
+                                            <option value="050">台灣企銀</option>
+                                            <option value="052">新光銀行</option>
+                                            <option value="053">台中商銀</option>
+                                            <option value="054">京城銀行</option>
+                                            <option value="103">新光銀行</option>
+                                            <option value="147">三信商銀</option>
+                                            <option value="700">中華郵政</option>
+                                            <option value="803">聯邦商銀</option>
+                                            <option value="805">遠東商銀</option>
+                                            <option value="806">元大商銀</option>
+                                            <option value="807">永豐商銀</option>
+                                            <option value="808">玉山商銀</option>
+                                            <option value="809">凱基商銀</option>
+                                            <option value="810">星展銀行</option>
+                                            <option value="812">台新商銀</option>
+                                            <option value="815">日盛商銀</option>
+                                            <option value="816">安泰商銀</option>
+                                            <option value="822">中國信託</option>
+                                        </select>
+                                        <small class="form-text text-muted">請選擇您的銀行</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="BankAccountNumber">銀行帳號 <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="BankAccountNumber" name="BankAccountNumber" 
+                                               placeholder="請輸入銀行帳號" maxlength="20" required>
+                                        <small class="form-text text-muted">請輸入您的銀行帳號（不含連字號）</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="AccountCoverPhoto">帳戶封面照片 <span class="text-danger">*</span></label>
+                                <div class="custom-file">
+                                    <input type="file" class="custom-file-input" id="AccountCoverPhoto" name="AccountCoverPhoto" 
+                                           accept="image/*" required>
+                                    <label class="custom-file-label" for="AccountCoverPhoto">選擇檔案</label>
+                                </div>
+                                <small class="form-text text-muted">
+                                    請上傳您的銀行存摺封面或網路銀行截圖，用於驗證帳戶資訊
+                                </small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="ApplicationNote">申請說明</label>
+                                <textarea class="form-control" id="ApplicationNote" name="ApplicationNote" rows="3" 
+                                          placeholder="請簡述您申請銷售權限的原因和計劃（選填）"></textarea>
+                                <small class="form-text text-muted">例如：想要銷售遊戲道具、虛擬商品等</small>
+                            </div>
+
+                            <div class="form-group">
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" class="custom-control-input" id="agreeTerms" required>
+                                    <label class="custom-control-label" for="agreeTerms">
+                                        我同意遵守 <a href="#" data-toggle="modal" data-target="#termsModal">銷售規範</a> 和相關條款
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-paper-plane"></i>
+                                    提交申請
+                                </button>
+                                <a href="@Url.Action("Index", "WalletMvc")" class="btn btn-secondary btn-lg">
+                                    <i class="fas fa-arrow-left"></i>
+                                    返回錢包
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側說明 -->
+            <div class="col-lg-4">
+                <div class="card shadow">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-info-circle"></i>
+                            申請須知
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="font-weight-bold text-primary">申請條件</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success"></i> 完成實名認證</li>
+                            <li><i class="fas fa-check text-success"></i> 帳號註冊滿30天</li>
+                            <li><i class="fas fa-check text-success"></i> 無違規記錄</li>
+                        </ul>
+
+                        <hr>
+
+                        <h6 class="font-weight-bold text-primary">審核流程</h6>
+                        <ol class="pl-3">
+                            <li>提交申請資料</li>
+                            <li>管理員審核（1-3個工作天）</li>
+                            <li>審核結果通知</li>
+                            <li>啟用銷售權限</li>
+                        </ol>
+
+                        <hr>
+
+                        <h6 class="font-weight-bold text-primary">注意事項</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-exclamation-triangle text-warning"></i> 請確保上傳的資料清晰可讀</li>
+                            <li><i class="fas fa-exclamation-triangle text-warning"></i> 銀行帳號資訊僅用於驗證</li>
+                            <li><i class="fas fa-exclamation-triangle text-warning"></i> 申請通過後即可開始銷售</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- 銷售規範 Modal -->
+<div class="modal fade" id="termsModal" tabindex="-1" role="dialog" aria-labelledby="termsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="termsModalLabel">銷售規範</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <h6 class="font-weight-bold">商品規範</h6>
+                <ul>
+                    <li>禁止銷售違法、色情、暴力等不當內容</li>
+                    <li>禁止銷售盜版、仿冒商品</li>
+                    <li>商品描述必須真實準確</li>
+                    <li>商品圖片必須清晰且為實物拍攝</li>
+                </ul>
+
+                <h6 class="font-weight-bold">交易規範</h6>
+                <ul>
+                    <li>必須在規定時間內完成交易</li>
+                    <li>禁止惡意抬價或壓價</li>
+                    <li>必須遵守平台抽成規則</li>
+                    <li>交易糾紛需配合平台調解</li>
+                </ul>
+
+                <h6 class="font-weight-bold">違規處罰</h6>
+                <ul>
+                    <li>輕微違規：警告或限制銷售</li>
+                    <li>嚴重違規：暫停或永久取消銷售權限</li>
+                    <li>違法行為：移送相關機關處理</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // 檔案上傳標籤顯示
+        document.getElementById('AccountCoverPhoto').addEventListener('change', function(e) {
+            var fileName = e.target.files[0]?.name || '選擇檔案';
+            e.target.nextElementSibling.textContent = fileName;
+        });
+
+        // 銀行帳號格式驗證
+        document.getElementById('BankAccountNumber').addEventListener('input', function(e) {
+            var value = e.target.value.replace(/[^0-9]/g, '');
+            e.target.value = value;
+        });
+
+        // 表單驗證
+        document.querySelector('form').addEventListener('submit', function(e) {
+            var bankCode = document.getElementById('BankCode').value;
+            var bankAccount = document.getElementById('BankAccountNumber').value;
+            var photo = document.getElementById('AccountCoverPhoto').files[0];
+            var agreeTerms = document.getElementById('agreeTerms').checked;
+
+            if (!bankCode) {
+                alert('請選擇銀行');
+                e.preventDefault();
+                return;
+            }
+
+            if (!bankAccount || bankAccount.length < 8) {
+                alert('請輸入有效的銀行帳號');
+                e.preventDefault();
+                return;
+            }
+
+            if (!photo) {
+                alert('請上傳帳戶封面照片');
+                e.preventDefault();
+                return;
+            }
+
+            if (!agreeTerms) {
+                alert('請同意銷售規範和相關條款');
+                e.preventDefault();
+                return;
+            }
+        });
+    </script>
+} 

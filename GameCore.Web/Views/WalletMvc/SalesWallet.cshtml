@@ -1,0 +1,437 @@
+@model GameCore.Web.Controllers.WalletMvcController.SalesWalletViewModel
+@{
+    ViewData["Title"] = "銷售錢包管理";
+}
+
+<div class="container-fluid">
+    <!-- 頁面標題 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-store text-primary"></i>
+                銷售錢包管理
+            </h1>
+            <p class="text-muted">管理您的銷售錢包和查看銷售統計</p>
+        </div>
+    </div>
+
+    <!-- 銷售錢包概覽 -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                銷售錢包餘額
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @Model.SalesWallet.UserSalesWallet.ToString("N0") 點
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-wallet fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                本月銷售額
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @Model.SalesStatistics.MonthlySales.ToString("N0") 點
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                本月訂單數
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @Model.SalesStatistics.MonthlyOrders.ToString("N0")
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                平均訂單金額
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @Model.SalesStatistics.AverageOrderValue.ToString("N0") 點
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calculator fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 快速操作 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">快速操作</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <button type="button" class="btn btn-success btn-block" data-toggle="modal" data-target="#transferToSalesModal">
+                                <i class="fas fa-arrow-right"></i>
+                                轉移到銷售錢包
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button type="button" class="btn btn-warning btn-block" data-toggle="modal" data-target="#withdrawFromSalesModal">
+                                <i class="fas fa-arrow-left"></i>
+                                從銷售錢包提領
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="/market" class="btn btn-primary btn-block">
+                                <i class="fas fa-store"></i>
+                                前往玩家市場
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="@Url.Action("Index", "WalletMvc")" class="btn btn-secondary btn-block">
+                                <i class="fas fa-arrow-left"></i>
+                                返回錢包
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 銷售統計圖表 -->
+    <div class="row">
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">銷售趨勢圖</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="salesTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 銷售排行榜 -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">本月銷售排行榜</h6>
+                </div>
+                <div class="card-body">
+                    <div id="salesRanking">
+                        <div class="text-center py-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only">載入中...</span>
+                            </div>
+                            <p class="mt-2 text-muted">載入排行榜中...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 詳細統計 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">詳細統計</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="font-weight-bold text-primary">累計統計</h6>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td>累計銷售額：</td>
+                                    <td class="font-weight-bold">@Model.SalesStatistics.TotalSales.ToString("N0") 點</td>
+                                </tr>
+                                <tr>
+                                    <td>累計訂單數：</td>
+                                    <td class="font-weight-bold">@Model.SalesStatistics.TotalOrders.ToString("N0") 筆</td>
+                                </tr>
+                                <tr>
+                                    <td>平均訂單金額：</td>
+                                    <td class="font-weight-bold">@Model.SalesStatistics.AverageOrderValue.ToString("N0") 點</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="font-weight-bold text-primary">本月統計</h6>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td>本月銷售額：</td>
+                                    <td class="font-weight-bold">@Model.SalesStatistics.MonthlySales.ToString("N0") 點</td>
+                                </tr>
+                                <tr>
+                                    <td>本月訂單數：</td>
+                                    <td class="font-weight-bold">@Model.SalesStatistics.MonthlyOrders.ToString("N0") 筆</td>
+                                </tr>
+                                <tr>
+                                    <td>銷售權限狀態：</td>
+                                    <td class="font-weight-bold">
+                                        <span class="badge badge-@(Model.SalesWallet.HasSalesAuthority ? "success" : "warning")">
+                                            @(Model.SalesWallet.HasSalesAuthority ? "已啟用" : "未啟用")
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 轉移到銷售錢包 Modal -->
+<div class="modal fade" id="transferToSalesModal" tabindex="-1" role="dialog" aria-labelledby="transferToSalesModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="transferToSalesModalLabel">轉移到銷售錢包</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="transferToSalesForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="transferAmount">轉移金額</label>
+                        <input type="number" class="form-control" id="transferAmount" name="amount" min="1" required>
+                        <small class="form-text text-muted">可轉移金額：<span id="availableAmount">0</span> 點</small>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>注意：</strong>轉移到銷售錢包的點數將用於支付平台抽成和手續費，轉移後無法直接轉回主錢包。
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-success">確認轉移</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 從銷售錢包提領 Modal -->
+<div class="modal fade" id="withdrawFromSalesModal" tabindex="-1" role="dialog" aria-labelledby="withdrawFromSalesModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="withdrawFromSalesModalLabel">從銷售錢包提領</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="withdrawFromSalesForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="withdrawAmount">提領金額</label>
+                        <input type="number" class="form-control" id="withdrawAmount" name="amount" min="1" required>
+                        <small class="form-text text-muted">可提領金額：<span id="salesWalletAmount">0</span> 點</small>
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>注意：</strong>提領後點數將轉入您的主錢包，可用於一般消費。
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-warning">確認提領</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // 銷售趨勢圖表
+        var ctx = document.getElementById('salesTrendChart').getContext('2d');
+        var salesTrendChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
+                datasets: [{
+                    label: '銷售額',
+                    data: [1200, 1900, 3000, 5000, 2000, 3000],
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // 載入銷售排行榜
+        async function loadSalesRanking() {
+            try {
+                const response = await fetch('/api/sales/ranking?period=monthly&limit=5');
+                if (response.ok) {
+                    const ranking = await response.json();
+                    displaySalesRanking(ranking);
+                } else {
+                    document.getElementById('salesRanking').innerHTML = '<p class="text-muted text-center">無法載入排行榜</p>';
+                }
+            } catch (error) {
+                document.getElementById('salesRanking').innerHTML = '<p class="text-muted text-center">載入排行榜失敗</p>';
+            }
+        }
+
+        // 顯示銷售排行榜
+        function displaySalesRanking(ranking) {
+            if (!ranking || ranking.length === 0) {
+                document.getElementById('salesRanking').innerHTML = '<p class="text-muted text-center">暫無排行榜資料</p>';
+                return;
+            }
+
+            let html = '';
+            ranking.forEach((item, index) => {
+                const rankClass = index < 3 ? `text-${index === 0 ? 'warning' : index === 1 ? 'secondary' : 'danger'}` : '';
+                const rankIcon = index < 3 ? ['🥇', '🥈', '🥉'][index] : `${index + 1}.`;
+                
+                html += `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <span class="font-weight-bold ${rankClass}">${rankIcon}</span>
+                            <span class="ml-2">${item.userName}</span>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-weight-bold">${item.salesAmount.toLocaleString()} 點</div>
+                            <small class="text-muted">${item.orderCount} 筆訂單</small>
+                        </div>
+                    </div>
+                `;
+                if (index < ranking.length - 1) html += '<hr>';
+            });
+
+            document.getElementById('salesRanking').innerHTML = html;
+        }
+
+        // 轉移到銷售錢包
+        document.getElementById('transferToSalesForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const amount = parseInt(document.getElementById('transferAmount').value);
+            
+            try {
+                const response = await fetch('/api/wallet/sales/transfer', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ amount: amount })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    alert(result.message);
+                    location.reload();
+                } else {
+                    const error = await response.json();
+                    alert('轉移失敗：' + error.error);
+                }
+            } catch (error) {
+                alert('轉移失敗：' + error.message);
+            }
+        });
+
+        // 從銷售錢包提領
+        document.getElementById('withdrawFromSalesForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const amount = parseInt(document.getElementById('withdrawAmount').value);
+            
+            try {
+                const response = await fetch('/api/wallet/sales/withdraw', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ amount: amount })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    alert(result.message);
+                    location.reload();
+                } else {
+                    const error = await response.json();
+                    alert('提領失敗：' + error.error);
+                }
+            } catch (error) {
+                alert('提領失敗：' + error.message);
+            }
+        });
+
+        // Modal 顯示時更新金額
+        $('#transferToSalesModal').on('show.bs.modal', function () {
+            // 這裡需要從主錢包取得可轉移金額，暫時使用固定值
+            document.getElementById('availableAmount').textContent = '1000';
+            document.getElementById('transferAmount').max = 1000;
+        });
+
+        $('#withdrawFromSalesModal').on('show.bs.modal', function () {
+            document.getElementById('salesWalletAmount').textContent = '@Model.SalesWallet.UserSalesWallet';
+            document.getElementById('withdrawAmount').max = @Model.SalesWallet.UserSalesWallet;
+        });
+
+        // 頁面載入完成後載入排行榜
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSalesRanking();
+        });
+    </script>
+} 

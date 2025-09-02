@@ -1,0 +1,845 @@
+@model List<GameCore.Core.Entities.MarketTransaction>
+@{
+    ViewData["Title"] = "玩家市場";
+    ViewData["ActivePage"] = "PlayerMarket";
+}
+
+<div class="container-fluid">
+    <!-- 頁面標題 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-store text-primary"></i>
+                玩家市場
+            </h1>
+            <p class="text-muted">與其他玩家交易遊戲物品，找到最適合的價格</p>
+        </div>
+    </div>
+
+    <!-- 搜尋和篩選區域 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="searchInput" class="form-label">搜尋商品</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="searchInput" placeholder="輸入商品名稱或描述...">
+                                <button class="btn btn-primary" type="button" onclick="searchItems()">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="categoryFilter" class="form-label">商品分類</label>
+                            <select class="form-select" id="categoryFilter" onchange="filterByCategory()">
+                                <option value="">全部分類</option>
+                                <option value="裝備">裝備</option>
+                                <option value="道具">道具</option>
+                                <option value="材料">材料</option>
+                                <option value="寵物">寵物</option>
+                                <option value="坐騎">坐騎</option>
+                                <option value="時裝">時裝</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="priceRange" class="form-label">價格範圍</label>
+                            <select class="form-select" id="priceRange" onchange="filterByPrice()">
+                                <option value="">全部價格</option>
+                                <option value="0-100">NT$ 0 - 100</option>
+                                <option value="100-500">NT$ 100 - 500</option>
+                                <option value="500-1000">NT$ 500 - 1,000</option>
+                                <option value="1000-5000">NT$ 1,000 - 5,000</option>
+                                <option value="5000+">NT$ 5,000+</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label for="sortBy" class="form-label">排序方式</label>
+                            <select class="form-select" id="sortBy" onchange="sortItems()">
+                                <option value="newest">最新上架</option>
+                                <option value="price-low">價格由低到高</option>
+                                <option value="price-high">價格由高到低</option>
+                                <option value="popular">熱門程度</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 快速操作按鈕 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary" onclick="refreshMarket()">
+                        <i class="fas fa-sync-alt"></i> 重新整理
+                    </button>
+                    <button class="btn btn-outline-info" onclick="showMarketStats()">
+                        <i class="fas fa-chart-bar"></i> 市場統計
+                    </button>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/PlayerMarket/Create" class="btn btn-success">
+                        <i class="fas fa-plus"></i> 上架商品
+                    </a>
+                    <a href="/PlayerMarket/MyListings" class="btn btn-outline-secondary">
+                        <i class="fas fa-list"></i> 我的上架
+                    </a>
+                    <a href="/PlayerMarket/MyPurchases" class="btn btn-outline-secondary">
+                        <i class="fas fa-shopping-bag"></i> 我的購買
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 商品列表 -->
+    <div class="row" id="marketItemsContainer">
+        @if (Model != null && Model.Any())
+        {
+            @foreach (var item in Model)
+            {
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4 market-item" 
+                     data-category="@item.Category" 
+                     data-price="@item.Price"
+                     data-create-time="@item.CreateTime.Ticks">
+                    <div class="card h-100 shadow-sm market-item-card">
+                        <div class="card-img-top-container">
+                            @if (!string.IsNullOrEmpty(item.ImageUrl))
+                            {
+                                <img src="@item.ImageUrl" class="card-img-top" alt="@item.ItemName">
+                            }
+                            else
+                            {
+                                <div class="card-img-top placeholder-image d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-image text-muted fa-3x"></i>
+                                </div>
+                            }
+                            <div class="item-overlay">
+                                <div class="overlay-buttons">
+                                    <button class="btn btn-primary btn-sm" onclick="viewItem(@item.Id)">
+                                        <i class="fas fa-eye"></i> 查看詳情
+                                    </button>
+                                    <button class="btn btn-success btn-sm" onclick="buyItem(@item.Id, '@item.ItemName', @item.Price)">
+                                        <i class="fas fa-shopping-cart"></i> 立即購買
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <h6 class="card-title text-truncate" title="@item.ItemName">
+                                @item.ItemName
+                            </h6>
+                            <p class="card-text text-muted small flex-grow-1">
+                                @(string.IsNullOrEmpty(item.Description) ? "無描述" : (item.Description.Length > 50 ? item.Description.Substring(0, 50) + "..." : item.Description))
+                            </p>
+                            <div class="item-meta mb-2">
+                                <span class="badge bg-primary">@item.Category</span>
+                                <span class="badge bg-secondary">數量: @item.Quantity</span>
+                                @if (item.IsRare)
+                                {
+                                    <span class="badge bg-warning">稀有</span>
+                                }
+                            </div>
+                            <div class="price-section">
+                                <div class="current-price">
+                                    NT$ @item.Price.ToString("N0")
+                                </div>
+                                @if (item.OriginalPrice.HasValue && item.OriginalPrice > item.Price)
+                                {
+                                    <div class="original-price text-muted text-decoration-line-through">
+                                        NT$ @item.OriginalPrice.Value.ToString("N0")
+                                    </div>
+                                }
+                            </div>
+                            <div class="seller-info mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-user"></i> @item.Seller.Username
+                                </small>
+                                <small class="text-muted float-end">
+                                    <i class="fas fa-clock"></i> @item.CreateTime.ToString("MM/dd")
+                                </small>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="seller-rating">
+                                    @{
+                                        var rating = item.Seller.Rating ?? 0;
+                                        for (int i = 1; i <= 5; i++)
+                                        {
+                                            if (i <= rating)
+                                            {
+                                                <i class="fas fa-star text-warning"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="far fa-star text-muted"></i>
+                                            }
+                                        }
+                                    }
+                                    <small class="text-muted ms-1">(@item.Seller.TransactionCount 筆交易)</small>
+                                </div>
+                                <button class="btn btn-outline-primary btn-sm" onclick="addToWatchlist(@item.Id)">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-store fa-4x text-muted mb-3"></i>
+                        <h4 class="text-muted">目前沒有商品</h4>
+                        <p class="text-muted">市場中暫時沒有可購買的商品，請稍後再來查看。</p>
+                        <a href="/PlayerMarket/Create" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> 成為第一個上架者
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- 分頁控制 -->
+    <div class="row mt-4" id="paginationContainer" style="display: none;">
+        <div class="col-12">
+            <nav aria-label="市場商品分頁">
+                <ul class="pagination justify-content-center" id="pagination">
+                    <!-- 分頁按鈕將由 JavaScript 動態生成 -->
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- 市場統計 Modal -->
+<div class="modal fade" id="marketStatsModal" tabindex="-1" aria-labelledby="marketStatsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="marketStatsModalLabel">
+                    <i class="fas fa-chart-bar"></i> 市場統計
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body text-center">
+                                <h4>@Model?.Count ?? 0</h4>
+                                <p class="mb-0">目前上架商品</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <h4>@(Model?.Where(x => x.Status == "Sold").Count() ?? 0)</h4>
+                                <p class="mb-0">本月成交商品</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body text-center">
+                                <h4>@(Model?.Select(x => x.SellerId).Distinct().Count() ?? 0)</h4>
+                                <p class="mb-0">活躍賣家</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body text-center">
+                                <h4>@(Model?.Average(x => x.Price)?.ToString("N0") ?? "0")</h4>
+                                <p class="mb-0">平均價格</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <h6>熱門分類</h6>
+                    <div class="row">
+                        @if (Model != null)
+                        {
+                            var categories = Model.GroupBy(x => x.Category)
+                                                .Select(g => new { Category = g.Key, Count = g.Count() })
+                                                .OrderByDescending(x => x.Count)
+                                                .Take(5);
+                            
+                            @foreach (var cat in categories)
+                            {
+                                <div class="col-md-6 mb-2">
+                                    <div class="d-flex justify-content-between">
+                                        <span>@cat.Category</span>
+                                        <span class="badge bg-secondary">@cat.Count</span>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 購買確認 Modal -->
+<div class="modal fade" id="buyItemModal" tabindex="-1" aria-labelledby="buyItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="buyItemModalLabel">
+                    <i class="fas fa-shopping-cart"></i> 確認購買
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <h6 id="buyItemName"></h6>
+                    <p class="text-muted">價格：<span id="buyItemPrice" class="text-primary fw-bold"></span></p>
+                </div>
+                <div class="mb-3">
+                    <label for="buyQuantity" class="form-label">購買數量</label>
+                    <input type="number" class="form-control" id="buyQuantity" value="1" min="1" max="1">
+                </div>
+                <div class="mb-3">
+                    <label for="buyMessage" class="form-label">給賣家的訊息（可選）</label>
+                    <textarea class="form-control" id="buyMessage" rows="3" placeholder="例如：請盡快發貨、謝謝等"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="confirmBuyItem()">確認購買</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .market-item-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+        }
+
+        .market-item-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        }
+
+        .card-img-top-container {
+            position: relative;
+            overflow: hidden;
+            height: 200px;
+        }
+
+        .card-img-top {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .placeholder-image {
+            width: 100%;
+            height: 100%;
+            background-color: #f8f9fc;
+        }
+
+        .item-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .market-item-card:hover .item-overlay {
+            opacity: 1;
+        }
+
+        .market-item-card:hover .card-img-top {
+            transform: scale(1.1);
+        }
+
+        .overlay-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .overlay-buttons .btn {
+            min-width: 120px;
+        }
+
+        .item-meta .badge {
+            margin-right: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .price-section {
+            margin-bottom: 1rem;
+        }
+
+        .current-price {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .original-price {
+            font-size: 0.9rem;
+        }
+
+        .seller-info {
+            border-top: 1px solid #e3e6f0;
+            padding-top: 0.5rem;
+        }
+
+        .seller-rating .fa-star {
+            font-size: 0.8rem;
+        }
+
+        .card-footer {
+            border-top: 1px solid #e3e6f0;
+        }
+
+        .pagination .page-link {
+            color: #007bff;
+        }
+
+        .pagination .page-item.active .page-link {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 767.98px) {
+            .overlay-buttons {
+                flex-direction: row;
+                gap: 0.25rem;
+            }
+            
+            .overlay-buttons .btn {
+                min-width: auto;
+                font-size: 0.8rem;
+                padding: 0.25rem 0.5rem;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        let marketItems = @Html.Raw(Json.Serialize(Model ?? new List<GameCore.Core.Entities.MarketTransaction>()));
+        let filteredItems = [...marketItems];
+        let currentPage = 1;
+        const itemsPerPage = 12;
+        let currentBuyItem = null;
+
+        // 頁面載入完成後初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            displayItems();
+            updatePagination();
+        });
+
+        // 搜尋商品
+        function searchItems() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            
+            if (searchTerm === '') {
+                filteredItems = [...marketItems];
+            } else {
+                filteredItems = marketItems.filter(item => 
+                    item.itemName.toLowerCase().includes(searchTerm) ||
+                    (item.description && item.description.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            currentPage = 1;
+            displayItems();
+            updatePagination();
+        }
+
+        // 按分類篩選
+        function filterByCategory() {
+            const category = document.getElementById('categoryFilter').value;
+            
+            if (category === '') {
+                filteredItems = [...marketItems];
+            } else {
+                filteredItems = marketItems.filter(item => item.category === category);
+            }
+            
+            currentPage = 1;
+            displayItems();
+            updatePagination();
+        }
+
+        // 按價格篩選
+        function filterByPrice() {
+            const priceRange = document.getElementById('priceRange').value;
+            
+            if (priceRange === '') {
+                filteredItems = [...marketItems];
+            } else {
+                const [min, max] = priceRange.split('-').map(p => p === '+' ? Infinity : parseInt(p));
+                filteredItems = marketItems.filter(item => {
+                    if (max === Infinity) {
+                        return item.price >= min;
+                    }
+                    return item.price >= min && item.price <= max;
+                });
+            }
+            
+            currentPage = 1;
+            displayItems();
+            updatePagination();
+        }
+
+        // 排序商品
+        function sortItems() {
+            const sortBy = document.getElementById('sortBy').value;
+            
+            switch (sortBy) {
+                case 'newest':
+                    filteredItems.sort((a, b) => new Date(b.createTime) - new Date(a.createTime));
+                    break;
+                case 'price-low':
+                    filteredItems.sort((a, b) => a.price - b.price);
+                    break;
+                case 'price-high':
+                    filteredItems.sort((a, b) => b.price - a.price);
+                    break;
+                case 'popular':
+                    filteredItems.sort((a, b) => (b.seller.transactionCount || 0) - (a.seller.transactionCount || 0));
+                    break;
+            }
+            
+            currentPage = 1;
+            displayItems();
+            updatePagination();
+        }
+
+        // 顯示商品
+        function displayItems() {
+            const container = document.getElementById('marketItemsContainer');
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageItems = filteredItems.slice(startIndex, endIndex);
+            
+            if (pageItems.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="card shadow-sm">
+                            <div class="card-body text-center py-5">
+                                <i class="fas fa-search fa-4x text-muted mb-3"></i>
+                                <h4 class="text-muted">沒有找到符合條件的商品</h4>
+                                <p class="text-muted">請嘗試調整搜尋條件或篩選器。</p>
+                                <button class="btn btn-outline-primary" onclick="clearFilters()">
+                                    <i class="fas fa-times"></i> 清除篩選
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            pageItems.forEach(item => {
+                html += generateItemHtml(item);
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // 生成商品 HTML
+        function generateItemHtml(item) {
+            const createTime = new Date(item.createTime).toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit' });
+            const rating = item.seller.rating || 0;
+            const stars = Array.from({ length: 5 }, (_, i) => 
+                i < rating ? '<i class="fas fa-star text-warning"></i>' : '<i class="far fa-star text-muted"></i>'
+            ).join('');
+            
+            return `
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4 market-item" 
+                     data-category="${item.category}" 
+                     data-price="${item.price}"
+                     data-create-time="${new Date(item.createTime).getTime()}">
+                    <div class="card h-100 shadow-sm market-item-card">
+                        <div class="card-img-top-container">
+                            ${item.imageUrl ? 
+                                `<img src="${item.imageUrl}" class="card-img-top" alt="${item.itemName}">` :
+                                `<div class="card-img-top placeholder-image d-flex align-items-center justify-content-center">
+                                    <i class="fas fa-image text-muted fa-3x"></i>
+                                </div>`
+                            }
+                            <div class="item-overlay">
+                                <div class="overlay-buttons">
+                                    <button class="btn btn-primary btn-sm" onclick="viewItem(${item.id})">
+                                        <i class="fas fa-eye"></i> 查看詳情
+                                    </button>
+                                    <button class="btn btn-success btn-sm" onclick="buyItem(${item.id}, '${item.itemName}', ${item.price})">
+                                        <i class="fas fa-shopping-cart"></i> 立即購買
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <h6 class="card-title text-truncate" title="${item.itemName}">
+                                ${item.itemName}
+                            </h6>
+                            <p class="card-text text-muted small flex-grow-1">
+                                ${item.description ? 
+                                    (item.description.length > 50 ? item.description.substring(0, 50) + '...' : item.description) :
+                                    '無描述'
+                                }
+                            </p>
+                            <div class="item-meta mb-2">
+                                <span class="badge bg-primary">${item.category}</span>
+                                <span class="badge bg-secondary">數量: ${item.quantity}</span>
+                                ${item.isRare ? '<span class="badge bg-warning">稀有</span>' : ''}
+                            </div>
+                            <div class="price-section">
+                                <div class="current-price">
+                                    NT$ ${item.price.toLocaleString()}
+                                </div>
+                                ${item.originalPrice && item.originalPrice > item.price ? 
+                                    `<div class="original-price text-muted text-decoration-line-through">
+                                        NT$ ${item.originalPrice.toLocaleString()}
+                                    </div>` : ''
+                                }
+                            </div>
+                            <div class="seller-info mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-user"></i> ${item.seller.username}
+                                </small>
+                                <small class="text-muted float-end">
+                                    <i class="fas fa-clock"></i> ${createTime}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="seller-rating">
+                                    ${stars}
+                                    <small class="text-muted ms-1">(${item.seller.transactionCount || 0} 筆交易)</small>
+                                </div>
+                                <button class="btn btn-outline-primary btn-sm" onclick="addToWatchlist(${item.id})">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 更新分頁
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+            const container = document.getElementById('paginationContainer');
+            const pagination = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                container.style.display = 'none';
+                return;
+            }
+            
+            container.style.display = 'block';
+            
+            let html = '';
+            
+            // 上一頁
+            html += `
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">上一頁</a>
+                </li>
+            `;
+            
+            // 頁碼
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    html += `
+                        <li class="page-item ${i === currentPage ? 'active' : ''}">
+                            <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+                        </li>
+                    `;
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                }
+            }
+            
+            // 下一頁
+            html += `
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">下一頁</a>
+                </li>
+            `;
+            
+            pagination.innerHTML = html;
+        }
+
+        // 切換頁面
+        function changePage(page) {
+            const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+            if (page < 1 || page > totalPages) return;
+            
+            currentPage = page;
+            displayItems();
+            updatePagination();
+            
+            // 滾動到頁面頂部
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 重新整理市場
+        function refreshMarket() {
+            location.reload();
+        }
+
+        // 顯示市場統計
+        function showMarketStats() {
+            const modal = new bootstrap.Modal(document.getElementById('marketStatsModal'));
+            modal.show();
+        }
+
+        // 查看商品詳情
+        function viewItem(itemId) {
+            window.location.href = `/PlayerMarket/Item/${itemId}`;
+        }
+
+        // 購買商品
+        function buyItem(itemId, itemName, price) {
+            currentBuyItem = { id: itemId, name: itemName, price: price };
+            document.getElementById('buyItemName').textContent = itemName;
+            document.getElementById('buyItemPrice').textContent = `NT$ ${price.toLocaleString()}`;
+            document.getElementById('buyQuantity').max = 1; // 暫時設為 1，實際應該從商品資料獲取
+            
+            const modal = new bootstrap.Modal(document.getElementById('buyItemModal'));
+            modal.show();
+        }
+
+        // 確認購買
+        function confirmBuyItem() {
+            if (!currentBuyItem) return;
+            
+            const quantity = parseInt(document.getElementById('buyQuantity').value);
+            const message = document.getElementById('buyMessage').value;
+            
+            if (quantity < 1) {
+                showToast('請選擇有效的購買數量', 'warning');
+                return;
+            }
+            
+            // 這裡應該調用購買 API
+            fetch('/api/playermarket/purchase', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    itemId: currentBuyItem.id,
+                    quantity: quantity,
+                    message: message
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('購買成功！', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('buyItemModal')).hide();
+                    // 重新整理頁面或更新商品狀態
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(`購買失敗：${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('購買時發生錯誤，請稍後再試。', 'error');
+            });
+        }
+
+        // 加入關注清單
+        function addToWatchlist(itemId) {
+            fetch('/api/playermarket/watchlist/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    itemId: itemId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('已加入關注清單', 'success');
+                } else {
+                    showToast(`加入失敗：${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('操作時發生錯誤，請稍後再試。', 'error');
+            });
+        }
+
+        // 清除篩選
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('categoryFilter').value = '';
+            document.getElementById('priceRange').value = '';
+            document.getElementById('sortBy').value = 'newest';
+            
+            filteredItems = [...marketItems];
+            currentPage = 1;
+            displayItems();
+            updatePagination();
+        }
+
+        // 顯示提示訊息
+        function showToast(message, type = 'info') {
+            if (type === 'success') {
+                alert('✅ ' + message);
+            } else if (type === 'error') {
+                alert('❌ ' + message);
+            } else if (type === 'warning') {
+                alert('⚠️ ' + message);
+            } else {
+                alert(message);
+            }
+        }
+
+        // 搜尋框 Enter 鍵事件
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchItems();
+            }
+        });
+    </script>
+}

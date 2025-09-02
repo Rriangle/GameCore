@@ -1,0 +1,405 @@
+@model GameCore.Web.Controllers.StoreMvcController.MyOrdersViewModel
+@{
+    ViewData["Title"] = "我的訂單";
+    ViewData["Description"] = "查看您的訂單歷史";
+}
+
+@section Styles {
+    <style>
+        .orders-container {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .order-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.2s;
+        }
+        
+        .order-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .order-number {
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .order-date {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .order-status {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: bold;
+        }
+        
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-processing {
+            background: #cce5ff;
+            color: #004085;
+        }
+        
+        .status-shipped {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .order-items {
+            margin-bottom: 1rem;
+        }
+        
+        .order-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        
+        .order-item:last-child {
+            border-bottom: none;
+        }
+        
+        .order-item-image {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 6px;
+            background: #f8f9fa;
+            margin-right: 1rem;
+        }
+        
+        .order-summary {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.25rem 0;
+        }
+        
+        .summary-row:last-child {
+            font-weight: bold;
+            color: #dc3545;
+            font-size: 1.1rem;
+            border-top: 1px solid #dee2e6;
+            padding-top: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .order-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+        
+        .empty-orders {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+        
+        .empty-orders i {
+            font-size: 4rem;
+            color: #6c757d;
+            margin-bottom: 1rem;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+        }
+        
+        .pagination .page-link {
+            padding: 0.5rem 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            color: #007bff;
+            text-decoration: none;
+        }
+        
+        .pagination .page-link:hover {
+            background-color: #e9ecef;
+        }
+        
+        .pagination .page-link.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        
+        .filter-tabs {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-tabs {
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            color: #6c757d;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0;
+        }
+        
+        .nav-tabs .nav-link.active {
+            color: #007bff;
+            background: none;
+            border-bottom: 2px solid #007bff;
+        }
+    </style>
+}
+
+<div class="container py-4">
+    <!-- 頁面標題 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">
+            <i class="fas fa-receipt text-primary me-2"></i>
+            我的訂單
+        </h1>
+        <a href="@Url.Action("Index", "StoreMvc")" class="btn btn-outline-primary">
+            <i class="fas fa-shopping-bag me-2"></i>
+            繼續購物
+        </a>
+    </div>
+
+    <!-- 篩選標籤 -->
+    <div class="filter-tabs">
+        <ul class="nav nav-tabs" id="orderTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">
+                    全部訂單
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab">
+                    待處理
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="processing-tab" data-bs-toggle="tab" data-bs-target="#processing" type="button" role="tab">
+                    處理中
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="shipped-tab" data-bs-toggle="tab" data-bs-target="#shipped" type="button" role="tab">
+                    已出貨
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed" type="button" role="tab">
+                    已完成
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <!-- 訂單列表 -->
+    <div class="orders-container">
+        @if (Model.Orders.Any())
+        {
+            <div class="tab-content" id="orderTabContent">
+                <!-- 全部訂單 -->
+                <div class="tab-pane fade show active" id="all" role="tabpanel">
+                    @foreach (var order in Model.Orders)
+                    {
+                        <div class="order-card">
+                            @await Html.PartialAsync("_OrderCard", order)
+                        </div>
+                    }
+                </div>
+
+                <!-- 待處理訂單 -->
+                <div class="tab-pane fade" id="pending" role="tabpanel">
+                    @foreach (var order in Model.Orders.Where(o => o.Status == "pending"))
+                    {
+                        <div class="order-card">
+                            @await Html.PartialAsync("_OrderCard", order)
+                        </div>
+                    }
+                </div>
+
+                <!-- 處理中訂單 -->
+                <div class="tab-pane fade" id="processing" role="tabpanel">
+                    @foreach (var order in Model.Orders.Where(o => o.Status == "processing"))
+                    {
+                        <div class="order-card">
+                            @await Html.PartialAsync("_OrderCard", order)
+                        </div>
+                    }
+                </div>
+
+                <!-- 已出貨訂單 -->
+                <div class="tab-pane fade" id="shipped" role="tabpanel">
+                    @foreach (var order in Model.Orders.Where(o => o.Status == "shipped"))
+                    {
+                        <div class="order-card">
+                            @await Html.PartialAsync("_OrderCard", order)
+                        </div>
+                    }
+                </div>
+
+                <!-- 已完成訂單 -->
+                <div class="tab-pane fade" id="completed" role="tabpanel">
+                    @foreach (var order in Model.Orders.Where(o => o.Status == "completed"))
+                    {
+                        <div class="order-card">
+                            @await Html.PartialAsync("_OrderCard", order)
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- 分頁 -->
+            @if (Model.TotalPages > 1)
+            {
+                <nav class="pagination">
+                    @if (Model.CurrentPage > 1)
+                    {
+                        <a class="page-link" href="@Url.Action("MyOrders", "StoreMvc", new { page = Model.CurrentPage - 1 })">上一頁</a>
+                    }
+
+                    @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
+                    {
+                        <a class="page-link @(i == Model.CurrentPage ? "active" : "")" 
+                           href="@Url.Action("MyOrders", "StoreMvc", new { page = i })">@i</a>
+                    }
+
+                    @if (Model.CurrentPage < Model.TotalPages)
+                    {
+                        <a class="page-link" href="@Url.Action("MyOrders", "StoreMvc", new { page = Model.CurrentPage + 1 })">下一頁</a>
+                    }
+                </nav>
+            }
+        }
+        else
+        {
+            <!-- 空訂單 -->
+            <div class="empty-orders">
+                <i class="fas fa-receipt"></i>
+                <h3 class="text-muted">您還沒有任何訂單</h3>
+                <p class="text-muted mb-4">快來選購您喜歡的商品吧！</p>
+                <a href="@Url.Action("Index", "StoreMvc")" class="btn btn-primary btn-lg">
+                    <i class="fas fa-shopping-bag me-2"></i>
+                    開始購物
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // 標籤頁切換
+            $('#orderTabs button').on('click', function(e) {
+                e.preventDefault();
+                
+                // 移除所有活動狀態
+                $('#orderTabs button').removeClass('active');
+                $('.tab-pane').removeClass('show active');
+                
+                // 添加活動狀態
+                $(this).addClass('active');
+                const target = $(this).data('bs-target');
+                $(target).addClass('show active');
+            });
+            
+            // 取消訂單功能
+            window.cancelOrder = function(orderId) {
+                if (!confirm('確定要取消這個訂單嗎？取消後將無法復原。')) {
+                    return;
+                }
+                
+                $.ajax({
+                    url: '/api/Store/orders/cancel',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        orderId: orderId
+                    }),
+                    success: function(response) {
+                        if (response.success) {
+                            showToast('訂單已取消', 'success');
+                            
+                            // 重新載入頁面
+                            setTimeout(() => {
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            showToast(response.message || '取消訂單失敗', 'error');
+                        }
+                    },
+                    error: function() {
+                        showToast('取消訂單失敗，請稍後再試', 'error');
+                    }
+                });
+            };
+            
+            // 顯示 Toast 訊息
+            function showToast(message, type) {
+                const toast = $(`
+                    <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0" role="alert">
+                        <div class="d-flex">
+                            <div class="toast-body">${message}</div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                        </div>
+                    </div>
+                `);
+                
+                $('.toast-container').append(toast);
+                const bsToast = new bootstrap.Toast(toast[0]);
+                bsToast.show();
+                
+                // 自動移除
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
+            }
+        });
+    </script>
+} 

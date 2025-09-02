@@ -1,0 +1,123 @@
+@{
+    ViewData["Title"] = "首頁";
+}
+
+<div class="text-center">
+    <h1 class="display-4">歡迎來到 GameCore</h1>
+    <p>您的遊戲核心平台</p>
+    
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+        <div class="alert alert-success" role="alert">
+            <h4>歡迎回來，@User.Identity.Name!</h4>
+            <p>您已成功登入系統</p>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">個人資料</h5>
+                        <p class="card-text">查看和編輯您的個人資料</p>
+                        <a href="/profile" class="btn btn-primary">查看資料</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">變更密碼</h5>
+                        <p class="card-text">更新您的登入密碼</p>
+                        <a href="/change-password" class="btn btn-warning">變更密碼</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">登出</h5>
+                        <p class="card-text">安全登出系統</p>
+                        <a href="/logout" class="btn btn-danger">登出</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info" role="alert">
+            <h4>請登入以使用完整功能</h4>
+            <p>登入後您可以享受更多遊戲功能和個人化體驗</p>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">已有帳號？</h5>
+                        <p class="card-text">登入您的帳號</p>
+                        <a href="/login" class="btn btn-primary btn-lg">登入</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">新用戶？</h5>
+                        <p class="card-text">立即註冊新帳號</p>
+                        <a href="/register" class="btn btn-success btn-lg">註冊</a>
+                    </div>
+                </div>
+            </div>
+                        </div>
+                        
+        <div class="mt-4">
+            <h5>測試帳號</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            測試用戶 001
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Email:</strong> test001@example.com</p>
+                            <p><strong>密碼:</strong> password123</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            測試用戶 002
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Email:</strong> test002@example.com</p>
+                            <p><strong>密碼:</strong> password123</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    </div>
+
+@section Scripts {
+    <script>
+        // 檢查登入狀態
+        function checkAuthStatus() {
+            fetch('/api/auth/status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.isAuthenticated) {
+                        location.reload();
+                    }
+                })
+                .catch(error => console.error('檢查認證狀態失敗:', error));
+        }
+        
+        // 每5秒檢查一次認證狀態
+        if (!@User.Identity?.IsAuthenticated.ToString().ToLower()) {
+            setInterval(checkAuthStatus, 5000);
+        }
+    </script>
+}

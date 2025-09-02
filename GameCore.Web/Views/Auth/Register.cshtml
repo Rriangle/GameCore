@@ -1,0 +1,776 @@
+@{
+    ViewData["Title"] = "註冊 - GameCore";
+    Layout = "_Layout";
+}
+
+@section Styles {
+    <style>
+        :root {
+            --bg: #eef3f8;
+            --bg2: #ffffff;
+            --ink: #1f2937;
+            --muted: #64748b;
+            --line: #e5e7eb;
+            --surface: rgba(255,255,255,.75);
+            --glass: rgba(255,255,255,.45);
+            --accent: #7557ff;
+            --accent-2: #34d2ff;
+            --accent-3: #22c55e;
+            --radius: 18px;
+            --radius-sm: 12px;
+            --shadow: 0 18px 40px rgba(17,24,39,.12);
+            --blur: 14px;
+        }
+
+        body.dark {
+            --bg: #0c111b;
+            --bg2: #0a0f18;
+            --ink: #e5edff;
+            --muted: #9fb1c9;
+            --line: #1e2b43;
+            --surface: rgba(22,30,48,.65);
+            --glass: rgba(18,24,39,.50);
+            --shadow: 0 18px 42px rgba(0,0,0,.35);
+        }
+
+        body {
+            margin: 0;
+            color: var(--ink);
+            font: 16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+            background: radial-gradient(900px 500px at -10% -10%, rgba(117,87,255,.10), transparent 60%),
+                        radial-gradient(800px 460px at 110% 10%, rgba(52,210,255,.10), transparent 50%),
+                        linear-gradient(180deg, var(--bg), var(--bg2));
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .register-container {
+            width: 100%;
+            max-width: 480px;
+            background: var(--glass);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            backdrop-filter: blur(var(--blur));
+            box-shadow: var(--shadow);
+            padding: 32px;
+        }
+
+        .register-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .logo-badge {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #fff;
+            display: grid;
+            place-items: center;
+            font-weight: 900;
+            font-size: 20px;
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: 900;
+            color: var(--ink);
+        }
+
+        .register-subtitle {
+            color: var(--muted);
+            font-size: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--line);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            color: var(--ink);
+            font-size: 16px;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(117,87,255,.1);
+        }
+
+        .form-input::placeholder {
+            color: var(--muted);
+        }
+
+        .form-input.error {
+            border-color: #dc2626;
+            box-shadow: 0 0 0 3px rgba(220,38,38,.1);
+        }
+
+        .form-input.success {
+            border-color: #16a34a;
+            box-shadow: 0 0 0 3px rgba(22,163,74,.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .password-strength {
+            margin-top: 8px;
+            font-size: 12px;
+        }
+
+        .strength-bar {
+            height: 4px;
+            background: var(--line);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+
+        .strength-fill {
+            height: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .strength-weak .strength-fill {
+            background: #dc2626;
+            width: 25%;
+        }
+
+        .strength-medium .strength-fill {
+            background: #f59e0b;
+            width: 50%;
+        }
+
+        .strength-strong .strength-fill {
+            background: #16a34a;
+            width: 75%;
+        }
+
+        .strength-very-strong .strength-fill {
+            background: #059669;
+            width: 100%;
+        }
+
+        .strength-text {
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .form-checkbox {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .form-checkbox input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+            margin-top: 2px;
+        }
+
+        .form-checkbox label {
+            color: var(--ink);
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .form-checkbox a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .form-checkbox a:hover {
+            text-decoration: underline;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px 20px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #fff;
+            box-shadow: var(--shadow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px rgba(117,87,255,.3);
+        }
+
+        .btn-secondary {
+            background: var(--surface);
+            color: var(--ink);
+            border: 1px solid var(--line);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg2);
+            transform: translateY(-1px);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 24px 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--line);
+        }
+
+        .divider span {
+            padding: 0 16px;
+        }
+
+        .oauth-buttons {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .oauth-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border: 1px solid var(--line);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            color: var(--ink);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .oauth-btn:hover {
+            background: var(--bg2);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow);
+        }
+
+        .oauth-btn.google {
+            border-color: #ea4335;
+            color: #ea4335;
+        }
+
+        .oauth-btn.facebook {
+            border-color: #1877f2;
+            color: #1877f2;
+        }
+
+        .oauth-btn.discord {
+            border-color: #5865f2;
+            color: #5865f2;
+        }
+
+        .register-footer {
+            text-align: center;
+            margin-top: 24px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .register-footer a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .register-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background: rgba(239,68,68,.1);
+            border: 1px solid rgba(239,68,68,.2);
+            color: #dc2626;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .success-message {
+            background: rgba(34,197,94,.1);
+            border: 1px solid rgba(34,197,94,.2);
+            color: #16a34a;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .loading .btn {
+            position: relative;
+        }
+
+        .loading .btn::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .validation-message {
+            margin-top: 4px;
+            font-size: 12px;
+        }
+
+        .validation-message.error {
+            color: #dc2626;
+        }
+
+        .validation-message.success {
+            color: #16a34a;
+        }
+
+        @media (max-width: 480px) {
+            .register-container {
+                padding: 24px;
+            }
+            
+            .logo-text {
+                font-size: 24px;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+}
+
+<div class="register-container">
+    <div class="register-header">
+        <div class="logo">
+            <div class="logo-badge">GC</div>
+            <div class="logo-text">GameCore</div>
+        </div>
+        <div class="register-subtitle">加入我們，開始您的遊戲之旅！</div>
+    </div>
+
+    <div id="errorMessage" class="error-message" style="display: none;"></div>
+    <div id="successMessage" class="success-message" style="display: none;"></div>
+
+    <form id="registerForm">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="userName" class="form-label">姓名</label>
+                <input type="text" id="userName" name="userName" class="form-input" 
+                       placeholder="請輸入您的姓名" required>
+                <div id="userNameValidation" class="validation-message"></div>
+            </div>
+            <div class="form-group">
+                <label for="userAccount" class="form-label">帳號</label>
+                <input type="text" id="userAccount" name="userAccount" class="form-input" 
+                       placeholder="請輸入帳號" required>
+                <div id="userAccountValidation" class="validation-message"></div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="email" class="form-label">電子郵件</label>
+            <input type="email" id="email" name="email" class="form-input" 
+                   placeholder="請輸入電子郵件" required>
+            <div id="emailValidation" class="validation-message"></div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="password" class="form-label">密碼</label>
+                <input type="password" id="password" name="password" class="form-input" 
+                       placeholder="請輸入密碼" required>
+                <div class="password-strength" id="passwordStrength">
+                    <div class="strength-bar">
+                        <div class="strength-fill"></div>
+                    </div>
+                    <div class="strength-text">密碼強度</div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="confirmPassword" class="form-label">確認密碼</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" class="form-input" 
+                       placeholder="請再次輸入密碼" required>
+                <div id="confirmPasswordValidation" class="validation-message"></div>
+            </div>
+        </div>
+
+        <div class="form-checkbox">
+            <input type="checkbox" id="agreeTerms" name="agreeTerms" required>
+            <label for="agreeTerms">
+                我同意 <a href="/terms" target="_blank">服務條款</a> 和 
+                <a href="/privacy" target="_blank">隱私政策</a>
+            </label>
+        </div>
+
+        <div class="form-checkbox">
+            <input type="checkbox" id="agreeMarketing" name="agreeMarketing">
+            <label for="agreeMarketing">
+                我願意接收 GameCore 的最新消息和優惠資訊
+            </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="registerBtn">
+            註冊帳號
+        </button>
+    </form>
+
+    <div class="divider">
+        <span>或使用以下方式註冊</span>
+    </div>
+
+    <div class="oauth-buttons">
+        <a href="#" class="oauth-btn google" onclick="oauthRegister('google')">
+            <svg width="20" height="20" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            使用 Google 註冊
+        </a>
+        <a href="#" class="oauth-btn facebook" onclick="oauthRegister('facebook')">
+            <svg width="20" height="20" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+            使用 Facebook 註冊
+        </a>
+        <a href="#" class="oauth-btn discord" onclick="oauthRegister('discord')">
+            <svg width="20" height="20" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419-.019 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1568 2.4189Z"/>
+            </svg>
+            使用 Discord 註冊
+        </a>
+    </div>
+
+    <div class="register-footer">
+        已經有帳號？ <a href="/Auth/Login">立即登入</a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // 密碼強度檢查
+        function checkPasswordStrength(password) {
+            let strength = 0;
+            let feedback = [];
+            
+            if (password.length >= 8) strength += 1;
+            else feedback.push('至少8個字元');
+            
+            if (/[a-z]/.test(password)) strength += 1;
+            else feedback.push('包含小寫字母');
+            
+            if (/[A-Z]/.test(password)) strength += 1;
+            else feedback.push('包含大寫字母');
+            
+            if (/[0-9]/.test(password)) strength += 1;
+            else feedback.push('包含數字');
+            
+            if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+            else feedback.push('包含特殊字元');
+            
+            return { strength, feedback };
+        }
+        
+        // 更新密碼強度顯示
+        function updatePasswordStrength(password) {
+            const strengthDiv = document.getElementById('passwordStrength');
+            const { strength, feedback } = checkPasswordStrength(password);
+            
+            strengthDiv.className = 'password-strength';
+            
+            if (password.length === 0) {
+                strengthDiv.querySelector('.strength-text').textContent = '密碼強度';
+                return;
+            }
+            
+            let strengthClass = '';
+            let strengthText = '';
+            
+            if (strength <= 1) {
+                strengthClass = 'strength-weak';
+                strengthText = '弱';
+            } else if (strength <= 2) {
+                strengthClass = 'strength-medium';
+                strengthText = '中等';
+            } else if (strength <= 3) {
+                strengthClass = 'strength-strong';
+                strengthText = '強';
+            } else {
+                strengthClass = 'strength-very-strong';
+                strengthText = '非常強';
+            }
+            
+            strengthDiv.classList.add(strengthClass);
+            strengthDiv.querySelector('.strength-text').textContent = `密碼強度：${strengthText}`;
+        }
+        
+        // 即時驗證
+        let validationTimeout;
+        
+        function debounceValidation(fn, delay) {
+            clearTimeout(validationTimeout);
+            validationTimeout = setTimeout(fn, delay);
+        }
+        
+        // 帳號驗證
+        document.getElementById('userAccount').addEventListener('input', function() {
+            const account = this.value;
+            const validation = document.getElementById('userAccountValidation');
+            
+            debounceValidation(async () => {
+                if (account.length === 0) {
+                    validation.textContent = '';
+                    this.className = 'form-input';
+                    return;
+                }
+                
+                if (!/^[a-zA-Z0-9_]+$/.test(account)) {
+                    validation.textContent = '帳號只能包含英文字母、數字和底線';
+                    validation.className = 'validation-message error';
+                    this.className = 'form-input error';
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`/api/auth/check-account?account=${encodeURIComponent(account)}`);
+                    const result = await response.json();
+                    
+                    if (result.data.exists) {
+                        validation.textContent = '此帳號已被使用';
+                        validation.className = 'validation-message error';
+                        this.className = 'form-input error';
+                    } else {
+                        validation.textContent = '帳號可用';
+                        validation.className = 'validation-message success';
+                        this.className = 'form-input success';
+                    }
+                } catch (error) {
+                    console.error('檢查帳號失敗:', error);
+                }
+            }, 500);
+        });
+        
+        // 電子郵件驗證
+        document.getElementById('email').addEventListener('input', function() {
+            const email = this.value;
+            const validation = document.getElementById('emailValidation');
+            
+            debounceValidation(async () => {
+                if (email.length === 0) {
+                    validation.textContent = '';
+                    this.className = 'form-input';
+                    return;
+                }
+                
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                    validation.textContent = '請輸入有效的電子郵件地址';
+                    validation.className = 'validation-message error';
+                    this.className = 'form-input error';
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`/api/auth/check-email?email=${encodeURIComponent(email)}`);
+                    const result = await response.json();
+                    
+                    if (result.data.exists) {
+                        validation.textContent = '此電子郵件已被使用';
+                        validation.className = 'validation-message error';
+                        this.className = 'form-input error';
+                    } else {
+                        validation.textContent = '電子郵件可用';
+                        validation.className = 'validation-message success';
+                        this.className = 'form-input success';
+                    }
+                } catch (error) {
+                    console.error('檢查電子郵件失敗:', error);
+                }
+            }, 500);
+        });
+        
+        // 密碼強度檢查
+        document.getElementById('password').addEventListener('input', function() {
+            updatePasswordStrength(this.value);
+        });
+        
+        // 確認密碼驗證
+        document.getElementById('confirmPassword').addEventListener('input', function() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = this.value;
+            const validation = document.getElementById('confirmPasswordValidation');
+            
+            if (confirmPassword.length === 0) {
+                validation.textContent = '';
+                this.className = 'form-input';
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                validation.textContent = '密碼與確認密碼不符';
+                validation.className = 'validation-message error';
+                this.className = 'form-input error';
+            } else {
+                validation.textContent = '密碼確認成功';
+                validation.className = 'validation-message success';
+                this.className = 'form-input success';
+            }
+        });
+        
+        // 註冊表單處理
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const form = e.target;
+            const submitBtn = document.getElementById('registerBtn');
+            const errorMessage = document.getElementById('errorMessage');
+            const successMessage = document.getElementById('successMessage');
+            
+            // 隱藏訊息
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+            
+            // 顯示載入狀態
+            form.classList.add('loading');
+            submitBtn.textContent = '註冊中...';
+            
+            try {
+                const formData = new FormData(form);
+                const requestData = {
+                    userName: formData.get('userName'),
+                    userAccount: formData.get('userAccount'),
+                    email: formData.get('email'),
+                    password: formData.get('password'),
+                    confirmPassword: formData.get('confirmPassword')
+                };
+                
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // 儲存 Token
+                    if (result.token) {
+                        localStorage.setItem('authToken', result.token);
+                    }
+                    
+                    // 儲存用戶資訊
+                    if (result.userInfo) {
+                        localStorage.setItem('userInfo', JSON.stringify(result.userInfo));
+                    }
+                    
+                    // 顯示成功訊息
+                    successMessage.textContent = '註冊成功！正在跳轉...';
+                    successMessage.style.display = 'block';
+                    
+                    // 跳轉到首頁
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
+                } else {
+                    // 顯示錯誤訊息
+                    errorMessage.textContent = result.errorMessage || '註冊失敗，請檢查輸入資料';
+                    errorMessage.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('註冊錯誤:', error);
+                errorMessage.textContent = '註冊過程中發生錯誤，請稍後再試';
+                errorMessage.style.display = 'block';
+            } finally {
+                // 移除載入狀態
+                form.classList.remove('loading');
+                submitBtn.textContent = '註冊帳號';
+            }
+        });
+        
+        // OAuth 註冊處理
+        function oauthRegister(provider) {
+            // 這裡應該實作 OAuth 註冊邏輯
+            // 目前先顯示提示訊息
+            alert(`${provider} 註冊功能即將推出！`);
+        }
+        
+        // 檢查是否已經登入
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                // 如果已經登入，跳轉到首頁
+                window.location.href = '/';
+            }
+        });
+    </script>
+} 

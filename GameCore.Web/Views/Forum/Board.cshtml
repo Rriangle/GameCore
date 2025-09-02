@@ -1,0 +1,465 @@
+@model int
+@{
+    ViewData["Title"] = "論壇版面 - GameCore";
+}
+
+<div class="container-fluid">
+    <!-- 論壇導航 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="論壇導航">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">首頁</a></li>
+                    <li class="breadcrumb-item"><a href="/forum">論壇</a></li>
+                    <li class="breadcrumb-item active" aria-current="page" id="forumName">論壇版面</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- 論壇資訊 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-1" id="forumTitle">載入中...</h4>
+                            <p class="text-muted mb-0" id="forumDescription">載入中...</p>
+                        </div>
+                        <div class="text-end">
+                            <div class="d-flex gap-3">
+                                <div class="text-center">
+                                    <div class="h5 mb-0" id="threadCount">-</div>
+                                    <small class="text-muted">主題</small>
+                                </div>
+                                <div class="text-center">
+                                    <div class="h5 mb-0" id="activeUserCount">-</div>
+                                    <small class="text-muted">活躍用戶</small>
+                                </div>
+                                <div class="text-center">
+                                    <div class="h5 mb-0" id="todayThreadCount">-</div>
+                                    <small class="text-muted">今日新主題</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主題列表 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>主題列表
+                    </h5>
+                    <div class="d-flex gap-2">
+                        <select class="form-select form-select-sm" id="sortBy" style="width: auto;">
+                            <option value="latest">最新</option>
+                            <option value="popular">熱門</option>
+                        </select>
+                        <input type="text" id="searchKeyword" class="form-control form-control-sm" placeholder="搜尋主題..." style="width: 200px;">
+                        <button type="button" class="btn btn-primary btn-sm" onclick="searchThreads()">
+                            <i class="fas fa-search"></i> 搜尋
+                        </button>
+                        <button type="button" class="btn btn-success btn-sm" onclick="showCreateThreadModal()">
+                            <i class="fas fa-plus"></i> 發表主題
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="threadsList">
+                        <!-- 主題列表將在這裡動態載入 -->
+                    </div>
+                    <div id="threadsPagination" class="d-flex justify-content-center mt-3">
+                        <!-- 分頁將在這裡動態載入 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 建立主題的 Modal -->
+<div class="modal fade" id="createThreadModal" tabindex="-1" aria-labelledby="createThreadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createThreadModalLabel">發表新主題</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createThreadForm">
+                    <div class="mb-3">
+                        <label for="threadTitle" class="form-label">主題標題</label>
+                        <input type="text" class="form-control" id="threadTitle" required maxlength="200" placeholder="請輸入主題標題">
+                    </div>
+                    <div class="mb-3">
+                        <label for="threadContent" class="form-label">主題內容</label>
+                        <textarea class="form-control" id="threadContent" rows="8" required placeholder="請輸入主題內容（支援 Markdown 格式）"></textarea>
+                        <div class="form-text">
+                            <small>支援 Markdown 格式：**粗體**、*斜體*、`程式碼`、[連結](URL)</small>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="submitCreateThread()">發表主題</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const forumId = @Model;
+        let currentPage = 1;
+        let currentSearchKeyword = '';
+        let currentSortBy = 'latest';
+
+        // 頁面載入時初始化
+        $(document).ready(function() {
+            loadForumInfo();
+            loadThreads();
+        });
+
+        // 載入論壇資訊
+        function loadForumInfo() {
+            $.ajax({
+                url: `/api/forum/${forumId}`,
+                method: 'GET',
+                success: function(forum) {
+                    $('#forumName').text(forum.name);
+                    $('#forumTitle').text(forum.name);
+                    $('#forumDescription').text(forum.description || '暫無說明');
+                    $('#threadCount').text(forum.threadCount);
+                    $('#activeUserCount').text(forum.activeUserCount);
+                    $('#todayThreadCount').text(forum.todayThreadCount);
+                },
+                error: function(xhr) {
+                    console.error('載入論壇資訊失敗:', xhr);
+                    showAlert('載入論壇資訊失敗', 'danger');
+                }
+            });
+        }
+
+        // 載入主題列表
+        function loadThreads(page = 1) {
+            currentPage = page;
+            
+            const params = new URLSearchParams({
+                forumId: forumId,
+                page: page,
+                pageSize: 20,
+                sortBy: currentSortBy
+            });
+
+            if (currentSearchKeyword) {
+                params.append('keyword', currentSearchKeyword);
+            }
+
+            $.ajax({
+                url: `/api/forum/threads?${params.toString()}`,
+                method: 'GET',
+                success: function(response) {
+                    renderThreads(response.items);
+                    renderThreadsPagination(response);
+                },
+                error: function(xhr) {
+                    console.error('載入主題列表失敗:', xhr);
+                    showAlert('載入主題列表失敗', 'danger');
+                }
+            });
+        }
+
+        // 渲染主題列表
+        function renderThreads(threads) {
+            const container = $('#threadsList');
+            container.empty();
+
+            if (threads.length === 0) {
+                container.html(`
+                    <div class="text-center py-5">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">暫無主題</h5>
+                        <p class="text-muted">成為第一個發表主題的人吧！</p>
+                        <button type="button" class="btn btn-primary" onclick="showCreateThreadModal()">
+                            <i class="fas fa-plus"></i> 發表主題
+                        </button>
+                    </div>
+                `);
+                return;
+            }
+
+            const table = $('<table class="table table-hover"></table>');
+            const thead = $(`
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">狀態</th>
+                        <th>主題</th>
+                        <th style="width: 120px;">作者</th>
+                        <th style="width: 100px;">回覆</th>
+                        <th style="width: 100px;">瀏覽</th>
+                        <th style="width: 100px;">讚數</th>
+                        <th style="width: 150px;">最後回覆</th>
+                    </tr>
+                </thead>
+            `);
+            table.append(thead);
+
+            const tbody = $('<tbody></tbody>');
+            threads.forEach(thread => {
+                const isPinned = thread.isPinned;
+                const row = $(`
+                    <tr class="thread-row" onclick="navigateToThread(${thread.threadId})">
+                        <td>
+                            ${isPinned ? '<span class="badge bg-warning"><i class="fas fa-thumbtack"></i></span>' : ''}
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="flex-shrink-0 me-2">
+                                    <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-size: 12px;">
+                                        ${thread.authorNickname.charAt(0).toUpperCase()}
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="thread-title">${thread.title}</div>
+                                    <small class="text-muted">
+                                        <i class="fas fa-user me-1"></i>${thread.authorNickname} · 
+                                        <i class="fas fa-clock me-1"></i>${formatTimeAgo(thread.createdAt)}
+                                    </small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <small>${thread.authorNickname}</small>
+                        </td>
+                        <td>
+                            <small class="text-muted">${thread.replyCount}</small>
+                        </td>
+                        <td>
+                            <small class="text-muted">${thread.viewCount}</small>
+                        </td>
+                        <td>
+                            <small class="text-muted">${thread.likeCount}</small>
+                        </td>
+                        <td>
+                            <small class="text-muted">
+                                ${thread.lastReplyTime ? formatTimeAgo(thread.lastReplyTime) : '無回覆'}
+                            </small>
+                        </td>
+                    </tr>
+                `);
+                tbody.append(row);
+            });
+            table.append(tbody);
+            container.append(table);
+        }
+
+        // 渲染主題分頁
+        function renderThreadsPagination(response) {
+            const container = $('#threadsPagination');
+            container.empty();
+
+            if (response.totalPages <= 1) return;
+
+            const pagination = $('<ul class="pagination"></ul>');
+
+            // 上一頁
+            if (response.hasPreviousPage) {
+                pagination.append(`
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="loadThreads(${currentPage - 1})">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                `);
+            }
+
+            // 頁碼
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(response.totalPages, currentPage + 2);
+
+            for (let i = startPage; i <= endPage; i++) {
+                const isActive = i === currentPage;
+                pagination.append(`
+                    <li class="page-item ${isActive ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="loadThreads(${i})">${i}</a>
+                    </li>
+                `);
+            }
+
+            // 下一頁
+            if (response.hasNextPage) {
+                pagination.append(`
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="loadThreads(${currentPage + 1})">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                `);
+            }
+
+            container.append(pagination);
+        }
+
+        // 搜尋主題
+        function searchThreads() {
+            currentSearchKeyword = $('#searchKeyword').val().trim();
+            loadThreads(1);
+        }
+
+        // 排序變更
+        $('#sortBy').on('change', function() {
+            currentSortBy = $(this).val();
+            loadThreads(1);
+        });
+
+        // 顯示建立主題 Modal
+        function showCreateThreadModal() {
+            $('#createThreadModal').modal('show');
+        }
+
+        // 提交建立主題
+        function submitCreateThread() {
+            const title = $('#threadTitle').val().trim();
+            const content = $('#threadContent').val().trim();
+
+            if (!title || !content) {
+                showAlert('請填寫所有必填欄位', 'warning');
+                return;
+            }
+
+            const request = {
+                forumId: forumId,
+                title: title,
+                content: content
+            };
+
+            $.ajax({
+                url: '/api/forum/threads',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(request),
+                success: function(response) {
+                    $('#createThreadModal').modal('hide');
+                    $('#createThreadForm')[0].reset();
+                    showAlert('主題發表成功！', 'success');
+                    
+                    // 重新載入主題列表
+                    loadThreads(1);
+                },
+                error: function(xhr) {
+                    console.error('發表主題失敗:', xhr);
+                    const message = xhr.responseJSON?.message || '發表主題失敗';
+                    showAlert(message, 'danger');
+                }
+            });
+        }
+
+        // 導航到主題
+        function navigateToThread(threadId) {
+            window.location.href = `/forum/thread/${threadId}`;
+        }
+
+        // 格式化時間
+        function formatTimeAgo(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / (1000 * 60));
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+            if (diffMins < 1) return '剛剛';
+            if (diffMins < 60) return `${diffMins} 分鐘前`;
+            if (diffHours < 24) return `${diffHours} 小時前`;
+            if (diffDays < 7) return `${diffDays} 天前`;
+            
+            return date.toLocaleDateString('zh-TW');
+        }
+
+        // 顯示提示訊息
+        function showAlert(message, type) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            $('.container-fluid').prepend(alertHtml);
+            
+            // 自動隱藏
+            setTimeout(() => {
+                $('.alert').alert('close');
+            }, 5000);
+        }
+
+        // 搜尋框按 Enter 鍵觸發搜尋
+        $('#searchKeyword').on('keypress', function(e) {
+            if (e.which === 13) {
+                searchThreads();
+            }
+        });
+
+        // 主題行懸停效果
+        $(document).on('mouseenter', '.thread-row', function() {
+            $(this).addClass('table-active');
+        }).on('mouseleave', '.thread-row', function() {
+            $(this).removeClass('table-active');
+        });
+    </script>
+}
+
+<style>
+    .thread-row {
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .thread-row:hover {
+        background-color: rgba(0, 123, 255, 0.1) !important;
+    }
+
+    .thread-title {
+        color: #333;
+        font-weight: 500;
+        margin-bottom: 4px;
+    }
+
+    .thread-row:hover .thread-title {
+        color: #007bff;
+    }
+
+    .avatar {
+        font-weight: bold;
+    }
+
+    .breadcrumb a {
+        color: #007bff;
+        text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+
+    .badge {
+        font-size: 10px;
+    }
+
+    .table th {
+        border-top: none;
+        font-weight: 600;
+        color: #666;
+    }
+
+    .table td {
+        vertical-align: middle;
+    }
+</style> 

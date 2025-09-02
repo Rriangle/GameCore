@@ -1,0 +1,479 @@
+@{
+    ViewData["Title"] = "登入 - GameCore";
+    Layout = "_Layout";
+}
+
+@section Styles {
+    <style>
+        :root {
+            --bg: #eef3f8;
+            --bg2: #ffffff;
+            --ink: #1f2937;
+            --muted: #64748b;
+            --line: #e5e7eb;
+            --surface: rgba(255,255,255,.75);
+            --glass: rgba(255,255,255,.45);
+            --accent: #7557ff;
+            --accent-2: #34d2ff;
+            --accent-3: #22c55e;
+            --radius: 18px;
+            --radius-sm: 12px;
+            --shadow: 0 18px 40px rgba(17,24,39,.12);
+            --blur: 14px;
+        }
+
+        body.dark {
+            --bg: #0c111b;
+            --bg2: #0a0f18;
+            --ink: #e5edff;
+            --muted: #9fb1c9;
+            --line: #1e2b43;
+            --surface: rgba(22,30,48,.65);
+            --glass: rgba(18,24,39,.50);
+            --shadow: 0 18px 42px rgba(0,0,0,.35);
+        }
+
+        body {
+            margin: 0;
+            color: var(--ink);
+            font: 16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+            background: radial-gradient(900px 500px at -10% -10%, rgba(117,87,255,.10), transparent 60%),
+                        radial-gradient(800px 460px at 110% 10%, rgba(52,210,255,.10), transparent 50%),
+                        linear-gradient(180deg, var(--bg), var(--bg2));
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+            background: var(--glass);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            backdrop-filter: blur(var(--blur));
+            box-shadow: var(--shadow);
+            padding: 32px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .logo-badge {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #fff;
+            display: grid;
+            place-items: center;
+            font-weight: 900;
+            font-size: 20px;
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: 900;
+            color: var(--ink);
+        }
+
+        .login-subtitle {
+            color: var(--muted);
+            font-size: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--line);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            color: var(--ink);
+            font-size: 16px;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(117,87,255,.1);
+        }
+
+        .form-input::placeholder {
+            color: var(--muted);
+        }
+
+        .form-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .form-checkbox input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+        }
+
+        .form-checkbox label {
+            color: var(--ink);
+            font-size: 14px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px 20px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #fff;
+            box-shadow: var(--shadow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px rgba(117,87,255,.3);
+        }
+
+        .btn-secondary {
+            background: var(--surface);
+            color: var(--ink);
+            border: 1px solid var(--line);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg2);
+            transform: translateY(-1px);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 24px 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--line);
+        }
+
+        .divider span {
+            padding: 0 16px;
+        }
+
+        .oauth-buttons {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .oauth-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border: 1px solid var(--line);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            color: var(--ink);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .oauth-btn:hover {
+            background: var(--bg2);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow);
+        }
+
+        .oauth-btn.google {
+            border-color: #ea4335;
+            color: #ea4335;
+        }
+
+        .oauth-btn.facebook {
+            border-color: #1877f2;
+            color: #1877f2;
+        }
+
+        .oauth-btn.discord {
+            border-color: #5865f2;
+            color: #5865f2;
+        }
+
+        .login-footer {
+            text-align: center;
+            margin-top: 24px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .login-footer a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .login-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background: rgba(239,68,68,.1);
+            border: 1px solid rgba(239,68,68,.2);
+            color: #dc2626;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .success-message {
+            background: rgba(34,197,94,.1);
+            border: 1px solid rgba(34,197,94,.2);
+            color: #16a34a;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .loading .btn {
+            position: relative;
+        }
+
+        .loading .btn::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 24px;
+            }
+            
+            .logo-text {
+                font-size: 24px;
+            }
+        }
+    </style>
+}
+
+<div class="login-container">
+    <div class="login-header">
+        <div class="logo">
+            <div class="logo-badge">GC</div>
+            <div class="logo-text">GameCore</div>
+        </div>
+        <div class="login-subtitle">歡迎回來！請登入您的帳號</div>
+    </div>
+
+    <div id="errorMessage" class="error-message" style="display: none;"></div>
+    <div id="successMessage" class="success-message" style="display: none;"></div>
+
+    <form id="loginForm">
+        <div class="form-group">
+            <label for="accountOrEmail" class="form-label">帳號或電子郵件</label>
+            <input type="text" id="accountOrEmail" name="accountOrEmail" class="form-input" 
+                   placeholder="請輸入帳號或電子郵件" required>
+        </div>
+
+        <div class="form-group">
+            <label for="password" class="form-label">密碼</label>
+            <input type="password" id="password" name="password" class="form-input" 
+                   placeholder="請輸入密碼" required>
+        </div>
+
+        <div class="form-checkbox">
+            <input type="checkbox" id="rememberMe" name="rememberMe">
+            <label for="rememberMe">記住我</label>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="loginBtn">
+            登入
+        </button>
+    </form>
+
+    <div class="divider">
+        <span>或使用以下方式登入</span>
+    </div>
+
+    <div class="oauth-buttons">
+        <a href="#" class="oauth-btn google" onclick="oauthLogin('google')">
+            <svg width="20" height="20" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            使用 Google 登入
+        </a>
+        <a href="#" class="oauth-btn facebook" onclick="oauthLogin('facebook')">
+            <svg width="20" height="20" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+            使用 Facebook 登入
+        </a>
+        <a href="#" class="oauth-btn discord" onclick="oauthLogin('discord')">
+            <svg width="20" height="20" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419-.019 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1568 2.4189Z"/>
+            </svg>
+            使用 Discord 登入
+        </a>
+    </div>
+
+    <div class="login-footer">
+        還沒有帳號？ <a href="/Auth/Register">立即註冊</a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // 登入表單處理
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const form = e.target;
+            const submitBtn = document.getElementById('loginBtn');
+            const errorMessage = document.getElementById('errorMessage');
+            const successMessage = document.getElementById('successMessage');
+            
+            // 隱藏訊息
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+            
+            // 顯示載入狀態
+            form.classList.add('loading');
+            submitBtn.textContent = '登入中...';
+            
+            try {
+                const formData = new FormData(form);
+                const requestData = {
+                    accountOrEmail: formData.get('accountOrEmail'),
+                    password: formData.get('password'),
+                    rememberMe: formData.get('rememberMe') === 'on'
+                };
+                
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // 儲存 Token
+                    if (result.token) {
+                        localStorage.setItem('authToken', result.token);
+                    }
+                    
+                    // 儲存用戶資訊
+                    if (result.userInfo) {
+                        localStorage.setItem('userInfo', JSON.stringify(result.userInfo));
+                    }
+                    
+                    // 顯示成功訊息
+                    successMessage.textContent = '登入成功！正在跳轉...';
+                    successMessage.style.display = 'block';
+                    
+                    // 跳轉到首頁
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
+                } else {
+                    // 顯示錯誤訊息
+                    errorMessage.textContent = result.errorMessage || '登入失敗，請檢查帳號密碼';
+                    errorMessage.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('登入錯誤:', error);
+                errorMessage.textContent = '登入過程中發生錯誤，請稍後再試';
+                errorMessage.style.display = 'block';
+            } finally {
+                // 移除載入狀態
+                form.classList.remove('loading');
+                submitBtn.textContent = '登入';
+            }
+        });
+        
+        // OAuth 登入處理
+        function oauthLogin(provider) {
+            // 這裡應該實作 OAuth 登入邏輯
+            // 目前先顯示提示訊息
+            alert(`${provider} 登入功能即將推出！`);
+        }
+        
+        // 檢查是否已經登入
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                // 如果已經登入，跳轉到首頁
+                window.location.href = '/';
+            }
+        });
+    </script>
+} 

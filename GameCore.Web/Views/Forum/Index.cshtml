@@ -1,0 +1,498 @@
+@{
+    ViewData["Title"] = "論壇 - GameCore";
+}
+
+<div class="container-fluid">
+    <!-- 論壇導航 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="論壇導航">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">首頁</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">論壇</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- 論壇版面列表 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-comments me-2"></i>論壇版面
+                    </h5>
+                    <div class="d-flex gap-2">
+                        <input type="text" id="searchKeyword" class="form-control form-control-sm" placeholder="搜尋版面..." style="width: 200px;">
+                        <button type="button" class="btn btn-primary btn-sm" onclick="searchForums()">
+                            <i class="fas fa-search"></i> 搜尋
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="forumsList" class="row">
+                        <!-- 論壇版面將在這裡動態載入 -->
+                    </div>
+                    <div id="forumsPagination" class="d-flex justify-content-center mt-3">
+                        <!-- 分頁將在這裡動態載入 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 熱門主題 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-fire me-2"></i>熱門主題
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="popularThreads">
+                        <!-- 熱門主題將在這裡動態載入 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 最新主題 -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clock me-2"></i>最新主題
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="latestThreads">
+                        <!-- 最新主題將在這裡動態載入 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 建立主題的 Modal -->
+<div class="modal fade" id="createThreadModal" tabindex="-1" aria-labelledby="createThreadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createThreadModalLabel">建立新主題</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createThreadForm">
+                    <div class="mb-3">
+                        <label for="forumSelect" class="form-label">選擇版面</label>
+                        <select class="form-select" id="forumSelect" required>
+                            <option value="">請選擇版面...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="threadTitle" class="form-label">主題標題</label>
+                        <input type="text" class="form-control" id="threadTitle" required maxlength="200" placeholder="請輸入主題標題">
+                    </div>
+                    <div class="mb-3">
+                        <label for="threadContent" class="form-label">主題內容</label>
+                        <textarea class="form-control" id="threadContent" rows="8" required placeholder="請輸入主題內容（支援 Markdown 格式）"></textarea>
+                        <div class="form-text">
+                            <small>支援 Markdown 格式：**粗體**、*斜體*、`程式碼`、[連結](URL)</small>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="submitCreateThread()">建立主題</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentPage = 1;
+        let currentSearchKeyword = '';
+
+        // 頁面載入時初始化
+        $(document).ready(function() {
+            loadForums();
+            loadPopularThreads();
+            loadLatestThreads();
+            loadForumOptions();
+        });
+
+        // 載入論壇版面列表
+        function loadForums(page = 1) {
+            currentPage = page;
+            
+            const params = new URLSearchParams({
+                page: page,
+                pageSize: 12
+            });
+
+            if (currentSearchKeyword) {
+                params.append('keyword', currentSearchKeyword);
+            }
+
+            $.ajax({
+                url: `/api/forum?${params.toString()}`,
+                method: 'GET',
+                success: function(response) {
+                    renderForums(response.items);
+                    renderForumsPagination(response);
+                },
+                error: function(xhr) {
+                    console.error('載入論壇版面失敗:', xhr);
+                    showAlert('載入論壇版面失敗', 'danger');
+                }
+            });
+        }
+
+        // 渲染論壇版面列表
+        function renderForums(forums) {
+            const container = $('#forumsList');
+            container.empty();
+
+            if (forums.length === 0) {
+                container.html(`
+                    <div class="col-12 text-center py-5">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">沒有找到相關的論壇版面</h5>
+                    </div>
+                `);
+                return;
+            }
+
+            forums.forEach(forum => {
+                const forumCard = `
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100 forum-card" onclick="navigateToForum(${forum.forumId})">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="card-title mb-0">${forum.name}</h6>
+                                    <span class="badge bg-primary">${forum.gameName}</span>
+                                </div>
+                                <p class="card-text text-muted small">${forum.description || '暫無說明'}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="fas fa-comments me-1"></i>${forum.threadCount} 主題
+                                    </small>
+                                    <small class="text-muted">
+                                        <i class="fas fa-users me-1"></i>${forum.activeUserCount} 活躍
+                                    </small>
+                                </div>
+                                <div class="mt-2">
+                                    <small class="text-success">
+                                        <i class="fas fa-plus me-1"></i>今日 +${forum.todayThreadCount}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.append(forumCard);
+            });
+        }
+
+        // 渲染論壇版面分頁
+        function renderForumsPagination(response) {
+            const container = $('#forumsPagination');
+            container.empty();
+
+            if (response.totalPages <= 1) return;
+
+            const pagination = $('<ul class="pagination"></ul>');
+
+            // 上一頁
+            if (response.hasPreviousPage) {
+                pagination.append(`
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="loadForums(${currentPage - 1})">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                `);
+            }
+
+            // 頁碼
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(response.totalPages, currentPage + 2);
+
+            for (let i = startPage; i <= endPage; i++) {
+                const isActive = i === currentPage;
+                pagination.append(`
+                    <li class="page-item ${isActive ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="loadForums(${i})">${i}</a>
+                    </li>
+                `);
+            }
+
+            // 下一頁
+            if (response.hasNextPage) {
+                pagination.append(`
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="loadForums(${currentPage + 1})">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                `);
+            }
+
+            container.append(pagination);
+        }
+
+        // 搜尋論壇版面
+        function searchForums() {
+            currentSearchKeyword = $('#searchKeyword').val().trim();
+            loadForums(1);
+        }
+
+        // 載入熱門主題
+        function loadPopularThreads() {
+            $.ajax({
+                url: '/api/forum/popular?limit=5',
+                method: 'GET',
+                success: function(threads) {
+                    renderThreads(threads, '#popularThreads');
+                },
+                error: function(xhr) {
+                    console.error('載入熱門主題失敗:', xhr);
+                }
+            });
+        }
+
+        // 載入最新主題
+        function loadLatestThreads() {
+            $.ajax({
+                url: '/api/forum/latest?limit=5',
+                method: 'GET',
+                success: function(threads) {
+                    renderThreads(threads, '#latestThreads');
+                },
+                error: function(xhr) {
+                    console.error('載入最新主題失敗:', xhr);
+                }
+            });
+        }
+
+        // 渲染主題列表
+        function renderThreads(threads, containerId) {
+            const container = $(containerId);
+            container.empty();
+
+            if (threads.length === 0) {
+                container.html(`
+                    <div class="text-center py-3">
+                        <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">暫無主題</p>
+                    </div>
+                `);
+                return;
+            }
+
+            threads.forEach(thread => {
+                const threadItem = `
+                    <div class="d-flex align-items-start mb-3 thread-item" onclick="navigateToThread(${thread.threadId})">
+                        <div class="flex-shrink-0 me-3">
+                            <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                ${thread.authorNickname.charAt(0).toUpperCase()}
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1 thread-title">${thread.title}</h6>
+                            <div class="d-flex align-items-center text-muted small">
+                                <span class="me-3">
+                                    <i class="fas fa-user me-1"></i>${thread.authorNickname}
+                                </span>
+                                <span class="me-3">
+                                    <i class="fas fa-comments me-1"></i>${thread.replyCount}
+                                </span>
+                                <span class="me-3">
+                                    <i class="fas fa-heart me-1"></i>${thread.likeCount}
+                                </span>
+                                <span>
+                                    <i class="fas fa-clock me-1"></i>${formatTimeAgo(thread.createdAt)}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.append(threadItem);
+            });
+        }
+
+        // 載入論壇版面選項
+        function loadForumOptions() {
+            $.ajax({
+                url: '/api/forum',
+                method: 'GET',
+                success: function(response) {
+                    const select = $('#forumSelect');
+                    select.find('option:not(:first)').remove();
+                    
+                    response.items.forEach(forum => {
+                        select.append(`<option value="${forum.forumId}">${forum.name}</option>`);
+                    });
+                },
+                error: function(xhr) {
+                    console.error('載入論壇版面選項失敗:', xhr);
+                }
+            });
+        }
+
+        // 提交建立主題
+        function submitCreateThread() {
+            const forumId = $('#forumSelect').val();
+            const title = $('#threadTitle').val().trim();
+            const content = $('#threadContent').val().trim();
+
+            if (!forumId || !title || !content) {
+                showAlert('請填寫所有必填欄位', 'warning');
+                return;
+            }
+
+            const request = {
+                forumId: parseInt(forumId),
+                title: title,
+                content: content
+            };
+
+            $.ajax({
+                url: '/api/forum/threads',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(request),
+                success: function(response) {
+                    $('#createThreadModal').modal('hide');
+                    $('#createThreadForm')[0].reset();
+                    showAlert('主題建立成功！', 'success');
+                    
+                    // 重新載入最新主題
+                    loadLatestThreads();
+                },
+                error: function(xhr) {
+                    console.error('建立主題失敗:', xhr);
+                    const message = xhr.responseJSON?.message || '建立主題失敗';
+                    showAlert(message, 'danger');
+                }
+            });
+        }
+
+        // 導航到論壇版面
+        function navigateToForum(forumId) {
+            window.location.href = `/forum/board/${forumId}`;
+        }
+
+        // 導航到主題
+        function navigateToThread(threadId) {
+            window.location.href = `/forum/thread/${threadId}`;
+        }
+
+        // 格式化時間
+        function formatTimeAgo(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / (1000 * 60));
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+            if (diffMins < 1) return '剛剛';
+            if (diffMins < 60) return `${diffMins} 分鐘前`;
+            if (diffHours < 24) return `${diffHours} 小時前`;
+            if (diffDays < 7) return `${diffDays} 天前`;
+            
+            return date.toLocaleDateString('zh-TW');
+        }
+
+        // 顯示提示訊息
+        function showAlert(message, type) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            $('.container-fluid').prepend(alertHtml);
+            
+            // 自動隱藏
+            setTimeout(() => {
+                $('.alert').alert('close');
+            }, 5000);
+        }
+
+        // 搜尋框按 Enter 鍵觸發搜尋
+        $('#searchKeyword').on('keypress', function(e) {
+            if (e.which === 13) {
+                searchForums();
+            }
+        });
+
+        // 論壇卡片懸停效果
+        $(document).on('mouseenter', '.forum-card', function() {
+            $(this).addClass('shadow-sm');
+        }).on('mouseleave', '.forum-card', function() {
+            $(this).removeClass('shadow-sm');
+        });
+
+        // 主題項目懸停效果
+        $(document).on('mouseenter', '.thread-item', function() {
+            $(this).addClass('bg-light');
+        }).on('mouseleave', '.thread-item', function() {
+            $(this).removeClass('bg-light');
+        });
+    </script>
+}
+
+<style>
+    .forum-card {
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .forum-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .thread-item {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-radius: 8px;
+        padding: 8px;
+    }
+
+    .thread-item:hover {
+        transform: translateX(4px);
+    }
+
+    .thread-title {
+        color: #333;
+        font-weight: 500;
+    }
+
+    .thread-item:hover .thread-title {
+        color: #007bff;
+    }
+
+    .avatar {
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    .breadcrumb a {
+        color: #007bff;
+        text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+</style>

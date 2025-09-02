@@ -1,0 +1,711 @@
+@model GameCore.Core.ViewModels.ForumPostsViewModel
+@{
+    ViewData["Title"] = Model?.Forum?.Name ?? "論壇版面";
+    ViewData["ActivePage"] = "Forum";
+}
+
+<div class="container-fluid">
+    <!-- 頁面標題和導航 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="/Forum" class="text-decoration-none">
+                            <i class="fas fa-comments"></i> 論壇
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        @Model?.Forum?.Name ?? "版面"
+                    </li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">
+                        <i class="fas fa-folder text-primary"></i>
+                        @Model?.Forum?.Name ?? "論壇版面"
+                    </h1>
+                    @if (Model?.Forum != null)
+                    {
+                        <p class="text-muted mb-0">@Model.Forum.Description</p>
+                    }
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/Forum" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> 返回論壇
+                    </a>
+                    <a href="/Forum/Post/Create?forumId=@Model?.Forum?.Id" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> 發表貼文
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model?.Forum != null)
+    {
+        <!-- 版面資訊 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <div class="forum-info">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <h5 class="mb-0 me-3">@Model.Forum.Name</h5>
+                                        @if (!Model.Forum.IsActive)
+                                        {
+                                            <span class="badge bg-secondary">已關閉</span>
+                                        }
+                                        @if (Model.Forum.IsSticky)
+                                        {
+                                            <span class="badge bg-warning">置頂</span>
+                                        }
+                                    </div>
+                                    <p class="text-muted mb-2">@Model.Forum.Description</p>
+                                    <div class="forum-meta">
+                                        <small class="text-muted me-3">
+                                            <i class="fas fa-folder"></i> @Model.Forum.Category
+                                        </small>
+                                        <small class="text-muted me-3">
+                                            <i class="fas fa-user"></i> 版主: @(Model.Forum.Moderator?.Username ?? "未指定")
+                                        </small>
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock"></i> 建立於 @Model.Forum.CreateTime.ToString("yyyy/MM/dd")
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="forum-stats text-center">
+                                    <div class="row">
+                                        <div class="col-4">
+                                            <div class="stat-item">
+                                                <h6 class="text-primary mb-1">@(Model.Forum.PostCount ?? 0)</h6>
+                                                <small class="text-muted">貼文</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="stat-item">
+                                                <h6 class="text-success mb-1">@(Model.Forum.ReplyCount ?? 0)</h6>
+                                                <small class="text-muted">回覆</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="stat-item">
+                                                <h6 class="text-info mb-1">@(Model.Forum.SubscriberCount ?? 0)</h6>
+                                                <small class="text-muted">訂閱</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2">
+                                        @if (Model.Forum.IsSubscribed)
+                                        {
+                                            <button class="btn btn-sm btn-outline-primary" onclick="unsubscribeForum(@Model.Forum.Id)">
+                                                <i class="fas fa-bell-slash"></i> 取消訂閱
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-sm btn-primary" onclick="subscribeForum(@Model.Forum.Id)">
+                                                <i class="fas fa-bell"></i> 訂閱
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 搜尋和篩選 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="searchInput" class="form-label">搜尋貼文</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="searchInput" 
+                                           placeholder="輸入標題或內容關鍵字...">
+                                    <button class="btn btn-primary" type="button" onclick="searchPosts()">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="sortBy" class="form-label">排序方式</label>
+                                <select class="form-select" id="sortBy" onchange="sortPosts()">
+                                    <option value="newest">最新發布</option>
+                                    <option value="oldest">最早發布</option>
+                                    <option value="mostReplies">最多回覆</option>
+                                    <option value="mostViews">最多瀏覽</option>
+                                    <option value="mostLikes">最多讚</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="filterType" class="form-label">貼文類型</label>
+                                <select class="form-select" id="filterType" onchange="filterPosts()">
+                                    <option value="">全部類型</option>
+                                    <option value="discussion">討論</option>
+                                    <option value="question">問題</option>
+                                    <option value="guide">攻略</option>
+                                    <option value="share">分享</option>
+                                    <option value="announcement">公告</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label for="timeFilter" class="form-label">時間範圍</label>
+                                <select class="form-select" id="timeFilter" onchange="filterPosts()">
+                                    <option value="">全部時間</option>
+                                    <option value="today">今天</option>
+                                    <option value="week">本週</option>
+                                    <option value="month">本月</option>
+                                    <option value="year">今年</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 貼文列表 -->
+        <div class="row" id="postsContainer">
+            @if (Model?.Posts != null && Model.Posts.Any())
+            {
+                @foreach (var post in Model.Posts)
+                {
+                    <div class="col-12 mb-3">
+                        <div class="card shadow-sm post-card">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="post-content">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <h5 class="mb-0 me-3">
+                                                    <a href="/Forum/Post/@post.Id" class="text-decoration-none text-dark">
+                                                        @post.Title
+                                                    </a>
+                                                </h5>
+                                                @if (post.IsSticky)
+                                                {
+                                                    <span class="badge bg-warning">置頂</span>
+                                                }
+                                                @if (post.IsLocked)
+                                                {
+                                                    <span class="badge bg-secondary">已鎖定</span>
+                                                }
+                                                @if (post.IsPinned)
+                                                {
+                                                    <span class="badge bg-info">精華</span>
+                                                }
+                                            </div>
+                                            <p class="text-muted mb-2">
+                                                @(string.IsNullOrEmpty(post.Content) ? "無內容" : 
+                                                  (post.Content.Length > 150 ? post.Content.Substring(0, 150) + "..." : post.Content))
+                                            </p>
+                                            <div class="post-meta">
+                                                <small class="text-muted me-3">
+                                                    <i class="fas fa-user"></i> @post.Author?.Username
+                                                </small>
+                                                <small class="text-muted me-3">
+                                                    <i class="fas fa-clock"></i> @post.CreateTime.ToString("yyyy/MM/dd HH:mm")
+                                                </small>
+                                                @if (post.LastReplyTime.HasValue)
+                                                {
+                                                    <small class="text-muted me-3">
+                                                        <i class="fas fa-comment"></i> 最後回覆: @post.LastReplyTime.Value.ToString("MM/dd HH:mm")
+                                                    </small>
+                                                }
+                                                <small class="text-muted">
+                                                    <i class="fas fa-tag"></i> @post.Type
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="post-stats text-center">
+                                            <div class="row">
+                                                <div class="col-4">
+                                                    <div class="stat-item">
+                                                        <h6 class="text-primary mb-1">@(post.ReplyCount ?? 0)</h6>
+                                                        <small class="text-muted">回覆</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-4">
+                                                    <div class="stat-item">
+                                                        <h6 class="text-success mb-1">@(post.ViewCount ?? 0)</h6>
+                                                        <small class="text-muted">瀏覽</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-4">
+                                                    <div class="stat-item">
+                                                        <h6 class="text-info mb-1">@(post.LikeCount ?? 0)</h6>
+                                                        <small class="text-muted">讚</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="mt-2">
+                                                <button class="btn btn-sm btn-outline-primary" onclick="likePost(@post.Id)">
+                                                    <i class="fas fa-thumbs-up"></i> 讚
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-secondary" onclick="bookmarkPost(@post.Id)">
+                                                    <i class="fas fa-bookmark"></i> 收藏
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-transparent">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="post-actions">
+                                        <a href="/Forum/Post/@post.Id" class="btn btn-outline-primary btn-sm me-2">
+                                            <i class="fas fa-eye"></i> 查看詳情
+                                        </a>
+                                        @if (User.Identity?.Name == post.Author?.Username || User.IsInRole("Admin") || User.IsInRole("Moderator"))
+                                        {
+                                            <a href="/Forum/Post/Edit/@post.Id" class="btn btn-outline-secondary btn-sm me-2">
+                                                <i class="fas fa-edit"></i> 編輯
+                                            </a>
+                                            <button class="btn btn-outline-danger btn-sm" onclick="deletePost(@post.Id, '@post.Title')">
+                                                <i class="fas fa-trash"></i> 刪除
+                                            </button>
+                                        }
+                                    </div>
+                                    <div class="post-tags">
+                                        @if (post.Tags != null && post.Tags.Any())
+                                        {
+                                            @foreach (var tag in post.Tags.Take(3))
+                                            {
+                                                <span class="badge bg-light text-dark me-1">@tag</span>
+                                            }
+                                            @if (post.Tags.Count() > 3)
+                                            {
+                                                <span class="badge bg-light text-dark">+@(post.Tags.Count() - 3)</span>
+                                            }
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="col-12">
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center py-5">
+                            <i class="fas fa-file-alt fa-4x text-muted mb-3"></i>
+                            <h4 class="text-muted">目前沒有貼文</h4>
+                            <p class="text-muted">成為第一個發表貼文的人吧！</p>
+                            <a href="/Forum/Post/Create?forumId=@Model.Forum.Id" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> 發表第一貼
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- 分頁控制 -->
+        @if (Model?.Posts != null && Model.Posts.Any())
+        {
+            <div class="row mt-4">
+                <div class="col-12">
+                    <nav aria-label="貼文分頁">
+                        <ul class="pagination justify-content-center" id="pagination">
+                            @{
+                                var totalPages = Math.Ceiling((double)(Model.TotalPosts / Model.PageSize));
+                                var currentPage = Model.CurrentPage;
+                                
+                                // 上一頁
+                                if (currentPage > 1)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="/Forum/Posts/@Model.Forum.Id?page=@(currentPage - 1)">上一頁</a>
+                                    </li>
+                                }
+                                
+                                // 頁碼
+                                for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                                {
+                                    <li class="page-item @(i == currentPage ? "active" : "")">
+                                        <a class="page-link" href="/Forum/Posts/@Model.Forum.Id?page=@i">@i</a>
+                                    </li>
+                                }
+                                
+                                // 下一頁
+                                if (currentPage < totalPages)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="/Forum/Posts/@Model.Forum.Id?page=@(currentPage + 1)">下一頁</a>
+                                    </li>
+                                }
+                            }
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <!-- 版面不存在 -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-exclamation-triangle text-warning fa-4x mb-3"></i>
+                        <h4 class="text-warning">版面不存在</h4>
+                        <p class="text-muted">指定的論壇版面不存在或已被刪除。</p>
+                        <a href="/Forum" class="btn btn-primary">
+                            <i class="fas fa-arrow-left"></i> 返回論壇
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- 刪除確認 Modal -->
+<div class="modal fade" id="deletePostModal" tabindex="-1" aria-labelledby="deletePostModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deletePostModalLabel">
+                    <i class="fas fa-exclamation-triangle text-danger"></i> 確認刪除貼文
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>您確定要刪除貼文 "<span id="deletePostTitle"></span>" 嗎？</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>警告：</strong> 此操作將永久刪除該貼文及其所有回覆，無法復原。
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeletePost()">確認刪除</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .post-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .post-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        }
+
+        .post-content h5 a:hover {
+            color: #007bff !important;
+        }
+
+        .post-meta small {
+            font-size: 0.85rem;
+        }
+
+        .stat-item h6 {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .stat-item small {
+            font-size: 0.75rem;
+        }
+
+        .post-actions .btn {
+            font-size: 0.8rem;
+        }
+
+        .post-tags .badge {
+            font-size: 0.7rem;
+        }
+
+        .card-header {
+            background-color: #f8f9fc;
+            border-bottom: 1px solid #e3e6f0;
+        }
+
+        .badge {
+            font-size: 0.7rem;
+        }
+
+        .btn-sm {
+            font-size: 0.8rem;
+            padding: 0.375rem 0.5rem;
+        }
+
+        .breadcrumb {
+            background-color: transparent;
+            padding: 0;
+            margin-bottom: 1rem;
+        }
+
+        .breadcrumb-item a {
+            color: #007bff;
+        }
+
+        .breadcrumb-item.active {
+            color: #6c757d;
+        }
+
+        .pagination .page-link {
+            color: #007bff;
+        }
+
+        .pagination .page-item.active .page-link {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 767.98px) {
+            .post-stats {
+                margin-top: 1rem;
+            }
+            
+            .post-actions {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .post-actions .btn {
+                width: 100%;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        let currentForumId = @(Model?.Forum?.Id ?? 0);
+        let postToDelete = null;
+
+        // 頁面載入完成後初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 搜尋框 Enter 鍵事件
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchPosts();
+                }
+            });
+        });
+
+        // 搜尋貼文
+        function searchPosts() {
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            if (searchTerm === '') {
+                location.href = `/Forum/Posts/${currentForumId}`;
+            } else {
+                location.href = `/Forum/Posts/${currentForumId}?search=${encodeURIComponent(searchTerm)}`;
+            }
+        }
+
+        // 排序貼文
+        function sortPosts() {
+            const sortBy = document.getElementById('sortBy').value;
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.set('sort', sortBy);
+            window.location.href = currentUrl.toString();
+        }
+
+        // 篩選貼文
+        function filterPosts() {
+            const filterType = document.getElementById('filterType').value;
+            const timeFilter = document.getElementById('timeFilter').value;
+            const currentUrl = new URL(window.location);
+            
+            if (filterType) {
+                currentUrl.searchParams.set('type', filterType);
+            } else {
+                currentUrl.searchParams.delete('type');
+            }
+            
+            if (timeFilter) {
+                currentUrl.searchParams.set('time', timeFilter);
+            } else {
+                currentUrl.searchParams.delete('time');
+            }
+            
+            window.location.href = currentUrl.toString();
+        }
+
+        // 訂閱論壇
+        function subscribeForum(forumId) {
+            fetch('/api/forum/subscribe', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    forumId: forumId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('訂閱成功', 'success');
+                    // 更新按鈕狀態
+                    const button = event.target.closest('button');
+                    button.innerHTML = '<i class="fas fa-bell-slash"></i> 取消訂閱';
+                    button.className = 'btn btn-sm btn-outline-primary';
+                    button.onclick = () => unsubscribeForum(forumId);
+                } else {
+                    showToast(`訂閱失敗：${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('訂閱時發生錯誤，請稍後再試。', 'error');
+            });
+        }
+
+        // 取消訂閱論壇
+        function unsubscribeForum(forumId) {
+            fetch('/api/forum/unsubscribe', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    forumId: forumId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('取消訂閱成功', 'success');
+                    // 更新按鈕狀態
+                    const button = event.target.closest('button');
+                    button.innerHTML = '<i class="fas fa-bell"></i> 訂閱';
+                    button.className = 'btn btn-sm btn-primary';
+                    button.onclick = () => subscribeForum(forumId);
+                } else {
+                    showToast(`取消訂閱失敗：${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('取消訂閱時發生錯誤，請稍後再試。', 'error');
+            });
+        }
+
+        // 讚貼文
+        function likePost(postId) {
+            fetch('/api/forum/post/like', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    postId: postId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('讚成功', 'success');
+                    // 這裡應該更新讚數顯示
+                    location.reload();
+                } else {
+                    showToast(`讚失敗：${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('讚時發生錯誤，請稍後再試。', 'error');
+            });
+        }
+
+        // 收藏貼文
+        function bookmarkPost(postId) {
+            fetch('/api/forum/post/bookmark', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    postId: postId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('收藏成功', 'success');
+                } else {
+                    showToast(`收藏失敗：${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('收藏時發生錯誤，請稍後再試。', 'error');
+            });
+        }
+
+        // 刪除貼文
+        function deletePost(postId, postTitle) {
+            postToDelete = { id: postId, title: postTitle };
+            document.getElementById('deletePostTitle').textContent = postTitle;
+            
+            const modal = new bootstrap.Modal(document.getElementById('deletePostModal'));
+            modal.show();
+        }
+
+        // 確認刪除貼文
+        function confirmDeletePost() {
+            if (!postToDelete) return;
+            
+            fetch(`/api/forum/post/delete/${postToDelete.id}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('貼文刪除成功', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('deletePostModal')).hide();
+                    // 重新整理頁面
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(`刪除失敗：${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('刪除時發生錯誤，請稍後再試。', 'error');
+            })
+            .finally(() => {
+                postToDelete = null;
+            });
+        }
+
+        // 顯示提示訊息
+        function showToast(message, type = 'info') {
+            if (type === 'success') {
+                alert('✅ ' + message);
+            } else if (type === 'error') {
+                alert('❌ ' + message);
+            } else if (type === 'warning') {
+                alert('⚠️ ' + message);
+            } else {
+                alert(message);
+            }
+        }
+    </script>
+}

@@ -1,0 +1,16 @@
+D:\GameCore\GameCore.Application\bin\Debug\net8.0\GameCore.Application.deps.json
+D:\GameCore\GameCore.Application\bin\Debug\net8.0\GameCore.Application.dll
+D:\GameCore\GameCore.Application\bin\Debug\net8.0\GameCore.Application.pdb
+D:\GameCore\GameCore.Application\bin\Debug\net8.0\GameCore.Domain.dll
+D:\GameCore\GameCore.Application\bin\Debug\net8.0\GameCore.Domain.pdb
+D:\GameCore\GameCore.Application\obj\Debug\net8.0\GameCore.Application.csproj.AssemblyReference.cache
+D:\GameCore\GameCore.Application\obj\Debug\net8.0\GameCore.Application.GeneratedMSBuildEditorConfig.editorconfig
+D:\GameCore\GameCore.Application\obj\Debug\net8.0\GameCore.Application.AssemblyInfoInputs.cache
+D:\GameCore\GameCore.Application\obj\Debug\net8.0\GameCore.Application.AssemblyInfo.cs
+D:\GameCore\GameCore.Application\obj\Debug\net8.0\GameCore.Application.csproj.CoreCompileInputs.cache
+D:\GameCore\GameCore.Application\obj\Debug\net8.0\GameCore.Application.sourcelink.json
+D:\GameCore\GameCore.Application\obj\Debug\net8.0\GameCore.9F018C8B.Up2Date
+D:\GameCore\GameCore.Application\obj\Debug\net8.0\GameCore.Application.dll
+D:\GameCore\GameCore.Application\obj\Debug\net8.0\refint\GameCore.Application.dll
+D:\GameCore\GameCore.Application\obj\Debug\net8.0\GameCore.Application.pdb
+D:\GameCore\GameCore.Application\obj\Debug\net8.0\ref\GameCore.Application.dll

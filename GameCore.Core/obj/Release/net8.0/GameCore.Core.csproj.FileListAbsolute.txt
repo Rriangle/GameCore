@@ -1,0 +1,13 @@
+D:\GameCore\GameCore.Core\obj\Release\net8.0\GameCore.Core.csproj.AssemblyReference.cache
+D:\GameCore\GameCore.Core\obj\Release\net8.0\GameCore.Core.GeneratedMSBuildEditorConfig.editorconfig
+D:\GameCore\GameCore.Core\obj\Release\net8.0\GameCore.Core.AssemblyInfoInputs.cache
+D:\GameCore\GameCore.Core\obj\Release\net8.0\GameCore.Core.AssemblyInfo.cs
+D:\GameCore\GameCore.Core\obj\Release\net8.0\GameCore.Core.csproj.CoreCompileInputs.cache
+D:\GameCore\GameCore.Core\obj\Release\net8.0\GameCore.Core.sourcelink.json
+D:\GameCore\GameCore.Core\bin\Release\net8.0\GameCore.Core.deps.json
+D:\GameCore\GameCore.Core\bin\Release\net8.0\GameCore.Core.dll
+D:\GameCore\GameCore.Core\bin\Release\net8.0\GameCore.Core.pdb
+D:\GameCore\GameCore.Core\obj\Release\net8.0\GameCore.Core.dll
+D:\GameCore\GameCore.Core\obj\Release\net8.0\refint\GameCore.Core.dll
+D:\GameCore\GameCore.Core\obj\Release\net8.0\GameCore.Core.pdb
+D:\GameCore\GameCore.Core\obj\Release\net8.0\ref\GameCore.Core.dll

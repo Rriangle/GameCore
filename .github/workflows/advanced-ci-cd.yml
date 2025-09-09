@@ -1,12 +1,6 @@
 name: Advanced CI/CD Pipeline with Multi-Environment
 
 on:
-  push:
-    branches: [ main, develop, staging ]
-  pull_request:
-    branches: [ main, develop ]
-  schedule:
-    - cron: '0 2 * * *'  # Daily security scan at 2 AM
   workflow_dispatch:
     inputs:
       environment:
